@@ -81,7 +81,8 @@ def print_weight_mem(mem, bits=8, size=8):
         
 # Read the dram files and build memory images
 hostarray = np.load(args.hostmem)
-#print(hostarray)
+print("Host array:")
+print(hostarray)
 #print(hostarray.shape)
 hostmem = { a : concat_vec(vec) for a,vec in enumerate(hostarray) }
 print("Host memory:")

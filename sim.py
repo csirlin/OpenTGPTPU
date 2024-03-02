@@ -30,7 +30,7 @@ class TPUSim(object):
 
     def run(self):
         # load program and execute instructions
-        while True:
+        while True: #this is the 'PC' pulling the next line. Might need to change how this is handled. 
             instruction = self.decode()
             opcode, operands = instruction[0], instruction[1:]
             if opcode in ['RHM', 'WHM', 'RW']:
@@ -86,7 +86,9 @@ class TPUSim(object):
             vfunc = np.vectorize(lambda x: x)
             #raise Exception('(╯°□°）╯︵ ┻━┻ bad activation function!')
 
+        print(f'before = {result}')
         result = vfunc(result)
+        print(f'after = {result}')
 
         # downsample/normalize if needed
         if not args.raw:
@@ -119,17 +121,20 @@ class TPUSim(object):
         inp = self.unified_buffer[ub_addr: ub_addr + size]
         print('MMC input shape: {}'.format(inp.shape))
         weight_mat = self.weight_fifo.popleft()
-        print('MMC weight: {}'.format(weight_mat))
         if not args.raw:
             inp = inp.astype(np.int32)
             weight_mat = weight_mat.astype(np.int32)
+        print('MMC matrix: \n{}'.format(inp))
+        print('MMC weight: \n{}'.format(weight_mat))
         out = np.matmul(inp, weight_mat)
         print('MMC output shape: {}'.format(out.shape))
+        print('MMC output: \n{}'.format(out))
         overwrite = isa.OVERWRITE_MASK & flags
         if overwrite:
             self.accumulator[accum_addr:accum_addr + size] = out
         else:
             self.accumulator[accum_addr:accum_addr + size] += out
+        print(f'Accumulator[{accum_addr}] = {self.accumulator[accum_addr: accum_addr + size]}')
 
 def parse_args():
     global args
@@ -146,6 +151,7 @@ def parse_args():
     args = parser.parse_args()
 
 if __name__ == '__main__':
+    np.set_printoptions(linewidth=150)
     if len(sys.argv) < 4:
         print('Usage:', sys.argv[0], 'PROGRAM_BINARY DRAM_FILE HOST_FILE')
         sys.exit(0)
