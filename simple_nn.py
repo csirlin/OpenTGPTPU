@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import pickle
-from gen_mem import gen_mem
+from old.gen_mem import gen_mem
 
 # train code from http://iamtrask.github.io/2015/07/12/basic-python-network/
 
@@ -15,12 +15,16 @@ def relu(X):
     map_func = np.vectorize(lambda x: max(x, 0))
     return map_func(X)
 
-def train(path, lpath):    
+def train(path, lpath):
+    print(f"simple_nn.py; path = {path}, lpath = {lpath}")  
+     
     X = np.load(path)
     y = np.load(lpath)
+    print(f"X.shape[-1] = {X.shape[-1]}") 
+    print(f"y.shape[-1] = {y.shape[-1]}") 
 
-    print 'X: {}'.format(X)
-    print 'y: {}'.format(y)
+    print('X: {}'.format(X))
+    print('y: {}'.format(y))
     # seed random numbers to make calculation
     # deterministic (just a good practice)
     np.random.seed(1)
@@ -30,7 +34,7 @@ def train(path, lpath):
 
     nonlin = sigmoid
 
-    for iter in xrange(10000):
+    for iter in range(10000):
 
         # forward propagation
         l0 = X
@@ -45,9 +49,9 @@ def train(path, lpath):
 
         # update weights
         syn0 += np.dot(l0.T,l1_delta)
-    print 'syn0: {}'.format(syn0)
-    print 'l1: {}'.format(l1)
-    with open('simple_nn_gt', 'w') as f:
+    print('syn0: {}'.format(syn0))
+    print('l1: {}'.format(l1))
+    with open('simple_nn_gt', 'wb') as f:
         pickle.dump((l1, syn0), f)
         f.close()
     

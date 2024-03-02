@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-from gen_mem import gen_mem
+from old.gen_mem import gen_mem
 
 args = None
 
@@ -9,11 +9,11 @@ def gen_one_hot(lower=-5, upper=5, shape=(8, 8)):
     one_hot = np.random.randint(lower, upper, shape, dtype=np.int8)
     # We eigher generate a squre matrix for training or generate a vector for testing.
     if shape[0] == shape[1]:
-        for i in xrange(shape[0]):
+        for i in range(shape[0]):
             one_hot[i, i] = 64
     else:
         assert shape[1] == 1
-        for i in xrange(shape[0]):
+        for i in range(shape[0]):
             one_hot[i, 0] = np.random.randint(lower, upper, dtype=np.int8)
     return one_hot
 
