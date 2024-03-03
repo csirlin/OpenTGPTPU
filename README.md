@@ -1,3 +1,27 @@
+## Running TGPTPU examples
+
+Python and package versions:
+- python     3.8.18
+- numpy      1.24.4
+- pip        23.0.1
+- pyrtl      0.8.6
+- setuptools 56.0.0
+- six        1.16.0
+
+Prepare weight and input .npy files
+- python branch_neq.py
+
+Run example 1: Increment the top left value of a matrix in a loop until it equals 10
+- python assembler.py branch_neq.a
+- python sim.py branch_neq.out branch_neq_input.npy branch_neq_weights.npy
+
+Run example 2: Multiply the matrix by two in a loop until the top left value is 128
+- python assembler.py branch_neq_2.a
+- python sim.py branch_neq_2.out branch_neq_input.npy branch_neq_weights.npy
+
+
+
+
 # UCSB ArchLab OpenTPU Project 
 
 OpenTPU is an open-source re-implementation of Google's Tensor Processing Unit (TPU) by the UC Santa Barbara ArchLab.
