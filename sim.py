@@ -27,23 +27,27 @@ class TPUSim(object):
         self.accumulator = (np.zeros((4000, WIDTH), dtype=np.float32) if args.raw else
             np.zeros((4000, WIDTH), dtype=np.int32))
         self.weight_fifo = deque()
+        
+        self.pc = 0
 
     def run(self):
         # load program and execute instructions
-        while True: #this is the 'PC' pulling the next line. Might need to change how this is handled. 
-            instruction = self.decode()
-            opcode, operands = instruction[0], instruction[1:]
-            if opcode in ['RHM', 'WHM', 'RW']:
-                self.memops(opcode, *operands)
-            elif opcode == 'MMC':
-                self.matrix_multiply_convolve(*operands)
-            elif opcode == 'ACT':
-                self.act(*operands)
-            elif opcode == 'SYNC':
-                pass
-            elif opcode == 'NOP':
-                pass
-            elif opcode == 'HLT':
+        instructions = self.decode()
+        opcodes, operands = instructions[0], instructions[1]
+        
+        # use self.pc to select next instruction, starting from 0, and finishing when halt is reached
+        while True:
+            if opcodes[self.pc] in ['RHM', 'WHM', 'RW']:
+                self.memops(opcodes[self.pc], *operands[self.pc])
+            elif opcodes[self.pc] == 'MMC':
+                self.matrix_multiply_convolve(*operands[self.pc])
+            elif opcodes[self.pc] == 'ACT':
+                self.act(*operands[self.pc])
+            elif opcodes[self.pc] == 'SYNC':
+                self.pc += 1
+            elif opcodes[self.pc] == 'NOP':
+                self.pc += 1
+            elif opcodes[self.pc] == 'HLT':
                 print('H A L T')
                 break
             else:
@@ -60,16 +64,23 @@ class TPUSim(object):
         ( •_•)>⌐■-■
         (⌐■_■)""")
 
+    # decode everything at once and return lists
     def decode(self):
-        opcode = int.from_bytes(self.program.read(isa.OP_SIZE), byteorder='big')
-        opcode = isa.BIN2OPCODE[opcode]
+        opcode_list = []
+        operand_list = []
+        current_opcode = ""
 
-        flag = int.from_bytes(self.program.read(isa.FLAGS_SIZE), byteorder='big')
-        length = int.from_bytes(self.program.read(isa.LEN_SIZE), byteorder='big')
-        src_addr = int.from_bytes(self.program.read(isa.ADDR_SIZE), byteorder='big')
-        dest_addr = int.from_bytes(self.program.read(isa.UB_ADDR_SIZE), byteorder='big')
-        #print('{} decoding: len {}, flags {}, src {}, dst {}'.format(opcode, length, flag, src_addr, dest_addr))
-        return opcode, src_addr, dest_addr, length, flag
+        while (current_opcode != "HLT"):
+            current_opcode = int.from_bytes(self.program.read(isa.OP_SIZE), byteorder='big')
+            current_opcode = isa.BIN2OPCODE[current_opcode]
+            opcode_list.append(current_opcode)
+            current_flag = int.from_bytes(self.program.read(isa.FLAGS_SIZE), byteorder='big')
+            current_length = int.from_bytes(self.program.read(isa.LEN_SIZE), byteorder='big')
+            current_src_addr = int.from_bytes(self.program.read(isa.ADDR_SIZE), byteorder='big')
+            current_dest_addr = int.from_bytes(self.program.read(isa.UB_ADDR_SIZE), byteorder='big')
+            operand_list.append((current_src_addr, current_dest_addr, current_length, current_flag))
+
+        return opcode_list, operand_list
 
     # opcodes
     def act(self, src, dest, length, flag):
@@ -95,6 +106,8 @@ class TPUSim(object):
             result = [v & 0x000000FF for v in result]
         self.unified_buffer[dest:dest+length] = result
 
+        self.pc += 1
+
     def memops(self, opcode, src_addr, dest_addr, length, flag):
         print('Memory xfer! host: {} unified buffer: {}: length: {} (FLAGS? {})'.format(
             src_addr, dest_addr, length, flag
@@ -111,6 +124,8 @@ class TPUSim(object):
             self.weight_fifo.append(self.weight_memory[src_addr])
         else:
             raise Exception('WAT (╯°□°）╯︵ ┻━┻')
+        
+        self.pc += 1
 
     def matrix_multiply_convolve(self, ub_addr, accum_addr, size, flags):
         print('Matrix things....')
@@ -135,6 +150,8 @@ class TPUSim(object):
         else:
             self.accumulator[accum_addr:accum_addr + size] += out
         print(f'Accumulator[{accum_addr}] = {self.accumulator[accum_addr: accum_addr + size]}')
+
+        self.pc += 1
 
 def parse_args():
     global args
