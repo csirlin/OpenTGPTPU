@@ -1,3 +1,4 @@
+# copy of sim file that maintains original behavior, for reference while adding jumps to sim.py
 # coding=utf-8
 import argparse
 import sys
@@ -37,7 +38,6 @@ class TPUSim(object):
         
         # use self.pc to select next instruction, starting from 0, and finishing when halt is reached
         while True:
-            print(f'operands = {operands[self.pc]}')
             if opcodes[self.pc] in ['RHM', 'WHM', 'RW']:
                 self.memops(opcodes[self.pc], *operands[self.pc])
             elif opcodes[self.pc] == 'MMC':
@@ -53,7 +53,6 @@ class TPUSim(object):
                 break
             else:
                 raise Exception('WAT (╯°□°）╯︵ ┻━┻')
-            print(f"PC = {self.pc}")
 
         # all done, exit
         savepath = 'sim32.npy' if args.raw else 'sim8.npy'
@@ -108,12 +107,7 @@ class TPUSim(object):
             result = [v & 0x000000FF for v in result]
         self.unified_buffer[dest:dest+length] = result
 
-        # branch if not equal: weight matrix holds v and p. if result[0][0] != v, pc += p. else pc += 1
-        print(f"branch_neq: value = {result[-2][-1]}, branch pc diff = {result[-1][-1]}")
-        if (result[0][0] != result[-2][-1]):
-            self.pc += result[-1][-1].astype(np.int8)
-        else:
-            self.pc += 1
+        self.pc += 1
 
     def memops(self, opcode, src_addr, dest_addr, length, flag):
         print('Memory xfer! host: {} unified buffer: {}: length: {} (FLAGS? {})'.format(
