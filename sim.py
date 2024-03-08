@@ -110,7 +110,9 @@ class TPUSim(object):
 
         # branch if not equal: weight matrix holds v and p. if result[0][0] != v, pc += p. else pc += 1
         print(f"branch_neq: value = {result[-2][-1]}, branch pc diff = {result[-1][-1]}")
-        if (result[0][0] != result[-2][-1]):
+        if (0 > result[-2][-1] > 1):
+            raise ValueError(f"Branch boolean must be 0 or 1. Instead it's {result[-2][-1]}.)")
+        if (result[-2][-1] == 1 and result[0][0] == 0):
             self.pc += result[-1][-1].astype(np.int8)
         else:
             self.pc += 1

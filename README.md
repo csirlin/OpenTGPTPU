@@ -9,13 +9,17 @@ Python and package versions:
 - six        1.16.0
 
 Prepare weight and input .npy files
-- python branch_neq.py
+- python branch_eq.py
 
-Run example 1: Increment the top left value of a matrix in a loop until it equals 10
+Run example 1: Add a matrix to a second matrix in a loop until the top left value is zero
+- python assembler.py branch_eq.a
+- python sim.py branch_eq.out branch_eq_input.npy branch_eq_weights.npy
+
+Old example 1: Increment the top left value of a matrix in a loop until it equals 10
 - python assembler.py branch_neq.a
 - python sim.py branch_neq.out branch_neq_input.npy branch_neq_weights.npy
 
-Run example 2: Multiply the matrix by two in a loop until the top left value is 128
+Old example 2: Multiply the matrix by two in a loop until the top left value is 128
 - python assembler.py branch_neq_2.a
 - python sim.py branch_neq_2.out branch_neq_input.npy branch_neq_weights.npy
 

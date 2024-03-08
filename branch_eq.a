@@ -1,0 +1,25 @@
+# Testing branch if equal functionality
+# load hostmem
+RHM     0,  0, 16 #0
+RHM    16, 16, 16 #1
+RHM    32, 32, 16 #2
+
+# load UB1 into ACC1 with the preparation to branch to the end
+RW      0         #3
+MMC.SO 16, 16, 16 #4
+
+# if ACC1[0][0] == 0, branch to #11
+ACT    16, 16, 16 #5
+
+# increment ACC1 by UB2 without changing ACC1's control
+RW      1         #6
+MMC.S  16, 32, 16 #7
+
+# jump to #4
+RW      2         #8
+MMC.SO  0, 0, 16  #9
+ACT     0, 0, 16  #10
+
+# writeback and halt
+WHM   16, 16, 16  #11
+HLT               #12
