@@ -16,7 +16,7 @@ def sigmoid_vector(vec):
     return concat_list([ sigmoid(x) for x in vec ])
 
 
-def act_top(start, start_addr, dest_addr, nvecs, func, accum_out):
+def act_top(start, start_addr, dest_addr, nvecs, func, accum_out):#, next_pc_reg):
 
     # func: 0 - nothing
     #       1 - ReLU
@@ -32,6 +32,7 @@ def act_top(start, start_addr, dest_addr, nvecs, func, accum_out):
     
     with conditional_assignment:
         with start:  # new instruction being dispatched
+            # next_pc_reg.next |= 
             accum_addr.next |= start_addr
             ub_waddr.next |= dest_addr
             N.next |= nvecs

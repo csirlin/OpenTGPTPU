@@ -81,23 +81,37 @@ def print_weight_mem(mem, bits=8, size=8):
         
 # Read the dram files and build memory images
 hostarray = np.load(args.hostmem)
-print("Host array:")
-print(hostarray)
-#print(hostarray.shape)
-hostmem = { a : concat_vec(vec) for a,vec in enumerate(hostarray) }
-print("Host memory:")
-print_mem(hostmem)
+# print("Host array:")
+# print(hostarray)
+host_shape = hostarray.shape
+# print(host_shape)
+if len(host_shape) == 3:
+    flat_host = np.zeros((host_shape[0] * host_shape[1], host_shape[2]))
+    # print(flat_host.shape)
+    for i, arr in enumerate(hostarray):
+        flat_host[host_shape[1]*i: host_shape[1]*(i+1)] = arr
+if len(host_shape) == 2:
+    flat_host = hostarray
+# print(flat_host)
+hostmem = { a : concat_vec(vec) for a,vec in enumerate(flat_host) }
+# print("Host memory:")
+# print_mem(hostmem)
     
 
 weightsarray = np.load(args.weightsmem)
+print("Weightsarray")
+print(weightsarray)
+print(weightsarray.shape)
 size = weightsarray.shape[-1]
-#print(weightsarray)
-#print(weightsarray.shape)
-weightsmem = { a : concat_tile(tile) for a,tile in enumerate(weightsarray) }
+weight_shape = weightsarray.shape
+if len(weight_shape) == 3:
+    weightsmem = { a : concat_tile(tile) for a,tile in enumerate(weightsarray) }
+if len(weight_shape) == 2:
+    weightsmem = np.zeros(())
 #weightsmem = { a : concat_vec(vec) for a,vec in enumerate(weightsarray) }
 print("Weight memory:")
 print_weight_mem(weightsmem, size=size)
-#print(weightsmem)
+print(weightsmem)
 
 '''
 Left-most element of each vector should be left-most in memory: use concat_list for each vector
@@ -110,6 +124,7 @@ For host mem, each vector goes at one address. First vector at address 0.
 
 tilesize = config.MATSIZE * config.MATSIZE  # number of weights in a tile
 nchunks = max(tilesize / 64, 1)  # Number of DRAM transfers needed from Weight DRAM for one tile
+print(f"nchunks = {nchunks}")
 chunkmask = pow(2,64*8)-1
 def getchunkfromtile(tile, chunkn):
     #print("Get chunk: ", chunkn, nchunks, chunkmask, tile)
@@ -177,6 +192,6 @@ print("Simulation terminated at cycle {}".format(cycle))
 print("Final Host memory:")
 print_mem(hostmem)
 
-#sim_trace.render_trace()
+# sim_trace.render_trace(symbol_len=131)
 with open("trace.vcd", 'w') as f:
     sim_trace.print_vcd(f)

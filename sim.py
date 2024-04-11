@@ -108,12 +108,12 @@ class TPUSim(object):
             result = [v & 0x000000FF for v in result]
         self.unified_buffer[dest:dest+length] = result
 
-        # branch if not equal: weight matrix holds v and p. if result[0][0] != v, pc += p. else pc += 1
-        print(f"branch_neq: value = {result[-2][-1]}, branch pc diff = {result[-1][-1]}")
-        if (0 > result[-2][-1] > 1):
-            raise ValueError(f"Branch boolean must be 0 or 1. Instead it's {result[-2][-1]}.)")
-        if (result[-2][-1] == 1 and result[0][0] == 0):
-            self.pc += result[-1][-1].astype(np.int8)
+        # branch if equal weight matrix holds e and p. if result[0][0] == 0 and e == 1, pc += p. else pc += 1
+        print(f"branch_eq_vect: enabled = {result[0][-3]}, branch pc diff = {result[0][-2]}")
+        if (0 > result[0][-3] > 1):
+            raise ValueError(f"Branch boolean must be 0 or 1. Instead it's {result[0][-3]}.)")
+        if (result[0][-3] == 1 and result[0][0] == 0):
+            self.pc += result[0][-2].astype(np.int8)
         else:
             self.pc += 1
 
