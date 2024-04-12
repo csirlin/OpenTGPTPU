@@ -6,6 +6,8 @@ from decoder import decode
 from matrix import MMU_top
 from activate import act_top
 
+acc_mem = MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, max_write_ports=None, max_read_ports=None) # accumulator memory
+
 ############################################################
 #  Control Signals
 ############################################################
@@ -55,7 +57,7 @@ halt <<= dispatch_halt
 #  Matrix Multiply Unit
 ############################################################
 
-ub_mm_raddr_sig, acc_out, mm_busy, mm_done = MMU_top(data_width=DWIDTH, matrix_size=MATSIZE, accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, overwrite=accum_overwrite, swap_weights=switch_weights, ub_rdata=UB2MM, accum_raddr=accum_act_raddr, weights_dram_in=weights_dram_in, weights_dram_valid=weights_dram_valid)
+ub_mm_raddr_sig, acc_out, mm_busy, mm_done = MMU_top(acc_mem=acc_mem, data_width=DWIDTH, matrix_size=MATSIZE, accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, overwrite=accum_overwrite, swap_weights=switch_weights, ub_rdata=UB2MM, accum_raddr=accum_act_raddr, weights_dram_in=weights_dram_in, weights_dram_valid=weights_dram_valid)
 
 ub_mm_raddr <<= ub_mm_raddr_sig
 
@@ -63,7 +65,7 @@ ub_mm_raddr <<= ub_mm_raddr_sig
 #  Activate Unit
 ############################################################
 
-accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy = act_top(start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, func=act_type, accum_out=acc_out)
+accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy = act_top(acc_mem=acc_mem, start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, func=act_type, accum_out=acc_out)
 accum_act_raddr <<= accum_raddr_sig
 
 # Write the result of activate to the unified buffer

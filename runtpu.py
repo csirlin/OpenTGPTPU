@@ -2,12 +2,12 @@ from pyrtl import *
 import argparse
 import numpy as np
 
-#set_debug_mode()
 
 from tpu import *
 import config
 
 import sys
+set_debug_mode()
 
 parser = argparse.ArgumentParser(description="Run the PyRTL spec for the TPU on the indicated program.")
 parser.add_argument("prog", metavar="program.bin", help="A valid binary program for OpenTPU.")

@@ -16,7 +16,8 @@ def sigmoid_vector(vec):
     return concat_list([ sigmoid(x) for x in vec ])
 
 
-def act_top(start, start_addr, dest_addr, nvecs, func, accum_out):#, next_pc_reg):
+def act_top(acc_mem, start, start_addr, dest_addr, nvecs, func, accum_out):
+    #, next_pc_reg):
 
     # func: 0 - nothing
     #       1 - ReLU
@@ -26,6 +27,7 @@ def act_top(start, start_addr, dest_addr, nvecs, func, accum_out):#, next_pc_reg
     accum_addr = Register(len(start_addr))
     ub_waddr = Register(len(dest_addr))
     N = Register(len(nvecs))
+    N_init = Register(len(nvecs))   
     act_func = Register(len(func))
     
     rtl_assert(~(start & busy), Exception("Dispatching new activate instruction while previous instruction is still running."))
@@ -36,6 +38,7 @@ def act_top(start, start_addr, dest_addr, nvecs, func, accum_out):#, next_pc_reg
             accum_addr.next |= start_addr
             ub_waddr.next |= dest_addr
             N.next |= nvecs
+            N_init.next |= nvecs
             act_func.next |= func
             busy.next |= 1
         with busy:  # Do activate on another vector this cycle
@@ -44,6 +47,8 @@ def act_top(start, start_addr, dest_addr, nvecs, func, accum_out):#, next_pc_reg
             N.next |= N - 1
             with N == 1:  # this was the last vector
                 busy.next |= 0
+                # update PC to jump
+                # with acc_mem[accum_addr-N_init]
 
     invals = concat_list([ x[:8] for x in accum_out ])
     act_out = mux(act_func, invals, relu_vector(accum_out, 24), sigmoid_vector(accum_out), invals)
