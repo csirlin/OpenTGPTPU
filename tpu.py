@@ -6,7 +6,18 @@ from decoder import decode
 from matrix import MMU_top
 from activate import act_top
 
-acc_mem = MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, max_write_ports=None, max_read_ports=None) # accumulator memory
+# accumulator memories
+acc_mems = []
+for i in range(MATSIZE):
+    acc_mems.append(MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, max_write_ports=None, max_read_ports=None, name=f"acc_mems_{i}"))
+
+acc_mems_0n3 = WireVector(32, "acc_mems_0n3")
+acc_mems_0n3 <<= acc_mems[-3][0]
+acc_mems_0n2 = WireVector(32, "acc_mems_0n2")
+acc_mems_0n2 <<= acc_mems[-2][0]
+acc_mems_0n1 = WireVector(32, "acc_mems_0n1")
+acc_mems_0n1 <<= acc_mems[-1][0]
+
 
 ############################################################
 #  Control Signals
@@ -28,12 +39,14 @@ IMem = MemBlock(bitwidth=INSTRUCTION_WIDTH, addrwidth=IMEM_ADDR_SIZE)
 pc = Register(IMEM_ADDR_SIZE)
 probe(pc, 'pc')
 pc.incr = WireVector(1)
-with conditional_assignment:
-    with pc.incr:
-        pc.next |= pc + 1 #incr_amt
+# with conditional_assignment:
+#     with pc.incr:
+#         pc.next |= pc + 1 #incr_amt
 pc.incr <<= 1  # right now, increment the PC every cycle
 instr = IMem[pc]
 probe(instr, "instr")
+pc_out = Output(len(pc), "pc_out")
+pc_out <<= pc
         
 ############################################################
 #  Unified Buffer
@@ -57,15 +70,15 @@ halt <<= dispatch_halt
 #  Matrix Multiply Unit
 ############################################################
 
-ub_mm_raddr_sig, acc_out, mm_busy, mm_done = MMU_top(acc_mem=acc_mem, data_width=DWIDTH, matrix_size=MATSIZE, accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, overwrite=accum_overwrite, swap_weights=switch_weights, ub_rdata=UB2MM, accum_raddr=accum_act_raddr, weights_dram_in=weights_dram_in, weights_dram_valid=weights_dram_valid)
-
+ub_mm_raddr_sig, acc_out, mm_busy, mm_done, accum_waddr_wv, vec_valid, overwrite_wv, addrout, weights_tile, mouts, mma_package, fifo_in_package = MMU_top(acc_mems=acc_mems, data_width=DWIDTH, matrix_size=MATSIZE, accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, overwrite=accum_overwrite, swap_weights=switch_weights, ub_rdata=UB2MM, accum_raddr=accum_act_raddr, weights_dram_in=weights_dram_in, weights_dram_valid=weights_dram_valid)
+weights_tile.name = "weights_tile" + weights_tile.name
 ub_mm_raddr <<= ub_mm_raddr_sig
 
 ############################################################
 #  Activate Unit
 ############################################################
 
-accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy = act_top(acc_mem=acc_mem, start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, func=act_type, accum_out=acc_out)
+accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy, start_addr_wv, act_cond, act_branch_enable, act_top_left, N_wv, act_func = act_top(pc=pc, acc_mems=acc_mems, start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, func=act_type, accum_out=acc_out, matsize=MATSIZE)
 accum_act_raddr <<= accum_raddr_sig
 
 # Write the result of activate to the unified buffer
@@ -75,7 +88,7 @@ with conditional_assignment:
 
 probe(ub_act_we, "ub_act_we")
 probe(ub_act_waddr, "ub_act_waddr")
-probe(act_out, "act_out")
+# probe(act_out, "act_out")
 probe(accum_raddr_sig, "accum_raddr")
 
 ############################################################
@@ -154,7 +167,7 @@ probe(weights_read, "weights_read")
 
             
 probe(dispatch_mm, "dispatch_mm")
-probe(dispatch_act, "dispatch_act")
+# probe(dispatch_act, "dispatch_act")
 probe(dispatch_rhm, "dispatch_rhm")
 probe(dispatch_whm, "dispatch_whm")
 

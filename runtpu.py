@@ -133,8 +133,52 @@ def getchunkfromtile(tile, chunkn):
         raise Exception("Reading more weights than are present in one tile?")
     return (tile >> int(((nchunks - chunkn - 1))*64*8)) & chunkmask
 
+acc_outn3 = WireVector(len(acc_out[-3]), "acc_out_neg3")
+acc_outn3 <<= acc_out[-3]
+moutsn3 = WireVector(len(mouts[-3]), "mouts_neg3")
+moutsn3 <<= mouts[-3]
+
+w = []
+
+data_width_wv = WireVector(32, "mma_0_data_width")
+data_width_wv <<= mma_package[0]
+w.append(data_width_wv)
+
+matrix_size_wv = WireVector(32, "mma_1_matrix_size")
+matrix_size_wv <<= mma_package[1]
+w.append(matrix_size_wv)
+
+for i in range(len(mma_package[2])):
+    data_in = mma_package[2][i]
+    data_in.name = f"mma_2_data_in_{i}"
+    w.append(data_in)
+
+for i in range(len(mma_package[3])):
+    new_weight = mma_package[3][i]
+    new_weight.name = f"mma_3_new_weight_{i}"
+    w.append(new_weight)
+
+weights_in = WireVector(len(mma_package[4]), "mma_4_weights_in")
+weights_in <<= mma_package[4]
+w.append(weights_in)
+
+weights_we = WireVector(len(mma_package[5]), "mma_5_weights_we")
+weights_we <<= mma_package[5]
+w.append(weights_we)
+
+ff = []
+
+
+# for i in range(len(mouts)):
+#     mout = WireVector(len(mouts[i]), f"mouts_{i}")
+#     mout <<= mouts[i]
+#     w.append(mout)
+
 # Run Simulation
-sim_trace = SimulationTrace()
+sim_trace = SimulationTrace(w)# + [acc_mems_0n3, acc_mems_0n2, acc_mems_0n1, act_branch_enable, weights_tile])
+    #wires_to_track=[pc_out, start_addr_wv, dispatch_act, N_wv, act_func, addrout, act_out, mm_busy, accum_waddr_wv, vec_valid, overwrite_wv, act_busy, act_top_left, 
+                            #                act_cond, act_branch_enable, acc_mems_0n3, acc_mems_0n2, acc_mems_0n1, weights_tile, acc_outn3, moutsn3])
+                            
 sim = FastSimulation(tracer=sim_trace, memory_value_map={ IMem : { a : v for a,v in enumerate(instrs)} })
 
 din = {
@@ -192,6 +236,11 @@ print("Simulation terminated at cycle {}".format(cycle))
 print("Final Host memory:")
 print_mem(hostmem)
 
-# sim_trace.render_trace(symbol_len=131)
+sim_trace.render_trace(symbol_len=131)
 with open("trace.vcd", 'w') as f:
     sim_trace.print_vcd(f)
+    # sim_trace.print_trace()
+
+print('ubuffer', sim.inspect_mem(UBuffer))
+for (i, mem) in enumerate(acc_mems):
+    print(f'acc_mem[{i}]', sim.inspect_mem(mem))

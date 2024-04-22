@@ -170,20 +170,18 @@ def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec):
     last vector of a matrix multiply instruction (at the final accumulator, this becomes
     a "done" signal).
     '''
-
-    mem = MemBlock(bitwidth=32, addrwidth=size)
     
     # Writes
     with conditional_assignment:
         with wen:
             with wclear:
-                mem[waddr] |= data_in
+                acc_mem[waddr] |= data_in
             with otherwise:
-                mem[waddr] |= (data_in + mem[waddr])[:mem.bitwidth]
+                acc_mem[waddr] |= (data_in + acc_mem[waddr])[:acc_mem.bitwidth]
 
     # Read
     data_out = WireVector(32)
-    data_out <<= mem[raddr]
+    data_out <<= acc_mem[raddr]
 
     # Pipeline registers
     waddrsave = Register(len(waddr))
@@ -197,7 +195,7 @@ def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec):
 
     return data_out, waddrsave, wensave, wclearsave, lastsave
 
-def accumulators(acc_mem, accsize, datas_in, waddr, we, wclear, raddr, lastvec):
+def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec):
     '''
     Produces array of accumulators of same dimension as datas_in.
     '''
@@ -215,7 +213,7 @@ def accumulators(acc_mem, accsize, datas_in, waddr, we, wclear, raddr, lastvec):
         #probe(x, "acc_{}_in".format(i))
         #probe(wein, "acc_{}_we".format(i))
         #probe(waddrin, "acc_{}_waddr".format(i))
-        dout, waddrin, wein, wclearin, lastvecin = accum(acc_mem, accsize, x, waddrin, wein, wclearin, raddr, lastvecin)
+        dout, waddrin, wein, wclearin, lastvecin = accum(acc_mems[i], accsize, x, waddrin, wein, wclearin, raddr, lastvecin)
         accout[i] = dout
         done = lastvecin
 
@@ -287,7 +285,7 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
             full.next |= 0
 
     # Build buffers for remainder of FIFO
-    buf2, buf3, buf4 = Register(tilesize), Register(tilesize), Register(tilesize)
+    buf2, buf3, buf4 = Register(tilesize, "buf2"), Register(tilesize, "buf3"), Register(tilesize, "buf4")
     #probe(concat_list(topbuf), "buf1")
     #probe(buf2, "buf2")
     #probe(buf3, "buf3")
@@ -411,11 +409,11 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     for din, reg in zip(datain, firstcolumn):
         reg.next <<= din
     
-        
+    addrout.name = "addrout"
     return lastcolumn, switchout, addrout, weout, clearout, doneout
 
 
-def MMU(acc_mem, data_width, matrix_size, accum_size, vector_in, accum_raddr, accum_waddr, vec_valid, accum_overwrite, lastvec, switch_weights, ddr_data, ddr_valid):  #, weights_in, weights_we):
+def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, accum_waddr, vec_valid, accum_overwrite, lastvec, switch_weights, ddr_data, ddr_valid):  #, weights_in, weights_we):
     
     logn1 = 1
     while pow(2, logn1) < (matrix_size + 1):
@@ -439,14 +437,27 @@ def MMU(acc_mem, data_width, matrix_size, accum_size, vector_in, accum_raddr, ac
 
     # FIFO
     weights_tile, tile_ready, full = FIFO(matsize=matrix_size, mem_data=ddr_data, mem_valid=ddr_valid, advance_fifo=done_programming)
+
+    fifo_in_package = [matrix_size, ddr_data, ddr_valid, done_programming]
     #probe(tile_ready, "tile_ready")
     #probe(weights_tile, "FIFO_weights_out")
     
     matin, switchout, addrout, weout, clearout, doneout = systolic_setup(data_width=data_width, matsize=matrix_size, vec_in=vector_in, waddr=accum_waddr, valid=vec_valid, clearbit=accum_overwrite, lastvec=lastvec, switch=switch_weights)
 
+    # print(f"type of data_width = {type(data_width)}, \
+    #         type of matrix_size = {type(matrix_size)}, \
+    #         type of data_in/matin = {type(matin)}, \
+    #         type of data_in/matin elem = {type(matin[0])}, \
+    #         type of new_weights/switchout = {type(switchout)}, \
+    #         type of new_weights/switchout elem = {type(switchout[0])}, \
+    #         type of weights_in/weights_tile = {type(weights_tile)}, \
+    #         type of weights_we = {type(weights_we)}")
+
     mouts = MMArray(data_width=data_width, matrix_size=matrix_size, data_in=matin, new_weights=switchout, weights_in=weights_tile, weights_we=weights_we)
 
-    accout, done = accumulators(acc_mem=acc_mem, accsize=accum_size, datas_in=mouts, waddr=addrout, we=weout, wclear=clearout, raddr=accum_raddr, lastvec=doneout)
+    mma_package = [data_width, matrix_size, matin, switchout, weights_tile, weights_we]
+
+    accout, done = accumulators(acc_mems=acc_mems, accsize=accum_size, datas_in=mouts, waddr=addrout, we=weout, wclear=clearout, raddr=accum_raddr, lastvec=doneout)
 
     switchstart = switchout[0]
     totalwait = Const(matrix_size + 1)
@@ -476,6 +487,7 @@ def MMU(acc_mem, data_width, matrix_size, accum_size, vector_in, accum_raddr, ac
                 weights_count.next |= weights_count + 1
                 weights_we |= 1
         
+    weights_package = [programming, waiting, weights_wait, weights_count, startup, weights_we, done_programming, first_tile]
     '''
     with conditional_assignment:
         with startup == 0:  # When we start, we're ready to push weights as soon as FIFO is ready
@@ -501,9 +513,9 @@ def MMU(acc_mem, data_width, matrix_size, accum_size, vector_in, accum_raddr, ac
             weights_we |= 1
     '''
 
-    return accout, done
+    return accout, done, addrout, weights_tile, mouts, mma_package, fifo_in_package
 
-def MMU_top(acc_mem, data_width, matrix_size, accum_size, ub_size, start, start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata, accum_raddr, weights_dram_in, weights_dram_valid):
+def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata, accum_raddr, weights_dram_in, weights_dram_valid):
     '''
 
     Outputs
@@ -513,12 +525,12 @@ def MMU_top(acc_mem, data_width, matrix_size, accum_size, ub_size, start, start_
     #probe(ub_rdata, "ub_mm_rdata")
     
     accum_waddr = Register(accum_size)
-    vec_valid = WireVector(1)
+    vec_valid = WireVector(1, "vec_valid_MMU")
     overwrite_reg = Register(1)
     last = WireVector(1)
     swap_reg = Register(1)
 
-    busy = Register(1)
+    busy = Register(1, "busy_matrix")
     N = Register(len(nvecs))
     ub_raddr = Register(ub_size)
 
@@ -526,6 +538,13 @@ def MMU_top(acc_mem, data_width, matrix_size, accum_size, ub_size, start, start_
 
     #probe(vec_valid, "MM_vec_valid_issue")
     #probe(busy, "MM_busy")
+    probe(accum_waddr, "accum_waddr")
+    accum_waddr_wv = WireVector(accum_size, "accum_waddr_MMU")
+    accum_waddr_wv <<= accum_waddr
+    probe(vec_valid, "vec_valid")
+    probe(overwrite_reg, "overwrite_reg")
+    overwrite_wv = WireVector(1, "overwrite_MMU")
+    overwrite_wv <<= overwrite_reg
     
     # Vector issue control logic
     with conditional_assignment:
@@ -548,12 +567,12 @@ def MMU_top(acc_mem, data_width, matrix_size, accum_size, ub_size, start, start_
                 ub_raddr.next |= ub_raddr + 1
                 accum_waddr.next |= accum_waddr + 1
                 last |= 0
-        
-    acc_out, done = MMU(acc_mem=acc_mem, data_width=data_width, matrix_size=matrix_size, accum_size=accum_size, vector_in=ub_rdata, accum_raddr=accum_raddr, accum_waddr=accum_waddr, vec_valid=vec_valid, accum_overwrite=overwrite_reg, lastvec=last, switch_weights=swap_reg, ddr_data=weights_dram_in, ddr_valid=weights_dram_valid)
+
+    acc_out, done, addrout, weights_tile, mouts, mma_package, fifo_in_package = MMU(acc_mems=acc_mems, data_width=data_width, matrix_size=matrix_size, accum_size=accum_size, vector_in=ub_rdata, accum_raddr=accum_raddr, accum_waddr=accum_waddr, vec_valid=vec_valid, accum_overwrite=overwrite_reg, lastvec=last, switch_weights=swap_reg, ddr_data=weights_dram_in, ddr_valid=weights_dram_valid)
 
     #probe(ub_raddr, "ub_mm_raddr")
 
-    return ub_raddr, acc_out, busy, done
+    return ub_raddr, acc_out, busy, done, accum_waddr_wv, vec_valid, overwrite_wv, addrout, weights_tile, mouts, mma_package, fifo_in_package
 
     
 

@@ -32,7 +32,7 @@ def decode(instruction):
     whm_addr = WireVector(config.HOST_ADDR_SIZE)
 
     dispatch_mm = WireVector(1)
-    dispatch_act = WireVector(1)
+    dispatch_act = WireVector(1, "dispatch_act")
     dispatch_rhm = WireVector(1)
     dispatch_whm = WireVector(1)
     dispatch_halt = WireVector(1)

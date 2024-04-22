@@ -67,7 +67,7 @@ def store():
 	
 	w = np.zeros((3, 16, 16))
 
-	# data = I, ctrl = branch + 6
+	# data = I, ctrl = branch + 6 (#5 (131) to #11 (287))
 	w[0] =  [ [  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		  	  [  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		  	  [  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -83,8 +83,11 @@ def store():
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0], 
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  6,  1,  1] ]
-  # branch enabled, will branch if top left is 0 after multiplication^   ^branch amt (forward 6 instrs)
+		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,156,  1,  1] ]
+	# [-1][-1] = 1
+	# [-1][-2]: branch enable (0 or 1)
+    # [-1][-3]: LSByte of branch amt
+	# [-1][-4]: MSByte of branch amt (for 12 bit PC only 4 LSb's of this are used)
 	
 	# data = I, ctrl = 0
 	w[1] =  [ [  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -104,7 +107,7 @@ def store():
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0], #<-- therefore branch amt is meaningless
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1] ]
 	
-	# data = 0, ctrl = branch - 5
+	# data = 0, ctrl = branch - 5 (#10 (261) to #5 (131))
 	w[2] =  [ [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -120,9 +123,10 @@ def store():
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0], #<-- backward 5 instructions
-		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1, -5,  1,  1] ]
+		  	  [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1,-130, 1,  1] ]
 	
-	np.save('branch_eq_vect_input', hm.astype(np.int8))
-	np.save('branch_eq_vect_weights', w.astype(np.int8))
+	np.save('branch_eq_pyrtl_input', hm.astype(np.int8))
+	np.save('branch_eq_pyrtl_weights', w.astype(np.int8))
+	print(hm0 @ w[2])
 
 store()
