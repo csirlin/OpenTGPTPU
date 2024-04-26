@@ -8,6 +8,10 @@ Python and package versions:
 - setuptools 56.0.0
 - six        1.16.0
 
+## Current working example
+- $ python sim.py branch_eq.out branch_eq_vect_input.npy branch_eq_vect_weights.npy
+
+## Other commands (outdated)
 Prepare weight and input .npy files
 - python branch_eq.py
 
