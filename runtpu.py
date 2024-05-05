@@ -1,3 +1,4 @@
+import pickle
 from pyrtl import *
 import argparse
 import numpy as np
@@ -166,8 +167,16 @@ weights_we = WireVector(len(mma_package[5]), "mma_5_weights_we")
 weights_we <<= mma_package[5]
 w.append(weights_we)
 
-ff = []
+ffi0 = WireVector(32, "fifo_matrix_size")
+ffi0 <<= MATSIZE
+fifo_in_package[0] = ffi0
+ff = fifo_in_package + fifo_out_package
 
+act = [acc_mems_0n3, acc_mems_0n2, acc_mems_0n1, act_branch_enable, pc_out, 
+       start_addr_wv, dispatch_act, N_wv, act_func, addrout, accum_waddr_wv, 
+       vec_valid, overwrite_wv, act_busy, act_top_left, act_cond, 
+       act_branch_enable, acc_mems_0n3, acc_mems_0n2, acc_mems_0n1, 
+       weights_tile, acc_outn3, moutsn3]
 
 # for i in range(len(mouts)):
 #     mout = WireVector(len(mouts[i]), f"mouts_{i}")
@@ -175,7 +184,8 @@ ff = []
 #     w.append(mout)
 
 # Run Simulation
-sim_trace = SimulationTrace(w)# + [acc_mems_0n3, acc_mems_0n2, acc_mems_0n1, act_branch_enable, weights_tile])
+# sim_trace = SimulationTrace(act + [pc, pc_incr, pc_diff_high, pc_diff_low])
+sim_trace = SimulationTrace()# + [acc_mems_0n3, acc_mems_0n2, acc_mems_0n1, act_branch_enable, weights_tile])
     #wires_to_track=[pc_out, start_addr_wv, dispatch_act, N_wv, act_func, addrout, act_out, mm_busy, accum_waddr_wv, vec_valid, overwrite_wv, act_busy, act_top_left, 
                             #                act_cond, act_branch_enable, acc_mems_0n3, acc_mems_0n2, acc_mems_0n1, weights_tile, acc_outn3, moutsn3])
                             
@@ -227,7 +237,10 @@ while True:
         chunkaddr = 0
         #print("Read Weights: addr {}".format(weightaddr))
         #print(weighttile)
-        
+    
+    # sim_trace.print_trace
+    print(f"cycle = {cycle}, pc = {sim.inspect('pc')}")
+
     sim.step(d)
     cycle += 1
 
@@ -236,11 +249,18 @@ print("Simulation terminated at cycle {}".format(cycle))
 print("Final Host memory:")
 print_mem(hostmem)
 
-sim_trace.render_trace(symbol_len=131)
-with open("trace.vcd", 'w') as f:
-    sim_trace.print_vcd(f)
-    # sim_trace.print_trace()
+
+with open('pickled1.pkl', 'wb') as file:
+    pickle.dump(sim_trace, file)
+
+# sim_trace.render_trace()
+# with open("trace.vcd", 'w') as f:
+#     sim_trace.print_vcd(f)
+# with open("trace.txt", 'w') as f:
+#     sim_trace.print_trace(f, compact=True)
 
 print('ubuffer', sim.inspect_mem(UBuffer))
 for (i, mem) in enumerate(acc_mems):
     print(f'acc_mem[{i}]', sim.inspect_mem(mem))
+
+
