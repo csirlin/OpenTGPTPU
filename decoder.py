@@ -11,31 +11,31 @@ def decode(instruction):
     :param instruction: instruction + optional operands + flags
     """
 
-    accum_raddr = WireVector(ACCSIZE)
-    accum_waddr = WireVector(ACCSIZE)
-    accum_overwrite = WireVector(1)
-    switch_weights = WireVector(1)
-    weights_raddr = WireVector(config.WEIGHT_DRAM_ADDR_SIZE)  # read address for weights DRAM
-    weights_read = WireVector(1)  # raised high to perform DRAM read
+    accum_raddr = WireVector(ACCSIZE, "dec_accum_raddr")
+    accum_waddr = WireVector(ACCSIZE, "dec_accum_waddr")
+    accum_overwrite = WireVector(1, "dec_accum_overwrite")
+    switch_weights = WireVector(1, "dec_switch_weights")
+    weights_raddr = WireVector(config.WEIGHT_DRAM_ADDR_SIZE, "dec_weights_raddr")  # read address for weights DRAM
+    weights_read = WireVector(1, "dec_weights_read")  # raised high to perform DRAM read
 
-    ub_addr = WireVector(24)  # goes to FSM
-    ub_raddr = WireVector(config.UB_ADDR_SIZE)  # goes to UB read addr port
-    ub_waddr = WireVector(config.UB_ADDR_SIZE)
+    ub_addr = WireVector(24, "dec_ub_addr")  # goes to FSM
+    ub_raddr = WireVector(config.UB_ADDR_SIZE, "dec_ub_raddr")  # goes to UB read addr port
+    ub_waddr = WireVector(config.UB_ADDR_SIZE, "dec_ub_waddr")
 
-    whm_length = WireVector(8)
-    rhm_length = WireVector(8)
-    mmc_length = WireVector(16)
-    act_length = WireVector(8)
-    act_type = WireVector(2)
+    whm_length = WireVector(8, "dec_whm_length")
+    rhm_length = WireVector(8, "dec_rhm_length")
+    mmc_length = WireVector(16, "dec_mmc_length")
+    act_length = WireVector(8, "dec_act_length")
+    act_type = WireVector(2, "dec_act_type")
 
-    rhm_addr = WireVector(config.HOST_ADDR_SIZE)
-    whm_addr = WireVector(config.HOST_ADDR_SIZE)
+    rhm_addr = WireVector(config.HOST_ADDR_SIZE, "dec_rhm_addr")
+    whm_addr = WireVector(config.HOST_ADDR_SIZE, "dec_whm_addr")
 
-    dispatch_mm = WireVector(1)
-    dispatch_act = WireVector(1)
-    dispatch_rhm = WireVector(1)
-    dispatch_whm = WireVector(1)
-    dispatch_halt = WireVector(1)
+    dispatch_mm = WireVector(1, "dec_dispatch_mm")
+    dispatch_act = WireVector(1, "dec_dispatch_act")
+    dispatch_rhm = WireVector(1, "dec_dispatch_rhm")
+    dispatch_whm = WireVector(1, "dec_dispatch_whm")
+    dispatch_halt = WireVector(1, "dec_dispatch_halt")
 
     # parse instruction
     op = instruction[ isa.OP_START*8 : isa.OP_END*8 ]

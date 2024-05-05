@@ -5,7 +5,7 @@ from pyrtl.rtllib import multipliers
 
 #set_debug_mode()
 globali = 0  # To give unique numbers to each MAC
-def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we, weight_tag):
+def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we, weight_tag, i, j):
     '''Multiply-Accumulate unit with programmable weight.
     Inputs
     data_in: The 8-bit activation value to multiply by weight.
@@ -35,14 +35,18 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     #rtl_assert(~(weight_we & switchw), Exception("Cannot switch weight values when they're being loaded!"))
 
     # Use two buffers to store weight and next weight to use.
-    wbuf1, wbuf2 = Register(len(weight_in)), Register(len(weight_in))
+    wbuf1, wbuf2 = Register(len(weight_in), f"mac_wbuf1_{i}_{j}"), Register(len(weight_in), f"mac_wbuf2_{i}_{j}")
+
+    switchw_wv = WireVector(1, f"mac_switch_wv_{i}_{j}")
+    switchw_wv <<= switchw
 
     # Track which buffer is current and which is secondary.
-    current_buffer_reg = Register(1)
+    current_buffer_reg = Register(1, f"mac_current_buffer_reg_{i}_{j}")
     with conditional_assignment:
         with switchw:
             current_buffer_reg.next |= ~current_buffer_reg
-    current_buffer = current_buffer_reg ^ switchw  # reflects change in same cycle switchw goes high
+    current_buffer = WireVector(1, f"mac_current_buffer_{i}_{j}")
+    current_buffer <<= current_buffer_reg ^ switchw  # reflects change in same cycle switchw goes high
 
     # When told, store a new weight value in the secondary buffer
     with conditional_assignment:
@@ -53,13 +57,16 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
                 wbuf1.next |= weight_in
 
     # Do the actual MAC operation
-    weight = select(current_buffer, wbuf2, wbuf1)
+    weight = WireVector(len(weight_in), f"mac_weight_{i}_{j}") 
+    weight <<= select(current_buffer, wbuf2, wbuf1)
     #probe(weight, "weight" + str(globali))
     globali += 1
     #inlen = max(len(weight), len(data_in))
     #product = weight.sign_extended(inlen*2) * data_in.sign_extended(inlen*2)
     #product = product[:inlen*2]
-    product = helperfuncs.mult_signed(weight, data_in)[:32]
+    product = WireVector(len(weight) + len(data_in), f"mac_product_{i}_{j}")
+    product <<= helperfuncs.mult_signed(weight, data_in)[:32]
+
     #plen = len(weight) + len(data_in)
     #product = weight.sign_extended(plen) * data_in.sign_extended(plen)
     #product = product[:plen]
@@ -74,17 +81,17 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
         out = out[:32]
                 
     # For values that need to be forward to the right/bottom, store in pipeline registers
-    data_reg = Register(len(data_in))  # pipeline register, holds data value for cell to the right
+    data_reg = Register(len(data_in), f"mac_data_reg_{i}_{j}")  # pipeline register, holds data value for cell to the right
     data_reg.next <<= data_in
-    switch_reg = Register(1)  # pipeline register, holds switch control signal for cell to the right
+    switch_reg = Register(1, f"mac_switch_reg_{i}_{j}")  # pipeline register, holds switch control signal for cell to the right
     switch_reg.next <<= switchw
-    acc_reg = Register(len(out))  # output value for MAC below
+    acc_reg = Register(len(out), f"mac_acc_reg_{i}_{j}")  # output value for MAC below
     acc_reg.next <<= out
-    weight_reg = Register(len(weight_in))  # pipeline register, holds weight input for cell below
+    weight_reg = Register(len(weight_in), f"mac_weight_reg_{i}_{j}")  # pipeline register, holds weight input for cell below
     weight_reg.next <<= weight_in
-    weight_we_reg = Register(1)  # pipeline register, holds weight write enable signal for cell below
+    weight_we_reg = Register(1, f"mac_weight_we_reg_{i}_{j}")  # pipeline register, holds weight write enable signal for cell below
     weight_we_reg.next <<= weight_we
-    weight_tag_reg = Register(len(weight_tag))  # pipeline register, holds weight tag for cell below
+    weight_tag_reg = Register(len(weight_tag), f"mac_weight_tag_reg_{i}_{j}")  # pipeline register, holds weight tag for cell below
     weight_tag_reg.next <<= (weight_tag + 1)[:len(weight_tag)]  # increment tag as it passes down rows
 
     return acc_reg, data_reg, switch_reg, weight_reg, weight_we_reg, weight_tag_reg
@@ -98,13 +105,15 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
     weights_we: 1-bit signal to begin writing new weights into the matrix
     '''
 
+
+
     # For signals going to the right, store in a var; for signals going down, keep a list
     # For signals going down, keep a copy of inputs to top row to connect to later
-    weights_in_top = [ WireVector(data_width) for i in range(matrix_size) ]  # input weights to top row
+    weights_in_top = [ WireVector(data_width, f"mma_weights_in_top_{i}") for i in range(matrix_size) ]  # input weights to top row
     weights_in_last = [x for x in weights_in_top]
-    weights_enable_top = [ WireVector(1) for i in range(matrix_size) ]  # weight we to top row
+    weights_enable_top = [ WireVector(1, f"mma_weights_enable_top_{i}") for i in range(matrix_size) ]  # weight we to top row
     weights_enable = [x for x in weights_enable_top]
-    weights_tag_top = [ WireVector(data_width) for i in range(matrix_size) ]  # weight row tag to top row
+    weights_tag_top = [ WireVector(data_width, f"mma_weights_tag_top_{i}") for i in range(matrix_size) ]  # weight row tag to top row
     weights_tag = [x for x in weights_tag_top]
     data_out = [Const(0) for i in range(matrix_size)]  # will hold output from final row
     # Build array of MACs
@@ -113,21 +122,51 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
         switchin = new_weights[i]
         #probe(switchin, "switch" + str(i))
         for j in range(matrix_size):  # for each column
-            acc_out, din, switchin, newweight, newwe, newtag  = MAC(data_width, matrix_size, din, data_out[j], switchin, weights_in_last[j], weights_enable[j], weights_tag[j])
+
+            data_width_in = WireVector(32, f"mma_in_data_width_{i}_{j}")
+            data_width_in <<= data_width
+            matrix_size_in = WireVector(32, f"mma_in_matrix_size_{i}_{j}")
+            matrix_size_in <<= matrix_size
+            din_in = WireVector(len(din), f"mma_in_din_{i}_{j}")
+            din_in <<= din
+            data_out_j_in = WireVector(len(data_out[j]), f"mma_in_data_out_{i}_{j}")
+            data_out_j_in <<= data_out[j]
+            switchin_in = WireVector(len(switchin), f"mma_in_switchin_{i}_{j}")
+            switchin_in <<= switchin
+            weights_in_last_j_in = WireVector(len(weights_in_last[j]), f"mma_in_weights_in_last_{i}_{j}")
+            weights_in_last_j_in <<= weights_in_last[j]
+            weights_enable_in = WireVector(len(weights_enable[j]), f"mma_in_weights_enable_{i}_{j}")
+            weights_enable_in <<= weights_enable[j]
+            weights_tag_in = WireVector(len(weights_tag[j]), f"mma_in_weights_tag_{i}_{j}")
+            weights_tag_in <<= weights_tag[j]
+            
+            acc_out, din, switchin, newweight, newwe, newtag  = MAC(data_width, matrix_size, din, data_out[j], switchin, weights_in_last[j], weights_enable[j], weights_tag[j], i, j)
             #probe(data_out[j], "MACacc{}_{}".format(i, j))
             #probe(acc_out, "MACout{}_{}".format(i, j))
             #probe(din, "MACdata{}_{}".format(i, j))
+            acc_out_wv = WireVector(len(acc_out), f"mma_out_acc_out_{i}_{j}")
+            acc_out_wv <<= acc_out
+            din_wv = WireVector(len(acc_out), f"mma_out_din_{i}_{j}")
+            din_wv <<= din
+            switchin_wv = WireVector(len(acc_out), f"mma_out_switchin_{i}_{j}")
+            switchin_wv <<= switchin
+            newweight_wv = WireVector(len(acc_out), f"mma_out_newweight_{i}_{j}")
+            newweight_wv <<= newweight
+            newwe_wv = WireVector(len(acc_out), f"mma_out_newwe_{i}_{j}")
+            newwe_wv <<= newwe
+            newtag_wv = WireVector(len(acc_out), f"mma_out_newtag_{i}_{j}")
+            newtag_wv <<= newtag
             weights_in_last[j] = newweight
             weights_enable[j] = newwe
             weights_tag[j] = newtag
             data_out[j] = acc_out
     
     # Handle weight reprogramming
-    programming = Register(1)  # when 1, we're in the process of loading new weights
+    programming = Register(1, "mma_programming")  # when 1, we're in the process of loading new weights
     size = 1
     while pow(2, size) < matrix_size:
         size = size + 1
-    progstep = Register(size)  # 256 steps to program new weights (also serves as tag input)
+    progstep = Register(size, "mma_progstep")  # 256 steps to program new weights (also serves as tag input)
     with conditional_assignment:
         with weights_we & (~programming):
             programming.next |= 1
@@ -170,9 +209,21 @@ def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index):
     last vector of a matrix multiply instruction (at the final accumulator, this becomes
     a "done" signal).
     '''
+    wen_wv = WireVector(len(wen), f"accum_wen_wv_{index}")
+    wen_wv <<= wen
+    wclear_wv = WireVector(len(wclear), f"accum_wclear_wv_{index}")
+    wclear_wv <<= wclear
+    waddr_wv = WireVector(len(waddr), f"accum_waddr_wv_{index}")
+    waddr_wv <<= waddr
+    data_in_wv = WireVector(len(data_in), f"accum_data_in_wv_{index}")
+    data_in_wv <<= data_in
+
+    acc_mem_at_waddr = WireVector(len(acc_mem[waddr]), f"accum_acc_mem_at_waddr_{index}")
+    acc_mem_at_waddr <<= acc_mem[waddr]
 
     acc_mem_no_overwrite = WireVector(len(acc_mem[waddr]), f"accum_acc_mem_no_overwrite_{index}")
     acc_mem_no_overwrite <<= (data_in + acc_mem[waddr])[:acc_mem.bitwidth]
+
     # Writes
     with conditional_assignment:
         with wen:
@@ -182,16 +233,17 @@ def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index):
                 acc_mem[waddr] |= acc_mem_no_overwrite
 
     # Read
-    data_out = acc_mem[raddr]
+    data_out = WireVector(32, f"accum_data_out_{index}")
+    data_out <<= acc_mem[raddr]
 
     # Pipeline registers
-    waddrsave = Register(len(waddr))
+    waddrsave = Register(len(waddr), f"accum_waddrsave_{index}")
     waddrsave.next <<= waddr
-    wensave = Register(1)
+    wensave = Register(1, f"accum_wensave_{index}")
     wensave.next <<= wen
-    wclearsave = Register(1)
+    wclearsave = Register(1, f"accum_wclearsave_{index}")
     wclearsave.next <<= wclear
-    lastsave = Register(1)
+    lastsave = Register(1, f"accum_lastsave_{index}")
     lastsave.next <<= lastvec
 
     return data_out, waddrsave, wensave, wclearsave, lastsave
@@ -214,7 +266,11 @@ def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec)
         #probe(x, "acc_{}_in".format(i))
         #probe(wein, "acc_{}_we".format(i))
         #probe(waddrin, "acc_{}_waddr".format(i))
+        wein_before = WireVector(len(wein), f"accumulators_wein_before_{i}")
+        wein_before <<= wein
         dout, waddrin, wein, wclearin, lastvecin = accum(acc_mems[i], accsize, x, waddrin, wein, wclearin, raddr, lastvecin, i)
+        wein_after = WireVector(len(wein), f"accumulators_wein_after_{i}")
+        wein_after <<= wein
         accout[i] = dout
         done = lastvecin
 
@@ -246,18 +302,18 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
     size = 1
     while pow(2, size) < (totalsize/ddrwidth):  # compute log of number of transfers required
         size = size + 1
-    state = Register(size)  # Number of reads to receive (each read is ddrwidth bytes)
-    startup = Register(1)
+    state = Register(size, "fifo_state")  # Number of reads to receive (each read is ddrwidth bytes)
+    startup = Register(1, "fifo_startup")
     startup.next <<= 1
 
     #probe(state, "fifo_state")
     
     # Declare top row of buffer: need to write to it in ddrwidth-byte chunks
-    topbuf = [ Register(ddrwidth*8) for i in range(max(1, int(totalsize/ddrwidth))) ]
+    topbuf = [ Register(ddrwidth*8, f"fifo_topbuf_{i}") for i in range(max(1, int(totalsize/ddrwidth))) ]
 
     # Latch command to advance FIFO, since it may not complete immediately
-    droptile = Register(1)
-    clear_droptile = WireVector(1)
+    droptile = Register(1, "fifo_droptile")
+    clear_droptile = WireVector(1, "fifo_clear_droptile")
     with conditional_assignment:
         with advance_fifo:
             droptile.next |= 1
@@ -277,8 +333,8 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
                     reg.next |= mem_data
 
     # Track when first buffer is filled and when data moves out of it
-    full = Register(1)  # goes high when last chunk of top buffer is filled
-    cleartop = WireVector(1)
+    full = Register(1, "fifo_full")  # goes high when last chunk of top buffer is filled
+    cleartop = WireVector(1, "fifo_cleartop")
     with conditional_assignment:
         with mem_valid & (state == Const(len(topbuf)-1)):  # writing the last buffer spot now
             full.next |= 1
@@ -286,14 +342,14 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
             full.next |= 0
 
     # Build buffers for remainder of FIFO
-    buf2, buf3, buf4 = Register(tilesize), Register(tilesize), Register(tilesize)
+    buf2, buf3, buf4 = Register(tilesize, "fifo_buf2"), Register(tilesize, "fifo_buf3"), Register(tilesize, "fifo_buf4")
     #probe(concat_list(topbuf), "buf1")
     #probe(buf2, "buf2")
     #probe(buf3, "buf3")
     #probe(buf4, "buf4")
     #probe(full, "buf1_full")
     # If a given row is empty, track that so we can fill immediately
-    empty2, empty3, empty4 = Register(1), Register(1), Register(1)
+    empty2, empty3, empty4 = Register(1, "fifo_empty2"), Register(1, "fifo_empty3"), Register(1, "fifo_empty4")
     #probe(empty2, "buf2_empty")
     #probe(empty3, "buf3_empty")
     #probe(empty4, "buf4_empty")
@@ -350,47 +406,51 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     # The last column of buffers need extra bits for control signals, which propagate down
     # and into the accumulators.
 
-    addrreg = Register(len(waddr))
+    addrreg = Register(len(waddr), "sys_addrreg")
     addrreg.next <<= waddr
-    wereg = Register(1)
+    wereg = Register(1, "sys_wereg")
     wereg.next <<= valid
-    clearreg = Register(1)
+    clearreg = Register(1, "sys_clearreg")
     clearreg.next <<= clearbit
-    donereg = Register(1)
+    donereg = Register(1, "sys_donereg")
     donereg.next <<= lastvec
-    topreg = Register(data_width)
+    topreg = Register(data_width, "sys_topreg")
 
-    firstcolumn = [topreg,] + [ Register(data_width) for i in range(matsize-1) ]
+    firstcolumn = [topreg,] + [ Register(data_width, f"sys_firstcolumn_{i}") for i in range(matsize-1) ]
     lastcolumn = [ None for i in range(matsize) ]
     lastcolumn[0] = topreg
 
     # Generate switch signals to matrix; propagate down
     switchout = [ None for i in range(matsize) ]
-    switchout[0] = Register(1)
+    switchout[0] = Register(1, "sys_switchout_0")
     switchout[0].next <<= switch
     for i in range(1, len(switchout)):
-        switchout[i] = Register(1)
+        switchout[i] = Register(1, f"sys_switchout_{i}")
         switchout[i].next <<= switchout[i-1]
 
     # Generate control pipeline for address, clear, and done signals
     addrout = addrreg
+    addrout.name = "sys_addrout"
     weout = wereg
+    weout.name = "sys_weout"
     clearout = clearreg
+    clearout.name = "sys_clearout"
     doneout = lastvec
+    doneout.name = "sys_doneout"
     #probe(clearout, "sys_clear_in")
     # Need one extra cycle of delay for control signals before giving them to first accumulator
     # But we already did registers for first row, so cancels out
     for i in range(0, matsize):
-        a = Register(len(addrout))
+        a = Register(len(addrout), f"sys_a_{i}")
         a.next <<= addrout
         addrout = a
-        w = Register(1)
+        w = Register(1, f"sys_w_{i}")
         w.next <<= weout
         weout = w
-        c = Register(1)
+        c = Register(1, f"sys_c_{i}")
         c.next <<= clearout
         clearout = c
-        d = Register(1)
+        d = Register(1, f"sys_d_{i}")
         d.next <<= doneout
         doneout = d
     #probe(clearout, "sys_clear_out")
@@ -400,7 +460,7 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
         left = firstcolumn[row]
         lastcolumn[row] = left
         for column in range(0, row):  # first column is done
-            buf = Register(data_width)
+            buf = Register(data_width, f"sys_buf_{row}_{column}")
             buf.next <<= left
             left = buf
             lastcolumn[row] = left  # holds final column for output
@@ -410,7 +470,6 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     for din, reg in zip(datain, firstcolumn):
         reg.next <<= din
     
-        
     return lastcolumn, switchout, addrout, weout, clearout, doneout
 
 
@@ -423,16 +482,16 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, a
     while pow(2, logn) < (matrix_size):
         logn = logn + 1
 
-    programming = Register(1)  # if high, we're programming new weights now
-    waiting = WireVector(1)  # if high, a switch is underway and we're waiting
+    programming = Register(1, "mmu_programming")  # if high, we're programming new weights now
+    waiting = WireVector(1, "mmu_waiting")  # if high, a switch is underway and we're waiting
         
     weights_wait = Register(logn1, "weights_wait")  # counts cycles since last weight push
     weights_count = Register(logn, "weights_count")  # counts cycles of current weight push
-    startup = Register(1)
+    startup = Register(1, "mmu_startup")
     startup.next <<= 1  # 0 only in first cycle
-    weights_we = WireVector(1)
-    done_programming = WireVector(1)
-    first_tile = Register(1)  # Tracks if we've programmed the first tile yet
+    weights_we = WireVector(1, "mmu_weights_we")
+    done_programming = WireVector(1, "mmu_done_programming")
+    first_tile = Register(1, "mmu_first_tile")  # Tracks if we've programmed the first tile yet
 
     #rtl_assert(~(switch_weights & (weights_wait != 0)), Exception("Weights are not ready to switch. Need a minimum of {} + 1 cycles since last switch.".format(matrix_size)))
 
@@ -511,20 +570,27 @@ def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, start
 
     #probe(ub_rdata, "ub_mm_rdata")
     
-    accum_waddr = Register(accum_size)
-    vec_valid = WireVector(1)
-    overwrite_reg = Register(1)
-    last = WireVector(1)
-    swap_reg = Register(1)
+    accum_waddr = Register(accum_size, "mmu_top_accum_waddr")
+    vec_valid = WireVector(1, "mmu_top_vec_valid")
+    overwrite_reg = Register(1, "mmu_top_overwrite_reg")
+    last = WireVector(1, "mmu_top_last")
+    swap_reg = Register(1, "mmu_top_swap_reg")
 
-    busy = Register(1)
-    N = Register(len(nvecs))
-    ub_raddr = Register(ub_size)
+    busy = Register(1, "busy_matrix")
+    N = Register(len(nvecs), "mmu_top_N")
+    ub_raddr = Register(ub_size, "mmu_top_ub_raddr")
 
     rtl_assert(~(start & busy), Exception("Cannot dispatch new MM instruction while previous instruction is still being issued."))
 
     #probe(vec_valid, "MM_vec_valid_issue")
     #probe(busy, "MM_busy")
+    # probe(accum_waddr, "accum_waddr")
+    accum_waddr_wv = WireVector(accum_size, "accum_waddr_MMU")
+    accum_waddr_wv <<= accum_waddr
+    # probe(vec_valid, "vec_valid")
+    # probe(overwrite_reg, "overwrite_reg")
+    overwrite_wv = WireVector(1, "overwrite_MMU")
+    overwrite_wv <<= overwrite_reg
     
     # Vector issue control logic
     with conditional_assignment:

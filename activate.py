@@ -16,16 +16,16 @@ def sigmoid_vector(vec):
     return concat_list([ sigmoid(x) for x in vec ])
 
 
-def act_top(start, start_addr, dest_addr, nvecs, func, accum_out, matsize, pc, acc_mems):#, next_pc_reg):
+def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, matsize):
 
     # func: 0 - nothing
     #       1 - ReLU
     #       2 - sigmoid
 
-    busy = Register(1)
-    accum_addr = Register(len(start_addr))
-    ub_waddr = Register(len(dest_addr))
-    N = Register(len(nvecs))
+    busy = Register(1, "act_busy")
+    accum_addr = Register(len(start_addr), "act_accum_addr")
+    ub_waddr = Register(len(dest_addr), "act_ub_waddr")
+    N = Register(len(nvecs), "act_N")
     N_wv = WireVector(len(nvecs), "act_N_wv")
     N_wv <<= N
     act_func = Register(len(func), "act_func")
@@ -81,6 +81,7 @@ def act_top(start, start_addr, dest_addr, nvecs, func, accum_out, matsize, pc, a
 
     invals = concat_list([ x[:8] for x in accum_out ])
     act_out = mux(act_func, invals, relu_vector(accum_out, 24), sigmoid_vector(accum_out), invals)
+    act_out.name = 'act_out'
     #act_out = relu_vector(accum_out, 24)
     ub_we = busy
             

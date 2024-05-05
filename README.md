@@ -8,6 +8,11 @@ Python and package versions:
 - setuptools 56.0.0
 - six        1.16.0
 
+Run pyrtl example:
+- python assembler.py pyrtl1new.a
+- python branch_eq_pyrtl.py
+- python runtpu.py pyrtl1new.out branch_eq_pyrtl_input.npy branch_eq_pyrtl_weights.npy
+
 Prepare weight and input .npy files
 - python branch_eq.py
 

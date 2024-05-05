@@ -1,3 +1,4 @@
+import pickle
 from pyrtl import *
 import argparse
 import numpy as np
@@ -133,6 +134,7 @@ def getchunkfromtile(tile, chunkn):
         raise Exception("Reading more weights than are present in one tile?")
     return (tile >> int(((nchunks - chunkn - 1))*64*8)) & chunkmask
 
+
 # Run Simulation
 sim_trace = SimulationTrace()
 sim = FastSimulation(tracer=sim_trace, memory_value_map={ IMem : { a : v for a,v in enumerate(instrs)} })
@@ -183,11 +185,10 @@ while True:
         chunkaddr = 0
         #print("Read Weights: addr {}".format(weightaddr))
         #print(weighttile)
-        
+    
     # sim_trace.print_trace
-    print(f"cycle = {cycle}, pc = {sim.inspect('pc')}")
+    print(f"cycle = {cycle}, pc = {sim.inspect('tpu_pc')}")
 
-        
     sim.step(d)
     cycle += 1
 
@@ -196,6 +197,16 @@ print("Simulation terminated at cycle {}".format(cycle))
 print("Final Host memory:")
 print_mem(hostmem)
 
-# sim_trace.render_trace(symbol_len=131)
-with open("trace.vcd", 'w') as f:
-    sim_trace.print_vcd(f)
+
+# with open('pickled1.pkl', 'wb') as file:
+#     pickle.dump(sim_trace, file)
+
+# sim_trace.render_trace()
+# with open("trace.vcd", 'w') as f:
+#     sim_trace.print_vcd(f)
+# with open("trace.txt", 'w') as f:
+#     sim_trace.print_trace(f, compact=True)
+
+# print('ubuffer', sim.inspect_mem(UBuffer))
+# for (i, mem) in enumerate(acc_mems):
+#     print(f'acc_mem[{i}]', sim.inspect_mem(mem))

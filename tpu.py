@@ -11,14 +11,15 @@ acc_mems = []
 for i in range(MATSIZE):
     acc_mems.append(MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, max_write_ports=None, max_read_ports=None, name=f"acc_mems_{i}"))
 
+
 ############################################################
 #  Control Signals
 ############################################################
 
-accum_act_raddr = WireVector(ACC_ADDR_SIZE)  # Activate unit read address for accumulator buffers
-weights_dram_in = Input(64*8, "weights_dram_in")  # Input signal from weights DRAM controller
-weights_dram_valid = Input(1, "weights_dram_valid")  # Valid bit for weights DRAM signal
-halt = Output(1)  # When raised, stop simulation
+accum_act_raddr = WireVector(ACC_ADDR_SIZE, "tpu_accum_act_raddr")  # Activate unit read address for accumulator buffers
+weights_dram_in = Input(64*8, "tpu_weights_dram_in")  # Input signal from weights DRAM controller
+weights_dram_valid = Input(1, "tpu_weights_dram_valid")  # Valid bit for weights DRAM signal
+halt = Output(1, "tpu_halt")  # When raised, stop simulation
 
 
 ############################################################
@@ -28,15 +29,17 @@ halt = Output(1)  # When raised, stop simulation
 # incr_amt = WireVector(DWIDTH) #TODO: is DWIDTH the data width (eg DWIDTH = 8 means 8-bit data in the matrix?)
 
 IMem = MemBlock(bitwidth=INSTRUCTION_WIDTH, addrwidth=IMEM_ADDR_SIZE)
-pc = Register(IMEM_ADDR_SIZE)
-probe(pc, 'pc')
-pc.incr = WireVector(1)
+pc = Register(IMEM_ADDR_SIZE, "tpu_pc")
+# probe(pc, 'pc')
+pc.incr = WireVector(1, "tpu_pc.incr")
 # with conditional_assignment:
 #     with pc.incr:
 #         pc.next |= pc + 1 #incr_amt
 pc.incr <<= 1  # right now, increment the PC every cycle
 instr = IMem[pc]
-probe(instr, "instr")
+# probe(instr, "instr")
+pc_out = Output(len(pc), "tpu_pc_out")
+pc_out <<= pc
         
 ############################################################
 #  Unified Buffer
@@ -45,7 +48,7 @@ probe(instr, "instr")
 UBuffer = MemBlock(bitwidth=MATSIZE*DWIDTH, addrwidth=UB_ADDR_SIZE, max_write_ports=2)
 
 # Address and data wires for MM read port
-ub_mm_raddr = WireVector(UBuffer.addrwidth)  # MM UB read address
+ub_mm_raddr = WireVector(UBuffer.addrwidth, "tpu_ub_mm_raddr")  # MM UB read address
 UB2MM = UBuffer[ub_mm_raddr]
 
 ############################################################
@@ -76,27 +79,27 @@ with conditional_assignment:
     with ub_act_we:
         UBuffer[ub_act_waddr] |= act_out
 
-probe(ub_act_we, "ub_act_we")
-probe(ub_act_waddr, "ub_act_waddr")
-probe(act_out, "act_out")
-probe(accum_raddr_sig, "accum_raddr")
+# probe(ub_act_we, "ub_act_we")
+# probe(ub_act_waddr, "ub_act_waddr")
+# probe(act_out, "act_out")
+# probe(accum_raddr_sig, "accum_raddr")
 
 ############################################################
 #  Read/Write Host Memory
 ############################################################
 
-hostmem_raddr = Output(HOST_ADDR_SIZE, "raddr")
-hostmem_rdata = Input(DWIDTH*MATSIZE)
-hostmem_re = Output(1, "hostmem_re")
-hostmem_waddr = Output(HOST_ADDR_SIZE)
-hostmem_wdata = Output(DWIDTH*MATSIZE)
-hostmem_we = Output(1)
+hostmem_raddr = Output(HOST_ADDR_SIZE, "tpu_raddr")
+hostmem_rdata = Input(DWIDTH*MATSIZE, "tpu_hostmem_rdata")
+hostmem_re = Output(1, "tpu_hostmem_re")
+hostmem_waddr = Output(HOST_ADDR_SIZE, "tpu_hostmem_waddr")
+hostmem_wdata = Output(DWIDTH*MATSIZE, "tpu_hostmem_wdata")
+hostmem_we = Output(1, "tpu_hostmem_we")
 
 # Write Host Memory control logic
-whm_N = Register(len(whm_length))
-whm_ub_raddr = Register(len(ub_dec_addr))
-whm_addr = Register(len(whm_dec_addr))
-whm_busy = Register(1)
+whm_N = Register(len(whm_length), "tpu_whm_N")
+whm_ub_raddr = Register(len(ub_dec_addr), "tpu_whm_ub_addr")
+whm_addr = Register(len(whm_dec_addr), "tpu_whm_addr")
+whm_busy = Register(1, "tpu_whm_busy")
 
 ubuffer_out = UBuffer[whm_ub_raddr]
 
@@ -119,11 +122,11 @@ with conditional_assignment:
 
 
 # Read Host Memory control logic
-probe(rhm_length, "rhm_length")
-rhm_N = Register(len(rhm_length))
-rhm_addr = Register(len(rhm_dec_addr))
-rhm_busy = Register(1)
-rhm_ub_waddr = Register(len(ub_dec_addr))
+# probe(rhm_length, "rhm_length")
+rhm_N = Register(len(rhm_length), "tpu_rhm_N")
+rhm_addr = Register(len(rhm_dec_addr), "tpu_rhm_addr")
+rhm_busy = Register(1, "tpu_rhm_busy")
+rhm_ub_waddr = Register(len(ub_dec_addr), "tpu_rhm_ub_waddr")
 with conditional_assignment:
     with dispatch_rhm:
         rhm_N.next |= rhm_length
@@ -146,20 +149,20 @@ with conditional_assignment:
 #  Weights Memory
 ############################################################
 
-weights_dram_raddr = Output(WEIGHT_DRAM_ADDR_SIZE)
-weights_dram_read = Output(1)
+weights_dram_raddr = Output(WEIGHT_DRAM_ADDR_SIZE, "tpu_weights_dram_raddr")
+weights_dram_read = Output(1, "tpu_weights_dram_read")
 
 weights_dram_raddr <<= weights_raddr
 weights_dram_read <<= weights_read
 
-probe(weights_raddr, "weights_raddr")
-probe(weights_read, "weights_read")
+# probe(weights_raddr, "weights_raddr")
+# probe(weights_read, "weights_read")
 
             
-probe(dispatch_mm, "dispatch_mm")
-probe(dispatch_act, "dispatch_act")
-probe(dispatch_rhm, "dispatch_rhm")
-probe(dispatch_whm, "dispatch_whm")
+# probe(dispatch_mm, "dispatch_mm")
+# probe(dispatch_act, "dispatch_act")
+# probe(dispatch_rhm, "dispatch_rhm")
+# probe(dispatch_whm, "dispatch_whm")
 
 def run_synth():
     print("logic = {:2f} mm^2, mem={:2f} mm^2".format(*area_estimation()))
