@@ -162,7 +162,7 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
     return [ x.sign_extended(32) for x in data_out ]
 
 
-def accum(size, data_in, waddr, wen, wclear, raddr, lastvec):
+def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index):
     '''A single 32-bit accumulator with 2^size 32-bit buffers.
     On wen, writes data_in to the specified address (waddr) if wclear is high;
     otherwise, it performs an accumulate at the specified address (buffer[waddr] += data_in).
@@ -171,18 +171,18 @@ def accum(size, data_in, waddr, wen, wclear, raddr, lastvec):
     a "done" signal).
     '''
 
-    mem = MemBlock(bitwidth=32, addrwidth=size)
-    
+    acc_mem_no_overwrite = WireVector(len(acc_mem[waddr]), f"accum_acc_mem_no_overwrite_{index}")
+    acc_mem_no_overwrite <<= (data_in + acc_mem[waddr])[:acc_mem.bitwidth]
     # Writes
     with conditional_assignment:
         with wen:
             with wclear:
-                mem[waddr] |= data_in
+                acc_mem[waddr] |= data_in
             with otherwise:
-                mem[waddr] |= (data_in + mem[waddr])[:mem.bitwidth]
+                acc_mem[waddr] |= acc_mem_no_overwrite
 
     # Read
-    data_out = mem[raddr]
+    data_out = acc_mem[raddr]
 
     # Pipeline registers
     waddrsave = Register(len(waddr))
@@ -196,7 +196,7 @@ def accum(size, data_in, waddr, wen, wclear, raddr, lastvec):
 
     return data_out, waddrsave, wensave, wclearsave, lastsave
 
-def accumulators(accsize, datas_in, waddr, we, wclear, raddr, lastvec):
+def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec):
     '''
     Produces array of accumulators of same dimension as datas_in.
     '''
@@ -214,7 +214,7 @@ def accumulators(accsize, datas_in, waddr, we, wclear, raddr, lastvec):
         #probe(x, "acc_{}_in".format(i))
         #probe(wein, "acc_{}_we".format(i))
         #probe(waddrin, "acc_{}_waddr".format(i))
-        dout, waddrin, wein, wclearin, lastvecin = accum(accsize, x, waddrin, wein, wclearin, raddr, lastvecin)
+        dout, waddrin, wein, wclearin, lastvecin = accum(acc_mems[i], accsize, x, waddrin, wein, wclearin, raddr, lastvecin, i)
         accout[i] = dout
         done = lastvecin
 
@@ -414,7 +414,7 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     return lastcolumn, switchout, addrout, weout, clearout, doneout
 
 
-def MMU(data_width, matrix_size, accum_size, vector_in, accum_raddr, accum_waddr, vec_valid, accum_overwrite, lastvec, switch_weights, ddr_data, ddr_valid):  #, weights_in, weights_we):
+def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, accum_waddr, vec_valid, accum_overwrite, lastvec, switch_weights, ddr_data, ddr_valid):  #, weights_in, weights_we):
     
     logn1 = 1
     while pow(2, logn1) < (matrix_size + 1):
@@ -445,7 +445,7 @@ def MMU(data_width, matrix_size, accum_size, vector_in, accum_raddr, accum_waddr
 
     mouts = MMArray(data_width=data_width, matrix_size=matrix_size, data_in=matin, new_weights=switchout, weights_in=weights_tile, weights_we=weights_we)
 
-    accout, done = accumulators(accsize=accum_size, datas_in=mouts, waddr=addrout, we=weout, wclear=clearout, raddr=accum_raddr, lastvec=doneout)
+    accout, done = accumulators(acc_mems=acc_mems, accsize=accum_size, datas_in=mouts, waddr=addrout, we=weout, wclear=clearout, raddr=accum_raddr, lastvec=doneout)
 
     switchstart = switchout[0]
     totalwait = Const(matrix_size + 1)
@@ -502,7 +502,7 @@ def MMU(data_width, matrix_size, accum_size, vector_in, accum_raddr, accum_waddr
 
     return accout, done
 
-def MMU_top(data_width, matrix_size, accum_size, ub_size, start, start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata, accum_raddr, weights_dram_in, weights_dram_valid):
+def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata, accum_raddr, weights_dram_in, weights_dram_valid):
     '''
 
     Outputs
@@ -548,7 +548,7 @@ def MMU_top(data_width, matrix_size, accum_size, ub_size, start, start_addr, nve
                 accum_waddr.next |= accum_waddr + 1
                 last |= 0
         
-    acc_out, done = MMU(data_width=data_width, matrix_size=matrix_size, accum_size=accum_size, vector_in=ub_rdata, accum_raddr=accum_raddr, accum_waddr=accum_waddr, vec_valid=vec_valid, accum_overwrite=overwrite_reg, lastvec=last, switch_weights=swap_reg, ddr_data=weights_dram_in, ddr_valid=weights_dram_valid)
+    acc_out, done = MMU(acc_mems=acc_mems, data_width=data_width, matrix_size=matrix_size, accum_size=accum_size, vector_in=ub_rdata, accum_raddr=accum_raddr, accum_waddr=accum_waddr, vec_valid=vec_valid, accum_overwrite=overwrite_reg, lastvec=last, switch_weights=swap_reg, ddr_data=weights_dram_in, ddr_valid=weights_dram_valid)
 
     #probe(ub_raddr, "ub_mm_raddr")
 

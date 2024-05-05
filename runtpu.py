@@ -184,6 +184,10 @@ while True:
         #print("Read Weights: addr {}".format(weightaddr))
         #print(weighttile)
         
+    # sim_trace.print_trace
+    print(f"cycle = {cycle}, pc = {sim.inspect('pc')}")
+
+        
     sim.step(d)
     cycle += 1
 
