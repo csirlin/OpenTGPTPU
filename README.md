@@ -11,6 +11,7 @@ True general purpose tensor processing unit
 - six        1.16.0
 
 ## Some future work includes
+- Why are some rows not translating in the pyrtl simulator?
 - Supporting matrix values of any bitwidth (currently only tested for 8-bit)
 - Supporting compiler
 - Instructions to move data between the unified buffer and weight fifo (either as vectors or full matrices)
@@ -23,7 +24,7 @@ True general purpose tensor processing unit
 - From ./branch_eq_pyrtl:
 - ```python ../assembler.py branch_eq_pyrtl.a```
 - ```python branch_eq_pyrtl.py```
-- ```python ../sim.py branch_eq_pyrtl.out branch_eq_pyrtl_input.npy branch_eq_pyrtl_weights.npy```
+- ```python ../runtpu.py branch_eq_pyrtl.out branch_eq_pyrtl_input.npy branch_eq_pyrtl_weights.npy```
 
 ### Software simulator
 Original example
@@ -36,7 +37,7 @@ Modified example with NOPs to mimic pyrtl simulator
 - From ./branch_eq_sim_orig:
 - ```python ../assembler.py branch_eq_sim_long.a```
 - ```python branch_eq_sim_long.py```
-- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_short_long.npy branch_eq_sim_long_weights.npy```
+- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_long_input.npy branch_eq_sim_long_weights.npy```
 
 Modified example that always keeps a weight loaded to mimic pyrtl simulator
 - From ./branch_eq_sim_preload:
@@ -48,7 +49,7 @@ Modified example with NOPs and weight loading
 - From ./branch_eq_sim_preload:
 - ```python ../assembler.py branch_eq_sim_long.a```
 - ```python branch_eq_sim_long.py```
-- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_short_long.npy branch_eq_sim_long_weights.npy```
+- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_long_input.npy branch_eq_sim_long_weights.npy```
 
 <br />
 <br />
