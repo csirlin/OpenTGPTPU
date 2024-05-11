@@ -1,7 +1,0 @@
-# Testing branch if not equal functionality - test 2
-RHM     0,  0, 16 #0 - load a matrix of values with control writethrough
-RW      1         #1 - load w1, which has 2 * identity matrix in data and the control sets PC -= 2 if ACTivated and acc[0][0] != 128
-MMC.SO  0,  0, 16 #2 - multiply value matrix with w1 into acc0 (multiplies data by 2 each time)
-ACT     0,  0, 16 #3 - flagless activation copies acc0 to ub0 and branches to pc=1 if acc0[0][0] != 128
-WHM     0,  0, 16 #4 - if here, then acc0[0][0] = 128, so write ub0 back to hm0
-HLT               #5 - halt and print hostmem

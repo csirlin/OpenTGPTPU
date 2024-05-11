@@ -1,6 +1,8 @@
-## Running TGPTPU examples
+# UCSB ArchLab OpenTGPTPU Project - Fork of OpenTPU
 
-Python and package versions:
+True general purpose tensor processing unit
+
+## Python and package versions
 - python     3.8.18
 - numpy      1.24.4
 - pip        23.0.1
@@ -8,29 +10,51 @@ Python and package versions:
 - setuptools 56.0.0
 - six        1.16.0
 
-Run pyrtl example:
-- python assembler.py pyrtl1new.a
-- python branch_eq_pyrtl.py
-- python runtpu.py pyrtl1new.out branch_eq_pyrtl_input.npy branch_eq_pyrtl_weights.npy
+## Some future work includes
+- Supporting matrix values of any bitwidth (currently only tested for 8-bit)
+- Supporting compiler
+- Instructions to move data between the unified buffer and weight fifo (either as vectors or full matrices)
+- Removing pyrtl simulator's dependence on manually inserted NOPs
+- Optionally prevent a branch instruction from writing back to UB
 
-Prepare weight and input .npy files
-- python branch_eq.py
+## Run examples
 
-Run example 1: Add a matrix to a second matrix in a loop until the top left value is zero
-- python assembler.py branch_eq.a
-- python sim.py branch_eq.out branch_eq_input.npy branch_eq_weights.npy
+### Pyrtl simulator
+- From ./branch_eq_pyrtl:
+- ```python ../assembler.py branch_eq_pyrtl.a```
+- ```python branch_eq_pyrtl.py```
+- ```python ../sim.py branch_eq_pyrtl.out branch_eq_pyrtl_input.npy branch_eq_pyrtl_weights.npy```
 
-Old example 1: Increment the top left value of a matrix in a loop until it equals 10
-- python assembler.py branch_neq.a
-- python sim.py branch_neq.out branch_neq_input.npy branch_neq_weights.npy
+### Software simulator
+Original example
+- From ./branch_eq_sim_orig:
+- ```python ../assembler.py branch_eq_sim_short.a```
+- ```python branch_eq_sim_short.py```
+- ```python ../sim.py branch_eq_sim_short.out branch_eq_sim_short_input.npy branch_eq_sim_short_weights.npy```
 
-Old example 2: Multiply the matrix by two in a loop until the top left value is 128
-- python assembler.py branch_neq_2.a
-- python sim.py branch_neq_2.out branch_neq_input.npy branch_neq_weights.npy
+Modified example with NOPs to mimic pyrtl simulator
+- From ./branch_eq_sim_orig:
+- ```python ../assembler.py branch_eq_sim_long.a```
+- ```python branch_eq_sim_long.py```
+- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_short_long.npy branch_eq_sim_long_weights.npy```
 
+Modified example that always keeps a weight loaded to mimic pyrtl simulator
+- From ./branch_eq_sim_preload:
+- ```python ../assembler.py branch_eq_sim_short.a```
+- ```python branch_eq_sim_short.py```
+- ```python ../sim.py branch_eq_sim_short.out branch_eq_sim_short_input.npy branch_eq_sim_short_weights.npy```
 
+Modified example with NOPs and weight loading
+- From ./branch_eq_sim_preload:
+- ```python ../assembler.py branch_eq_sim_long.a```
+- ```python branch_eq_sim_long.py```
+- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_short_long.npy branch_eq_sim_long_weights.npy```
 
+<br />
+<br />
+<br />
 
+---
 # UCSB ArchLab OpenTPU Project 
 
 OpenTPU is an open-source re-implementation of Google's Tensor Processing Unit (TPU) by the UC Santa Barbara ArchLab.

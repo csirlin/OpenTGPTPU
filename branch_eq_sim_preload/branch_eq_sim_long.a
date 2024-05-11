@@ -1,3 +1,5 @@
+# Testing branch if equal functionality
+# load hostmem
 RHM     0,  0, 16 #0
 NOP
 NOP
@@ -148,6 +150,8 @@ NOP
 NOP
 NOP
 NOP
+
+# load UB1 into ACC1 with the preparation to branch to the end
 RW      0         #3
 NOP
 NOP
@@ -298,6 +302,8 @@ NOP
 NOP
 NOP
 NOP
+
+# if ACC1[0][0] == 0, branch to #12
 ACT    16, 16, 16 #6
 NOP
 NOP
@@ -348,6 +354,8 @@ NOP
 NOP
 NOP
 NOP
+
+# increment ACC1 by UB2 without changing ACC1's control
 RW      2         #7
 NOP
 NOP
@@ -398,7 +406,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.S  32, 16, 16 #8 #tpu is MMC[flags] [UB] [ACC] [SIZE]. sim is MMC[flags] [ACC] [UB] [SIZE]
+MMC.S  16, 32, 16 #8 #tpu is MMC[flags] [UB] [ACC] [SIZE]. sim is MMC[flags] [ACC] [UB] [SIZE]
 NOP
 NOP
 NOP
@@ -448,6 +456,8 @@ NOP
 NOP
 NOP
 NOP
+
+# jump to #6
 RW      1         #9
 NOP
 NOP
@@ -498,7 +508,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO  0, 0, 16  #1
+MMC.SO  0, 0, 16  #10
 NOP
 NOP
 NOP
@@ -598,6 +608,8 @@ NOP
 NOP
 NOP
 NOP
+
+# writeback and halt
 WHM   16, 16, 16  #12
 NOP
 NOP
@@ -649,3 +661,52 @@ NOP
 NOP
 NOP
 HLT               #13
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP

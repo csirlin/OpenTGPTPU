@@ -1,4 +1,4 @@
-# specify hostmem and weight matrices for branch_eq_pyrtl test
+# specify hostmem and weight matrices for branch_eq_vect test
 import numpy as np
 
 def store():
@@ -67,7 +67,7 @@ def store():
     
     w = np.zeros((3, 16, 16))
 
-    # data = I, ctrl = branch + 250
+    # data = I, ctrl = branch + 6
     w[0] =  [ [  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -83,7 +83,7 @@ def store():
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-              [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,250,  1,  1] ]
+              [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  6,  1,  1] ]
     # [-1][-1] = 1
     # [-1][-2]: branch enable (0 or 1)
     # [-1][-3]: LSByte of branch amt
@@ -107,7 +107,7 @@ def store():
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1] ]
     
-    # data = 0, ctrl = branch - 300
+    # data = 0, ctrl = branch - 5
     w[2] =  [ [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -123,9 +123,9 @@ def store():
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-              [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,254,212,  1,  1] ]
+              [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1, -5,  1,  1] ]
     
-    np.save('branch_eq_pyrtl_input', hm.astype(np.int8))
-    np.save('branch_eq_pyrtl_weights', w.astype(np.int8))
+    np.save('branch_eq_sim_short_input', hm.astype(np.int8))
+    np.save('branch_eq_sim_short_weights', w.astype(np.int8))
 
 store()

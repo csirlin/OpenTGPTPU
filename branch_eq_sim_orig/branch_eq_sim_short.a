@@ -15,7 +15,7 @@ ACT    16, 16, 16 #5
 RW      1         #6
 MMC.S  16, 32, 16 #7
 
-# jump to #4
+# jump to #5
 RW      2         #8
 MMC.SO  0, 0, 16  #9
 ACT     0, 0, 16  #10
