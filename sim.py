@@ -37,7 +37,8 @@ class TPUSim(object):
         
         # use self.pc to select next instruction, starting from 0, and finishing when halt is reached
         while True:
-            print(f'operands = {operands[self.pc]}')
+            # print(f'operands = {operands[self.pc]}')
+            print(f"PC = {self.pc}")
             if opcodes[self.pc] in ['RHM', 'WHM', 'RW']:
                 self.memops(opcodes[self.pc], *operands[self.pc])
             elif opcodes[self.pc] == 'MMC':
@@ -53,15 +54,16 @@ class TPUSim(object):
                 break
             else:
                 raise Exception('WAT (╯°□°）╯︵ ┻━┻')
-            print(f"PC = {self.pc}")
+            print()
 
         # all done, exit
         savepath = 'sim32.npy' if args.raw else 'sim8.npy'
         np.save(savepath, self.host_memory)
+        print(f'Final host memory:')
         print(self.host_memory.astype('uint8'))
         self.program.close()
 
-        print("""ALL DONE!
+        print("""\nALL DONE!
         (•_•)
         ( •_•)>⌐■-■
         (⌐■_■)""")
@@ -72,8 +74,11 @@ class TPUSim(object):
         operand_list = []
         current_opcode = ""
 
-        while (current_opcode != "HLT"):
-            current_opcode = int.from_bytes(self.program.read(isa.OP_SIZE), byteorder='big')
+        while True:
+            bytes = self.program.read(isa.OP_SIZE)
+            if not bytes:
+                break
+            current_opcode = int.from_bytes(bytes, byteorder='big')
             current_opcode = isa.BIN2OPCODE[current_opcode]
             opcode_list.append(current_opcode)
             current_flag = int.from_bytes(self.program.read(isa.FLAGS_SIZE), byteorder='big')
@@ -86,51 +91,79 @@ class TPUSim(object):
 
     # opcodes
     def act(self, src, dest, length, flag):
-        print('ACTIVATE!')
+        print(f'ACT: read ACC[{src}:{src + length}], and write to UB[{dest}:{dest + length}]. Activation function:', end = ' ')
 
         result = self.accumulator[src:src+length]
         if flag & isa.FUNC_RELU_MASK:
-            print('  RELU!!!!')
+            print('RELU!!!!')
             vfunc = np.vectorize(lambda x: 0 * x if x < 0. else x)
         elif flag & isa.FUNC_SIGMOID_MASK:
-            print('  SIGMOID')
+            print('SIGMOID')
             vfunc = np.vectorize(lambda x: int(255./(1.+exp(-x))))
         else:
+            print('None')
             vfunc = np.vectorize(lambda x: x)
             #raise Exception('(╯°□°）╯︵ ┻━┻ bad activation function!')
 
-        print(f'before = {result}')
+        print(f'Before activation:\n{result}')
         result = vfunc(result)
-        print(f'after = {result}')
+        print(f'After activation:\n{result}')
 
         # downsample/normalize if needed
         if not args.raw:
             result = [v & 0x000000FF for v in result]
-        self.unified_buffer[dest:dest+length] = result
 
-        # branch if equal weight matrix holds e and p. if result[0][0] == 0 and e == 1, pc += p. else pc += 1
-        print(f"branch_eq_vect: enabled = {result[0][-2]}, branch pc diff = {256*result[0][-4] + result[0][-3]}")
-        if (0 > result[0][-2] > 1):
-            raise ValueError(f"Branch boolean must be 0 or 1. Instead it's {result[0][-2]}.)")
-        if (result[0][-2] == 1 and result[0][0] == 0):
-            self.pc += (256*result[0][-4] + result[0][-3]).astype(np.int16)
-            # self.pc += 1
+        # branching/comparison logic
+        if result[0][-1] == 1:
+            if result[0][-2] == 1:
+                self.pc += 1 + result[0][0].astype(np.int8)
+            else:
+                self.pc += 1 + result[0][1].astype(np.int8)
+            return # don't to the UB write when there's a branch
+        # equality check
+        elif result[0][-1] == 2:
+            result[0][-1] == 0
+            if result[0][0] == result[0][1]:
+                result[0][0] = 1
+            else:
+                result[0][0] = 0
+            result[0][1] = 0
+            self.pc += 1
+        elif result[0][-1] == 3:
+            # breakpoint()
+            result[0][-1] == 0
+            if result[0][0] < result[0][1]:
+                result[0][0] = 1
+            else:
+                result[0][0] = 0
+            result[0][1] = 0
+            self.pc += 1 
         else:
             self.pc += 1
+        self.unified_buffer[dest:dest+length] = result
 
     def memops(self, opcode, src_addr, dest_addr, length, flag):
-        print('Memory xfer! host: {} unified buffer: {}: length: {} (FLAGS? {})'.format(
-            src_addr, dest_addr, length, flag
-        ))
+        # print('Memory xfer! from: {} to: {}: length: {} (FLAGS? {})'.format(
+        #     src_addr, dest_addr, length, flag
+        # ))
 
         if opcode == 'RHM':
-            print('  read host memory to unified buffer')
+            print(f'RHM: read host memory [{src_addr}:{src_addr + length}], write to unified buffer [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
+            # for i in range(src_addr, src_addr + length):
+            #     print(f'  UB[{dest_addr + i - src_addr}] = {self.host_memory[i]}')
+            print(self.host_memory[src_addr:src_addr + length])
             self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[src_addr:src_addr + length]
         elif opcode == 'WHM':
-            print('  write unified buffer to host memory')
+            print(f'WHM: read unified buffer [{src_addr}:{src_addr + length}], write to host memory [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
+            # for i in range(src_addr, src_addr + length):
+            #     print(f'  HM[{dest_addr + i - src_addr}] = {self.host_memory[i]}')
+            print(self.unified_buffer[src_addr:src_addr + length])
             self.host_memory[dest_addr:dest_addr + length] = self.unified_buffer[src_addr:src_addr + length]
         elif opcode == 'RW':
-            print('  read weights from DRAM into MMU')
+            print(f'RW {src_addr}: read weight matrix {src_addr} into weight FIFO')
+            # for i in range(len(self.weight_memory[src_addr])):
+            #     print(f'  {self.weight_memory[src_addr][i]}')
+            print(self.weight_memory[src_addr])
             self.weight_fifo.append(self.weight_memory[src_addr])
         else:
             raise Exception('WAT (╯°□°）╯︵ ┻━┻')
@@ -138,13 +171,10 @@ class TPUSim(object):
         self.pc += 1
 
     def matrix_multiply_convolve(self, ub_addr, accum_addr, size, flags):
-        print('Matrix things....')
-        print('  UB@{} + {} -> MMU -> accumulator@{} + {}'.format(
-            ub_addr, size, accum_addr, size
-        ))
+        print(f'MMC: multiply UB[{ub_addr}:{ub_addr + size}] with a weight, store in ACC[{accum_addr}:{accum_addr + size}]')
 
         inp = self.unified_buffer[ub_addr: ub_addr + size]
-        print('MMC input shape: {}'.format(inp.shape))
+        # print('MMC input shape: {}'.format(inp.shape))
         weight_mat = self.weight_fifo.popleft()
         if not args.raw:
             inp = inp.astype(np.int32)
@@ -152,14 +182,17 @@ class TPUSim(object):
         print('MMC matrix: \n{}'.format(inp))
         print('MMC weight: \n{}'.format(weight_mat))
         out = np.matmul(inp, weight_mat)
-        print('MMC output shape: {}'.format(out.shape))
+        # print('MMC output shape: {}'.format(out.shape))
         print('MMC output: \n{}'.format(out))
         overwrite = isa.OVERWRITE_MASK & flags
         if overwrite:
+            print(f'Overwriting ACC[{accum_addr}:{accum_addr + size}]')
             self.accumulator[accum_addr:accum_addr + size] = out
         else:
+            print(f'Accumulating with ACC[{accum_addr}:{accum_addr + size}]')
+            print(f'{self.accumulator[accum_addr: accum_addr + size]}')
             self.accumulator[accum_addr:accum_addr + size] += out
-        print(f'Accumulator[{accum_addr}] = {self.accumulator[accum_addr: accum_addr + size]}')
+        print(f'After MMC + ACC: \n{self.accumulator[accum_addr: accum_addr + size]}')
 
         self.pc += 1
 

@@ -188,6 +188,9 @@ while True:
     
     # sim_trace.print_trace
     print(f"cycle = {cycle}, pc = {sim.inspect('tpu_pc')}")
+    print(f"mma_in_data_width_0_0 = {sim.inspect('mma_in_matrix_size_0_0')}")
+    print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
+    print(f"data_width_temp = {sim.inspect('data_width_temp')}")
 
     sim.step(d)
     cycle += 1
@@ -198,8 +201,8 @@ print("Final Host memory:")
 print_mem(hostmem)
 
 
-# with open('pickled1.pkl', 'wb') as file:
-#     pickle.dump(sim_trace, file)
+with open('pickled32.pkl', 'wb') as file:
+    pickle.dump(sim_trace, file)
 
 # sim_trace.render_trace()
 # with open("trace.vcd", 'w') as f:

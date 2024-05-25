@@ -2,6 +2,7 @@ from functools import reduce
 from pyrtl import *
 from pyrtl import rtllib
 from pyrtl.rtllib import multipliers
+from config import *
 
 #set_debug_mode()
 globali = 0  # To give unique numbers to each MAC
@@ -181,6 +182,7 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
 
     # Divide FIFO output into rows (each row datawidth x matrixsize bits)
     rowsize = data_width * matrix_size
+    print(f"Matrix_size: {matrix_size}, rowsize: {rowsize}, len(weights_in): {len(weights_in)}")
     weight_arr = [ weights_in[i*rowsize : i*rowsize + rowsize] for i in range(matrix_size) ]
     # Mux the wire for this row
     current_weights_wire = mux(progstep, *weight_arr)
@@ -296,7 +298,7 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
     #probe(advance_fifo, "weights_advance_fifo")
     
     # Make some size parameters, declare state register
-    totalsize = matsize * matsize  # total size of a tile in bytes
+    totalsize = int (matsize * matsize * DWIDTH / 8) # total size of a tile in bytes
     tilesize = totalsize * 8  # total size of a tile in bits
     ddrwidth = int(len(mem_data)/8)  # width from DDR in bytes (typically 64)
     size = 1
