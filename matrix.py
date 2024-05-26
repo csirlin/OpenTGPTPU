@@ -25,6 +25,7 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     weight_we_reg: weight_we, stored in a pipeline register for cell below.
     weight_tag_reg: weight_tag, incremented and stored in a pipeline register for cell below
     '''
+    # print(f"MAC({data_width}, {matrix_size}, {len(data_in)}, {len(acc_in)}, {len(switchw)}, {len(weight_in)}, {len(weight_we)}, {len(weight_tag)}, {i}, {j})")
     global globali
     # Check lengths of inupts
     if len(weight_in) != len(data_in) != data_width:
@@ -301,10 +302,16 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
     totalsize = int (matsize * matsize * DWIDTH / 8) # total size of a tile in bytes
     tilesize = totalsize * 8  # total size of a tile in bits
     ddrwidth = int(len(mem_data)/8)  # width from DDR in bytes (typically 64)
+    # ddrwidth = int(len(mem_data) * DWIDTH / 64)  # width from DDR in bytes (typically 64)
     size = 1
     while pow(2, size) < (totalsize/ddrwidth):  # compute log of number of transfers required
         size = size + 1
     state = Register(size, "fifo_state")  # Number of reads to receive (each read is ddrwidth bytes)
+    print(f"DWIDTH = {DWIDTH}, len(state) = {len(state)}")
+    state_wv = WireVector(len(state), "fifo_state_wv")
+    state_wv <<= state
+    mem_valid_wv = WireVector(len(mem_valid), "fifo_mem_valid_wv")
+    mem_valid_wv <<= mem_valid
     startup = Register(1, "fifo_startup")
     startup.next <<= 1
 
@@ -402,11 +409,24 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     clearout: clear signal for first accumulator
     doneout: done signal for first accumulator
     '''
-
+    print(f"systolic_setup({data_width}, {matsize}, {len(vec_in)}, {len(waddr)}, {len(valid)}, {len(clearbit)}, {len(lastvec)}, {len(switch)})")
     # Use a diagonal set of buffer so that when a vector is read from SRAM, it "falls" into
     # the correct diagonal pattern.
     # The last column of buffers need extra bits for control signals, which propagate down
     # and into the accumulators.
+
+    sys_vec_in = WireVector(len(vec_in), "sys_vec_in")
+    sys_vec_in <<= vec_in
+    sys_waddr = WireVector(len(waddr), "sys_waddr")
+    sys_waddr <<= waddr
+    sys_valid = WireVector(1, "sys_valid")
+    sys_valid <<= valid
+    sys_clearbit = WireVector(1, "sys_clearbit")
+    sys_clearbit <<= clearbit
+    sys_lastvec = WireVector(1, "sys_lastvec")
+    sys_lastvec <<= lastvec
+    sys_switch = WireVector(1, "sys_switch")
+    sys_switch <<= switch
 
     addrreg = Register(len(waddr), "sys_addrreg")
     addrreg.next <<= waddr
@@ -418,7 +438,7 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     donereg.next <<= lastvec
     topreg = Register(data_width, "sys_topreg")
 
-    firstcolumn = [topreg,] + [ Register(data_width, f"sys_firstcolumn_{i}") for i in range(matsize-1) ]
+    firstcolumn = [topreg,] + [ Register(data_width, f"sys_firstcolumn_{i}") for i in range(1, matsize) ]
     lastcolumn = [ None for i in range(matsize) ]
     lastcolumn[0] = topreg
 

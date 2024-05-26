@@ -2,6 +2,7 @@ from functools import reduce
 
 #import pyrtl
 from pyrtl import *
+from config import *
 
 def relu_vector(vec, offset):
     assert offset <= 24
@@ -79,8 +80,8 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             with N == 1:  # this was the last vector
                 busy.next |= 0
 
-    invals = concat_list([ x[:8] for x in accum_out ])
-    act_out = mux(act_func, invals, relu_vector(accum_out, 24), sigmoid_vector(accum_out), invals)
+    invals = concat_list([ x[:DWIDTH] for x in accum_out ])
+    act_out = mux(act_func, invals, relu_vector(accum_out, 24), sigmoid_vector(accum_out), invals) # relu might not work with 32-bit DWIDTH as represented currently. 
     act_out.name = 'act_out'
     #act_out = relu_vector(accum_out, 24)
     ub_we = busy

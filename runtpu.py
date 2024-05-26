@@ -39,6 +39,7 @@ def concat_vec(vec, bits=8):
     mask = int('1'*bits, 2)
     for x in reversed(vec):
         t = (t<<bits) | (int(x) & mask)
+    print(vec, t)
     return t
 
 def concat_tile(tile, bits=8):
@@ -57,13 +58,13 @@ def make_vec(value, bits=8):
     mask = int('1'*bits, 2)
     while value > 0:
         vec.append(value & mask)
-        value = value >> 8
+        value = value >> bits
     return list(reversed(vec))
 
 def print_mem(mem):
     ks = sorted(mem.keys())
     for a in ks:
-        print(a, make_vec(mem[a]))
+        print(a, make_vec(mem[a], DWIDTH))
 
 def print_weight_mem(mem, bits=8, size=8):
     ks = sorted(mem.keys())
@@ -73,8 +74,8 @@ def print_weight_mem(mem, bits=8, size=8):
         vec = []
         tile = mem[a]
         while tile > 0:
-            vec.append(make_vec(tile & mask))
-            tile = tile >> (8*8)
+            vec.append(make_vec(tile & mask, DWIDTH))
+            tile = tile >> (bits*size) ###hmmm
         if vec != []:
             vecs.append(vec)
     for a, vec in enumerate(vecs):
@@ -93,11 +94,12 @@ if len(host_shape) == 3:
         flat_host[host_shape[1]*i: host_shape[1]*(i+1)] = arr
 if len(host_shape) == 2:
     flat_host = hostarray
+# print("Flat host array:")
 # print(flat_host)
-hostmem = { a : concat_vec(vec) for a,vec in enumerate(flat_host) }
-# print("Host memory:")
+hostmem = { a : concat_vec(vec, DWIDTH) for a,vec in enumerate(flat_host) }
+# print("Host memory start:")
+# print(hostmem)
 # print_mem(hostmem)
-    
 
 weightsarray = np.load(args.weightsmem)
 print("Weightsarray")
@@ -106,12 +108,12 @@ print(weightsarray.shape)
 size = weightsarray.shape[-1]
 weight_shape = weightsarray.shape
 if len(weight_shape) == 3:
-    weightsmem = { a : concat_tile(tile) for a,tile in enumerate(weightsarray) }
+    weightsmem = { a : concat_tile(tile, DWIDTH) for a,tile in enumerate(weightsarray) }
 if len(weight_shape) == 2:
     weightsmem = np.zeros(())
-#weightsmem = { a : concat_vec(vec) for a,vec in enumerate(weightsarray) }
+#weightsmem = { a : concat_vec(vec, DWIDTH) for a,vec in enumerate(weightsarray) }
 print("Weight memory:")
-print_weight_mem(weightsmem, size=size)
+print_weight_mem(weightsmem, size=size, bits=DWIDTH)
 print(weightsmem)
 
 '''
@@ -126,13 +128,14 @@ For host mem, each vector goes at one address. First vector at address 0.
 tilesize = config.MATSIZE * config.MATSIZE  # number of weights in a tile
 nchunks = max(tilesize / 64, 1)  # Number of DRAM transfers needed from Weight DRAM for one tile
 print(f"nchunks = {nchunks}")
-chunkmask = pow(2,64*8)-1
+chunkmask = pow(2,64*DWIDTH)-1
+
 def getchunkfromtile(tile, chunkn):
     #print("Get chunk: ", chunkn, nchunks, chunkmask, tile)
     #print((tile >> ((nchunks - chunkn - 1)*64*8)) & chunkmask)
     if chunkn >= nchunks:
         raise Exception("Reading more weights than are present in one tile?")
-    return (tile >> int(((nchunks - chunkn - 1))*64*8)) & chunkmask
+    return (tile >> int(((nchunks - chunkn - 1))*64*DWIDTH)) & chunkmask
 
 
 # Run Simulation
@@ -159,39 +162,47 @@ while True:
 
     # Check if we're doing a Read Weights
     if chunkaddr < nchunks:
-        #print("Sending weights from chunk {}: {}".format(chunkaddr, getchunkfromtile(weighttile, chunkaddr)))
-        #print(getchunkfromtile(weighttile, chunkaddr))
-        #print(weighttile)
+        print("Sending weights from chunk {}: {}".format(chunkaddr, getchunkfromtile(weighttile, chunkaddr)))
+        print(getchunkfromtile(weighttile, chunkaddr))
+        print(weighttile)
         d[weights_dram_in] = getchunkfromtile(weighttile, chunkaddr)
         d[weights_dram_valid] = 1
         chunkaddr += 1
 
     # Read host memory signal
     if sim.inspect(hostmem_re):
+        print("Reading host memory")
         raddr = sim.inspect(hostmem_raddr)
-        if raddr in hostmem:
+        if raddr in hostmem: #this causes a pre-mature read of hostmem[end+1] after an RHM read from [start:end]. only lasts for one cycle and doesn't seem to affect anything else
             d[hostmem_rdata] = hostmem[raddr]
 
     # Write host memory signal
     if sim.inspect(hostmem_we):
+        print("Writing host memory")
         waddr = sim.inspect(hostmem_waddr)
         wdata = sim.inspect(hostmem_wdata)
         hostmem[waddr] = wdata
 
     # Read weights memory signal
     if sim.inspect(weights_dram_read):
+        print("Reading weights memory")
         weightaddr = sim.inspect(weights_dram_raddr)
         weighttile = weightsmem[weightaddr]
         chunkaddr = 0
-        #print("Read Weights: addr {}".format(weightaddr))
+        print("Read Weights: addr {}".format(weightaddr))
         #print(weighttile)
+    
+    # print(d)
     
     # sim_trace.print_trace
     print(f"cycle = {cycle}, pc = {sim.inspect('tpu_pc')}")
-    print(f"mma_in_data_width_0_0 = {sim.inspect('mma_in_matrix_size_0_0')}")
-    print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
-    print(f"data_width_temp = {sim.inspect('data_width_temp')}")
+    # print(f"mma_in_data_width_0_0 = {sim.inspect('mma_in_matrix_size_0_0')}")
+    # print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
+    # print(f"data_width_temp = {sim.inspect('data_width_temp')}")
 
+    if 314 < cycle < 318:
+        print(f"UBuffer@{cycle}: {sim.inspect_mem(UBuffer)}")
+        print(f"AccMems[0]@{cycle}: {sim.inspect_mem(acc_mems[0])}")
     sim.step(d)
     cycle += 1
 
@@ -201,7 +212,7 @@ print("Final Host memory:")
 print_mem(hostmem)
 
 
-with open('pickled32.pkl', 'wb') as file:
+with open(f'pickled{DWIDTH}.pkl', 'wb') as file:
     pickle.dump(sim_trace, file)
 
 # sim_trace.render_trace()

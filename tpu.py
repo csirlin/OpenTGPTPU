@@ -17,7 +17,7 @@ for i in range(MATSIZE):
 ############################################################
 
 accum_act_raddr = WireVector(ACC_ADDR_SIZE, "tpu_accum_act_raddr")  # Activate unit read address for accumulator buffers
-weights_dram_in = Input(64*8, "tpu_weights_dram_in")  # Input signal from weights DRAM controller
+weights_dram_in = Input(64*DWIDTH, "tpu_weights_dram_in")  # Input signal from weights DRAM controller
 weights_dram_valid = Input(1, "tpu_weights_dram_valid")  # Valid bit for weights DRAM signal
 halt = Output(1, "tpu_halt")  # When raised, stop simulation
 
