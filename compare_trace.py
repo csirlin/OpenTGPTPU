@@ -29,7 +29,7 @@ for wn in sim_trace2.trace:
 # print(diff)
 
 wire_names = sorted(list(t1_wires.intersection(t2_wires)))
-print(wire_names)
+# print(wire_names)
 
 # get wire traces for each wire name indexed together
 t1_objs = []
@@ -53,7 +53,7 @@ def print_all_diffs():
 		for i in range(min(len(t1_objs[0]), len(t2_objs[0]))):
 			inequality = False
 			for j in range(min(len(t1_objs), len(t1_objs))):
-				if t1_objs[j][i] != t2_objs[j][i]:
+				if t1_objs[j][i] != t2_objs[j][i] and not (t1_objs[j][i] == 8 and t2_objs[j][i] == 32):
 					if not inequality:
 						inequality = True
 						print(f"Timestep #{i}:", file=file)
@@ -62,9 +62,9 @@ def print_all_diffs():
 def print_wire_2(wire_name, file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
-	vals1 = sim_trace1.trace[wire_name]
-	vals2 = sim_trace2.trace[wire_name]
-	for i in range(len(vals1)):
+	vals1 = t1_objs[wire_names.index(wire_name)]
+	vals2 = t2_objs[wire_names.index(wire_name)]
+	for i in range(min(len(vals1), len(vals2))):
 		if vals1[i] == vals2[i]:
 			print(f"#{i}: {wire_name} (same) = {vals1[i]}", file=file)
 		else:
