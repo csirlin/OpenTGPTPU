@@ -55,12 +55,13 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     one_wv <<= 1
     cond = WireVector(1, "act_cond")
     cond <<= busy & (N_wv == 1) & (branch_enable == 1) & (top_left == 0)
-    pc_incr = WireVector(12, "act_pc_incr")
-    pc_incr <<= concat_list([acc_mems[-3][start_addr_reg][0:8], acc_mems[-4][start_addr_reg][0:4]]) # WireVector(len(pc))
-    pc_diff_high = WireVector(len(acc_mems[-4][start_addr_reg]), "act_pc_diff_high")
-    pc_diff_high <<= acc_mems[-4][start_addr_reg]
-    pc_diff_low = WireVector(len(acc_mems[-3][start_addr_reg]), "act_pc_diff_low")
-    pc_diff_low <<= acc_mems[-3][start_addr_reg]
+    pc_incr = WireVector(len(pc), "act_pc_incr")
+    pc_incr <<= acc_mems[-3][start_addr_reg]
+    # pc_incr <<= concat_list([acc_mems[-3][start_addr_reg][0:8], acc_mems[-4][start_addr_reg][0:4]]) # WireVector(len(pc))
+    # pc_diff_high = WireVector(len(acc_mems[-4][start_addr_reg]), "act_pc_diff_high")
+    # pc_diff_high <<= acc_mems[-4][start_addr_reg]
+    # pc_diff_low = WireVector(len(acc_mems[-3][start_addr_reg]), "act_pc_diff_low")
+    # pc_diff_low <<= acc_mems[-3][start_addr_reg]
     # pc_incr[0:8] <<= acc_mems[-3][start_addr_reg]
     # pc_incr[8:] <<= acc_mems[-4][start_addr_reg][0:len(pc)-8]
     pc.next <<= select(cond, (pc + pc_incr)[0:len(pc)], pc + 1)
