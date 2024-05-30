@@ -4,10 +4,10 @@ import pyrtl
 
 
 # load traces
-with open('branch_eq_pyrtl/pickled8.pkl', 'rb') as file:
+with open('branch_eq_pyrtl_32/pickled8.pkl', 'rb') as file:
 	sim_trace1 = pickle.load(file)
 
-with open('branch_eq_pyrtl/pickled32.pkl', 'rb') as file:
+with open('branch_eq_pyrtl_32/pickled32.pkl', 'rb') as file:
 	sim_trace2 = pickle.load(file)
 
 
@@ -75,10 +75,11 @@ def print_wire_2(wire_name, file=stdout):
 def print_wire_1(num, wire_name, file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
+	vals = []
 	if num == 1:
-		vals = sim_trace1.trace[wire_name]
+		vals = t1_objs[wire_names.index(wire_name)]
 	if num == 2:
-		vals = sim_trace2.trace[wire_name]
+		vals = t2_objs[wire_names.index(wire_name)]
 	for i in range(len(vals)):
 		print(f"#{i}: {wire_name} = {vals[i]}", file=file)
 	if file != stdout:

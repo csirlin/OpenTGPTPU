@@ -2,20 +2,18 @@ import pickle
 from sys import stdout
 import pyrtl
 
-with open('branch_eq_pyrtl/pickled.pkl', 'rb') as file:
+with open('branch_eq_pyrtl_32/pickled32.pkl', 'rb') as file:
 	sim_trace = pickle.load(file)
 
-wires = []
+wires = set()
 for wn in sim_trace.trace:
 	if wn.find('const') != 0:
-		wires.append(wn)
-wires.sort()
+		wires.add(wn)
 
+wire_names = sorted(list(wires))
 objs = []
-for wn in wires:
+for wn in wire_names:
 	objs.append(sim_trace.trace[wn])
-
-print(len(objs), len(objs[0]))
 
 # for i in range(len(t1_objs)):
 # 	if len(t1_objs[i]) != 601:
@@ -49,9 +47,9 @@ print(len(objs), len(objs[0]))
 def print_wire_1(wire_name, file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
-	vals1 = sim_trace.trace[wire_name]
-	for i in range(len(vals1)):
-		print(f"#{i}: {wire_name} = {vals1[i]}", file=file)
+	vals = objs[wire_names.index(wire_name)]
+	for i in range(len(vals)):
+		print(f"#{i}: {wire_name} = {vals[i]}", file=file)
 	if file != stdout:
 		file.close()
 # for wn in sim_trace2.trace:
