@@ -199,7 +199,7 @@ while True:
     # print(f"mma_in_data_width_0_0 = {sim.inspect('mma_in_matrix_size_0_0')}")
     # print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
     # print(f"data_width_temp = {sim.inspect('data_width_temp')}")
-
+    # print(f"act_acc_mems_wv_0 = {sim.inspect('act_acc_mems_wv_0')}")
     if 314 < cycle < 318:
         print(f"UBuffer@{cycle}: {sim.inspect_mem(UBuffer)}")
         print(f"AccMems[0]@{cycle}: {sim.inspect_mem(acc_mems[0])}")
