@@ -205,6 +205,9 @@ while True:
     # for i in range(len(acc_mems)):
     #     print(f"\t{i}: {sim.inspect_mem(acc_mems[i])}")
     # print()
+    # if 314 < cycle < 318:
+    #     print(f"UBuffer@{cycle}: {sim.inspect_mem(UBuffer)}")
+    #     print(f"AccMems[0]@{cycle}: {sim.inspect_mem(acc_mems[0])}")
     sim.step(d)
     cycle += 1
 
