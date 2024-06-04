@@ -76,6 +76,11 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
 
     accum_mod = [WireVector(len(accum_out[i]), f"act_accum_mod_{i}") for i in range(len(accum_out))]
 
+    accum_out_neg1 = WireVector(len(accum_out[-1]), "act_accum_out_neg1")
+    accum_out_neg1 <<= accum_out[-1]
+    acc_mems_neg1 = WireVector(DWIDTH, "act_acc_mems_neg1")
+    acc_mems_neg1 <<= acc_mems[-1][start_addr_reg]
+
     # activation behavior:
     with conditional_assignment:
         with cond:

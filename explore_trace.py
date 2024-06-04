@@ -2,7 +2,7 @@ import pickle
 from sys import stdout
 import pyrtl
 
-with open('branch_eq_pyrtl_32/pickled32.pkl', 'rb') as file:
+with open('pickled32.pkl', 'rb') as file:
 	sim_trace = pickle.load(file)
 
 wires = set()
