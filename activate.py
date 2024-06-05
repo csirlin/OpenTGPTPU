@@ -68,36 +68,48 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     pc_incr <<= acc_mems[-3][start_addr_reg] # old
 
     # # general condition to take action:
+    # # general condition to take action:
     # cond = WireVector(1, "act_cond")
     # cond <<= busy & (N_wv == 1)
 
     # accum_mod = [WireVector(len(accum_out[i]), f"act_accum_mod_{i}") for i in range(len(accum_out))]
 
     # new activation #
-    # # activation behavior:
-    # with conditional_assignment:
-    #     with cond:
-    #         # branch
-    #         with accum_out[-1] == 1: 
-    #             with accum_out[-2] == 1:
-    #                 pc_incr |= 1 + accum_out[0]
-    #             with accum_out[-2] == 0:
-    #                 pc_incr |= 1 + accum_out[1]
-    #             for i in range(len(accum_mod)):
-    #                 accum_mod[i] |= accum_out[i]
+    # # # activation behavior:
+    # # with conditional_assignment:
+    # #     with cond:
+    # #         # branch
+    # #         with accum_out[-1] == 1: 
+    # #             with accum_out[-2] == 1:
+    # #                 pc_incr |= 1 + accum_out[0]
+    # #             with accum_out[-2] == 0:
+    # #                 pc_incr |= 1 + accum_out[1]
+    # #             for i in range(len(accum_mod)):
+    # #                 accum_mod[i] |= accum_out[i]
+    # #         # # equality check
+    # #         with accum_out[-1] == 2:
+    # #             accum_mod[-1] |= 0
+    # #             with accum_out[0] == accum_out[1]:
+    # #                 accum_mod[0] |= 1
+    # #             with accum_out[0] != accum_out[1]:
+    # #                 accum_mod[0] |= 0
+    # #             accum_mod[1] |= 0
+    # #             for i in range(2, len(accum_mod)-1):
+    # #                 accum_mod[i] |= accum_out[i]
+    # #             pc_incr |= 1
 
-    #         # # equality check
-    #         with accum_out[-1] == 2:
+    #         # less than check
+    #         with accum_out[-1] == 3:
     #             accum_mod[-1] |= 0
-    #             with accum_out[0] == accum_out[1]:
+    #             with accum_out[0] < accum_out[1]:
     #                 accum_mod[0] |= 1
-    #             with accum_out[0] != accum_out[1]:
+    #             with accum_out[0] >= accum_out[1]:
     #                 accum_mod[0] |= 0
     #             accum_mod[1] |= 0
     #             for i in range(2, len(accum_mod)-1):
     #                 accum_mod[i] |= accum_out[i]
     #             pc_incr |= 1
-
+    # end new activation #
     #         # less than check
     #         with accum_out[-1] == 3:
     #             accum_mod[-1] |= 0
