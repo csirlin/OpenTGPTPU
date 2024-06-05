@@ -1,4 +1,4 @@
-RHM     0,  0, 16 #0
+RHM     0,  0, 8 #0
 NOP
 NOP
 NOP
@@ -48,7 +48,7 @@ NOP
 NOP
 NOP
 NOP
-RHM    16, 16, 16 #1
+RHM    8, 8, 8 #1
 NOP
 NOP
 NOP
@@ -98,7 +98,7 @@ NOP
 NOP
 NOP
 NOP
-RHM    32, 32, 16 #2
+RHM    16, 16, 8 #2
 NOP
 NOP
 NOP
@@ -248,7 +248,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO 16, 16, 16 #5
+MMC.SO 8, 8, 8 #5
 NOP
 NOP
 NOP
@@ -298,7 +298,7 @@ NOP
 NOP
 NOP
 NOP
-ACT    16, 16, 16 #6
+ACT    8, 8, 8 #6
 NOP
 NOP
 NOP
@@ -398,7 +398,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.S  32, 16, 16 #8 #tpu is MMC[flags] [UB] [ACC] [SIZE]. sim is MMC[flags] [ACC] [UB] [SIZE]
+MMC.S  16, 8, 8 #8 #tpu is MMC[flags] [UB] [ACC] [SIZE]. sim is MMC[flags] [ACC] [UB] [SIZE]
 NOP
 NOP
 NOP
@@ -498,7 +498,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO  0, 0, 16  #1
+MMC.SO  0, 0, 8  #1
 NOP
 NOP
 NOP
@@ -548,7 +548,7 @@ NOP
 NOP
 NOP
 NOP
-ACT     0, 0, 16  #11
+ACT     0, 0, 8  #11
 NOP
 NOP
 NOP
@@ -598,7 +598,7 @@ NOP
 NOP
 NOP
 NOP
-WHM   16, 16, 16  #12
+WHM   8, 8, 8  #12
 NOP
 NOP
 NOP
