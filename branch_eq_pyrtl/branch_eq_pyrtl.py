@@ -125,7 +125,7 @@ def store():
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
               [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,254,212,  1,  1] ]
     
-    np.save('branch_eq_pyrtl_input', hm.astype(np.int32))
-    np.save('branch_eq_pyrtl_weights', w.astype(np.int32))
+    np.save('branch_eq_pyrtl_input', hm.astype(np.int8))
+    np.save('branch_eq_pyrtl_weights', w.astype(np.int8))
 
 store()
