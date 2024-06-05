@@ -62,55 +62,54 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     top_left <<= acc_mems[0][start_addr_reg]
     one_wv = WireVector(len(nvecs), "act_one_wv")
     one_wv <<= 1
-    pc_incr = WireVector(len(pc), "act_pc_incr")
+    cond = WireVector(1, "act_cond") # old
+    cond <<= busy & (N_wv == 1) & (branch_enable == 1) & (top_left == 0) # old
+    pc_incr = WireVector(len(pc), "act_pc_incr") # keep
+    pc_incr <<= acc_mems[-3][start_addr_reg] # old
 
-
-
-    # old cond
+    # # general condition to take action:
     # cond = WireVector(1, "act_cond")
-    # cond <<= busy & (N_wv == 1) & (branch_enable == 1) & (top_left == 0)
+    # cond <<= busy & (N_wv == 1)
 
-    # general condition to take action:
-    cond = WireVector(1, "act_cond")
-    cond <<= busy & (N_wv == 1)
+    # accum_mod = [WireVector(len(accum_out[i]), f"act_accum_mod_{i}") for i in range(len(accum_out))]
 
-    accum_mod = [WireVector(len(accum_out[i]), f"act_accum_mod_{i}") for i in range(len(accum_out))]
+    # new activation #
+    # # activation behavior:
+    # with conditional_assignment:
+    #     with cond:
+    #         # branch
+    #         with accum_out[-1] == 1: 
+    #             with accum_out[-2] == 1:
+    #                 pc_incr |= 1 + accum_out[0]
+    #             with accum_out[-2] == 0:
+    #                 pc_incr |= 1 + accum_out[1]
+    #             for i in range(len(accum_mod)):
+    #                 accum_mod[i] |= accum_out[i]
 
-    # activation behavior:
-    with conditional_assignment:
-        with cond:
-            # branch
-            with accum_out[-1] == 1: 
-                with accum_out[-2] == 1:
-                    pc_incr |= 1 + accum_out[0]
-                with accum_out[-2] == 0:
-                    pc_incr |= 1 + accum_out[1]
-                for i in range(len(accum_mod)):
-                    accum_mod[i] |= accum_out[i]
+    #         # # equality check
+    #         with accum_out[-1] == 2:
+    #             accum_mod[-1] |= 0
+    #             with accum_out[0] == accum_out[1]:
+    #                 accum_mod[0] |= 1
+    #             with accum_out[0] != accum_out[1]:
+    #                 accum_mod[0] |= 0
+    #             accum_mod[1] |= 0
+    #             for i in range(2, len(accum_mod)-1):
+    #                 accum_mod[i] |= accum_out[i]
+    #             pc_incr |= 1
 
-            # # equality check
-            with accum_out[-1] == 2:
-                accum_mod[-1] |= 0
-                with accum_out[0] == accum_out[1]:
-                    accum_mod[0] |= 1
-                with accum_out[0] != accum_out[1]:
-                    accum_mod[0] |= 0
-                accum_mod[1] |= 0
-                for i in range(2, len(accum_mod)-1):
-                    accum_mod[i] |= accum_out[i]
-                pc_incr |= 1
-
-            # less than check
-            with accum_out[-1] == 3:
-                accum_mod[-1] |= 0
-                with accum_out[0] < accum_out[1]:
-                    accum_mod[0] |= 1
-                with accum_out[0] >= accum_out[1]:
-                    accum_mod[0] |= 0
-                accum_mod[1] |= 0
-                for i in range(2, len(accum_mod)-1):
-                    accum_mod[i] |= accum_out[i]
-                pc_incr |= 1
+    #         # less than check
+    #         with accum_out[-1] == 3:
+    #             accum_mod[-1] |= 0
+    #             with accum_out[0] < accum_out[1]:
+    #                 accum_mod[0] |= 1
+    #             with accum_out[0] >= accum_out[1]:
+    #                 accum_mod[0] |= 0
+    #             accum_mod[1] |= 0
+    #             for i in range(2, len(accum_mod)-1):
+    #                 accum_mod[i] |= accum_out[i]
+    #             pc_incr |= 1
+    # end new activation #
 
     # pc_incr <<= concat_list([acc_mems[-3][start_addr_reg][0:8], acc_mems[-4][start_addr_reg][0:4]]) # WireVector(len(pc))
     # pc_diff_high = WireVector(len(acc_mems[-4][start_addr_reg]), "act_pc_diff_high")
@@ -136,8 +135,9 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             with N == 1:  # this was the last vector
                 busy.next |= 0
 
-    invals = concat_list([ x[:DWIDTH] for x in accum_mod ])
-    act_out = mux(act_func, invals, relu_vector(accum_mod, 24), sigmoid_vector(accum_mod), invals) # relu might not work with 32-bit DWIDTH as represented currently. 
+    # old: accum_out. new: accum_mod
+    invals = concat_list([ x[:DWIDTH] for x in accum_out ]) 
+    act_out = mux(act_func, invals, relu_vector(accum_out, 24), sigmoid_vector(accum_out), invals) # relu might not work with 32-bit DWIDTH as represented currently. 
     act_out.name = 'act_out'
     #act_out = relu_vector(accum_out, 24)
     ub_we = busy

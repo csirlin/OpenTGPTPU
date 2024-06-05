@@ -142,7 +142,10 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
             weights_tag_in = WireVector(len(weights_tag[j]), f"mma_in_weights_tag_{i}_{j}")
             weights_tag_in <<= weights_tag[j]
             
-            acc_out, din, switchin, newweight, newwe, newtag  = MAC(data_width, matrix_size, din, data_out[j], switchin, weights_in_last[j], weights_enable[j], weights_tag[j], i, j)
+            acc_out, din, switchin, newweight, newwe, newtag \
+                = MAC(data_width, matrix_size, din, data_out[j], switchin, 
+                      weights_in_last[j], weights_enable[j], weights_tag[j],
+                      i, j)
             #probe(data_out[j], "MACacc{}_{}".format(i, j))
             #probe(acc_out, "MACout{}_{}".format(i, j))
             #probe(din, "MACdata{}_{}".format(i, j))
@@ -299,9 +302,9 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
     #probe(advance_fifo, "weights_advance_fifo")
     
     # Make some size parameters, declare state register
-    totalsize = int (matsize * matsize * DWIDTH / 8) # total size of a tile in bytes
+    totalsize = int (MATSIZE * MATSIZE * DWIDTH / 8) # total size of a tile in bytes
     tilesize = totalsize * 8  # total size of a tile in bits
-    ddrwidth = int(len(mem_data)/8)  # width from DDR in bytes (typically 64)
+    ddrwidth = int(8 * DWIDTH)  # width from DDR in bytes (typically 64)
     # ddrwidth = int(len(mem_data) * DWIDTH / 64)  # width from DDR in bytes (typically 64)
     size = 1
     while pow(2, size) < (totalsize/ddrwidth):  # compute log of number of transfers required
@@ -340,12 +343,14 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
                 #probe(reg, "fifo_reg{}".format(i))
                 with state == Const(i, bitwidth=size):
                     reg.next |= mem_data
+        with otherwise:
+            state.next |= 0  # reset state when no data is coming in (potential 8x8 matrix fix?)
 
     # Track when first buffer is filled and when data moves out of it
     full = Register(1, "fifo_full")  # goes high when last chunk of top buffer is filled
     cleartop = WireVector(1, "fifo_cleartop")
     with conditional_assignment:
-        with mem_valid & (state == Const(len(topbuf)-1)):  # writing the last buffer spot now
+        with mem_valid & (state == Const(len(topbuf)-1)):  # writing the last buffer spot now - likely have to change this
             full.next |= 1
         with cleartop:  # advancing FIFO, so buffer becomes empty
             full.next |= 0
