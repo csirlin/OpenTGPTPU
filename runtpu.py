@@ -173,6 +173,7 @@ while True:
     if sim.inspect(hostmem_re):
         print("Reading host memory")
         raddr = sim.inspect(hostmem_raddr)
+        print("Read Host Memory: addr {}".format(raddr))
         if raddr in hostmem: #this causes a pre-mature read of hostmem[end+1] after an RHM read from [start:end]. only lasts for one cycle and doesn't seem to affect anything else
             d[hostmem_rdata] = hostmem[raddr]
 
@@ -200,11 +201,11 @@ while True:
     # print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
     # print(f"data_width_temp = {sim.inspect('data_width_temp')}")
     # print(f"act_acc_mems_wv_0 = {sim.inspect('act_acc_mems_wv_0')}")
-    # print(f"UBuffer@{cycle}: {sim.inspect_mem(UBuffer)}")
-    # print(f"AccMems@{cycle}:")
-    # for i in range(len(acc_mems)):
-    #     print(f"\t{i}: {sim.inspect_mem(acc_mems[i])}")
-    # print()
+    print(f"UBuffer@{cycle}: {sim.inspect_mem(UBuffer)}")
+    print(f"AccMems@{cycle}:")
+    for i in range(len(acc_mems)):
+        print(f"\t{i}: {sim.inspect_mem(acc_mems[i])}")
+    print()
     sim.step(d)
     cycle += 1
 

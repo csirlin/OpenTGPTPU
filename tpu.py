@@ -127,13 +127,14 @@ rhm_N = Register(len(rhm_length), "tpu_rhm_N")
 rhm_addr = Register(len(rhm_dec_addr), "tpu_rhm_addr")
 rhm_busy = Register(1, "tpu_rhm_busy")
 rhm_ub_waddr = Register(len(ub_dec_addr), "tpu_rhm_ub_waddr")
+# hostmem_raddr_reg = Register(HOST_ADDR_SIZE, "tpu_hostmem_raddr_reg")
 with conditional_assignment:
     with dispatch_rhm:
         rhm_N.next |= rhm_length
         rhm_busy.next |= 1
         hostmem_raddr |= rhm_dec_addr
         hostmem_re |= 1
-        rhm_addr.next |=  + 1
+        rhm_addr.next |= rhm_dec_addr + 1
         rhm_ub_waddr.next |= ub_dec_addr
     with rhm_busy:
         rhm_N.next |= rhm_N - 1
