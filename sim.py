@@ -114,49 +114,47 @@ class TPUSim(object):
         #     result = [v & 0x000000FF for v in result]
         
         # new scheme #
-        # # branching/comparison logic
-        # if result[0][-1] == 1:
-        #     if result[0][-2] == 1:
-        #         self.pc += 1 + result[0][0].astype(np.int8)
-        #     else:
-        #         self.pc += 1 + result[0][1].astype(np.int8)
-        #     return # don't to the UB write when there's a branch
-        # # equality check
-        # elif result[0][-1] == 2:
-        #     result[0][-1] == 0
-        #     if result[0][0] == result[0][1]:
-        #         result[0][0] = 1
-        #     else:
-        #         result[0][0] = 0
-        #     result[0][1] = 0
-        #     self.pc += 1
-        # elif result[0][-1] == 3:
-        #     # breakpoint()
-        #     result[0][-1] == 0
-        #     if result[0][0] < result[0][1]:
-        #         result[0][0] = 1
-        #     else:
-        #         result[0][0] = 0
-        #     result[0][1] = 0
-        #     self.pc += 1 
-        # else:
-        #     self.pc += 1
-        # branch if equal weight matrix holds e and p. if result[0][0] == 0 and e == 1, pc += p. else pc += 1
-        # end new scheme #
-
-        # orig scheme #
-        print(f"result[0] = {result[0]}")
-        print(f"result[0][-3] = {result[0][-3]}")
-        print(f"branch_eq_vect: enabled = {result[0][-2]}, branch pc diff = {256*result[0][-4] + result[0][-3]}")
-        if (0 > result[0][-2] > 1):
-            raise ValueError(f"Branch boolean must be 0 or 1. Instead it's {result[0][-2]}.)")
-        if (result[0][-2] == 1 and result[0][0] == 0):
-            self.pc += (256*result[0][-4] + result[0][-3] + 1).astype(np.int16)
-        # end orig scheme #
-        
-        # always run #
+        # branching/comparison logic
+        if result[0][-1] == 1:
+            if result[0][-2] == 1:
+                self.pc += 1 + result[0][0].astype(np.int8)
+            else:
+                self.pc += 1 + result[0][1].astype(np.int8)
+            return # don't to the UB write when there's a branch
+        # equality check
+        elif result[0][-1] == 2:
+            result[0][-1] == 0
+            if result[0][0] == result[0][1]:
+                result[0][0] = 1
+            else:
+                result[0][0] = 0
+            result[0][1] = 0
+            self.pc += 1
+        elif result[0][-1] == 3:
+            # breakpoint()
+            result[0][-1] == 0
+            if result[0][0] < result[0][1]:
+                result[0][0] = 1
+            else:
+                result[0][0] = 0
+            result[0][1] = 0
+            self.pc += 1 
         else:
             self.pc += 1
+        # end new scheme #
+
+        # # orig scheme #
+        # branch if equal weight matrix holds e and p. if result[0][0] == 0 and e == 1, pc += p. else pc += 1
+        # print(f"result[0] = {result[0]}")
+        # print(f"result[0][-3] = {result[0][-3]}")
+        # print(f"branch_eq_vect: enabled = {result[0][-2]}, branch pc diff = {256*result[0][-4] + result[0][-3]}")
+        # if (0 > result[0][-2] > 1):
+        #     raise ValueError(f"Branch boolean must be 0 or 1. Instead it's {result[0][-2]}.)")
+        # if (result[0][-2] == 1 and result[0][0] == 0):
+        #     self.pc += (256*result[0][-4] + result[0][-3] + 1).astype(np.int16)
+        # else:
+        #     self.pc += 1
+        # # end orig scheme #        
 
         self.unified_buffer[dest:dest+length] = result
         # #
