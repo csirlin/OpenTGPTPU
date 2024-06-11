@@ -9,7 +9,9 @@ def relu_vector(vec, offset):
     return concat_list([ select(d[-1], falsecase=d, truecase=Const(0, len(d)))[24-offset:32-offset] for d in vec ])
 
 def sigmoid(x):
-    rb = RomBlock(bitwidth=8, addrwidth=3, asynchronous=True, romdata={0: 128, 1: 187, 2: 225, 3: 243, 4: 251, 5: 254, 6: 255, 7: 255, 8: 255})
+    rb = RomBlock(bitwidth=8, addrwidth=3, asynchronous=True, 
+                  romdata={0: 128, 1: 187, 2: 225, 3: 243, 4: 251, 
+                           5: 254, 6: 255, 7: 255, 8: 255})
     x_gt_7 = reduce(lambda x, y: x|y, x[3:])  # OR of bits 3 and up
     return select(x_gt_7, falsecase=rb[x[:3]], truecase=Const(255, bitwidth=8))
 
@@ -136,7 +138,8 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
 
     # old: accum_out. new: accum_mod
     invals = concat_list([ x[:DWIDTH] for x in accum_out ]) 
-    act_out = mux(act_func, invals, relu_vector(accum_out, 24), sigmoid_vector(accum_out), invals) # relu might not work with 32-bit DWIDTH as represented currently. 
+    act_out = mux(act_func, invals, relu_vector(accum_out, 24), 
+                  sigmoid_vector(accum_out), invals) # relu might not work with 32-bit DWIDTH as represented currently. 
     act_out.name = 'act_out'
     #act_out = relu_vector(accum_out, 24)
     ub_we = busy

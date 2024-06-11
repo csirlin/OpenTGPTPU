@@ -90,4 +90,8 @@ def decode(instruction):
         #with otherwise:
         #    print("otherwise")
 
-    return dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, ub_addr, ub_raddr, ub_waddr, rhm_addr, whm_addr, rhm_length, whm_length, mmc_length, act_length, act_type, accum_raddr, accum_waddr, accum_overwrite, switch_weights, weights_raddr, weights_read
+    return dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, \
+           dispatch_halt, ub_addr, ub_raddr, ub_waddr, rhm_addr, whm_addr, \
+           rhm_length, whm_length, mmc_length, act_length, act_type, \
+           accum_raddr, accum_waddr, accum_overwrite, switch_weights, \
+           weights_raddr, weights_read
