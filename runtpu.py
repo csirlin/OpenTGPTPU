@@ -61,6 +61,14 @@ def make_vec(value, bits=8):
         value = value >> bits
     return list(reversed(vec))
 
+def make_vec_2(value, bits=8, size=8):
+    vec = []
+    mask = int('1'*bits, 2)
+    for i in range(size):
+        vec.append(value & mask)
+        value = value >> bits
+    return list(vec)
+
 def print_mem(mem):
     ks = sorted(mem.keys())
     for a in ks:
@@ -201,11 +209,29 @@ while True:
     # print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
     # print(f"data_width_temp = {sim.inspect('data_width_temp')}")
     # print(f"act_acc_mems_wv_0 = {sim.inspect('act_acc_mems_wv_0')}")
-    print(f"UBuffer@{cycle}: {sim.inspect_mem(UBuffer)}")
+    print(f"UBuffer@{cycle}:")
+    ub = sim.inspect_mem(UBuffer)
+    for k in sorted(ub.keys()):
+        print(f"\t{k}: {make_vec_2(ub[k], DWIDTH, MATSIZE)}")
+
     print(f"AccMems@{cycle}:")
+    max_addrs = 0
     for i in range(len(acc_mems)):
-        print(f"\t{i}: {sim.inspect_mem(acc_mems[i])}")
-    print()
+        # print("keys = ", sim.inspect_mem(acc_mems[i]).keys())
+        max_addrs = max(max_addrs, max(sim.inspect_mem(acc_mems[i]).keys(), default=0))
+    # print(max_addrs)
+    amems = np.zeros([max_addrs+1, len(acc_mems)+1])
+    for i in range(len(acc_mems)):
+        ami = sim.inspect_mem(acc_mems[i])
+        for k in sorted(ami.keys()):
+            amems[k][i+1] = ami[k]
+    np.set_printoptions(linewidth=np.inf)
+    print(f"mmu_advance_fifo = {sim.inspect('mmu_advance_fifo')}")
+
+    for i in range(amems.shape[0]):
+        amems[i][0] = i
+    print(amems.astype(int))
+    print("\n\n")
     sim.step(d)
     cycle += 1
 
