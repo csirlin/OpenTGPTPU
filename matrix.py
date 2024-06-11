@@ -25,7 +25,9 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     weight_we_reg: weight_we, stored in a pipeline register for cell below.
     weight_tag_reg: weight_tag, incremented and stored in a pipeline register for cell below
     '''
-    # print(f"MAC({data_width}, {matrix_size}, {len(data_in)}, {len(acc_in)}, {len(switchw)}, {len(weight_in)}, {len(weight_we)}, {len(weight_tag)}, {i}, {j})")
+    # print(f"MAC({data_width}, {matrix_size}, {len(data_in)}, {len(acc_in)}, \
+    #       {len(switchw)}, {len(weight_in)}, {len(weight_we)}, {len(weight_tag)} \
+    #        , {i}, {j})")
     global globali
     # Check lengths of inupts
     if len(weight_in) != len(data_in) != data_width:
@@ -37,7 +39,8 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     #rtl_assert(~(weight_we & switchw), Exception("Cannot switch weight values when they're being loaded!"))
 
     # Use two buffers to store weight and next weight to use.
-    wbuf1, wbuf2 = Register(len(weight_in), f"mac_wbuf1_{i}_{j}"), Register(len(weight_in), f"mac_wbuf2_{i}_{j}")
+    wbuf1 = Register(len(weight_in), f"mac_wbuf1_{i}_{j}")
+    wbuf2 = Register(len(weight_in), f"mac_wbuf2_{i}_{j}")
 
     switchw_wv = WireVector(1, f"mac_switch_wv_{i}_{j}")
     switchw_wv <<= switchw
@@ -67,7 +70,10 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     #product = weight.sign_extended(inlen*2) * data_in.sign_extended(inlen*2)
     #product = product[:inlen*2]
     product = WireVector(len(weight) + len(data_in), f"mac_product_{i}_{j}")
-    product <<= helperfuncs.mult_signed(weight, data_in)[:32]
+    
+    # just use the passed in weight. it should be using whatever is at buf4 at the time.
+    product <<= helperfuncs.mult_signed(weight_in, data_in)[:32] 
+    # product <<= helperfuncs.mult_signed(weight, data_in)[:32]
 
     #plen = len(weight) + len(data_in)
     #product = weight.sign_extended(plen) * data_in.sign_extended(plen)
@@ -118,6 +124,62 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
     weights_tag_top = [ WireVector(data_width, f"mma_weights_tag_top_{i}") for i in range(matrix_size) ]  # weight row tag to top row
     weights_tag = [x for x in weights_tag_top]
     data_out = [Const(0) for i in range(matrix_size)]  # will hold output from final row
+
+    
+    # Handle weight reprogramming
+    programming = Register(1, "mma_programming")  # when 1, we're in the process of loading new weights
+    size = 1
+    while pow(2, size) < matrix_size:
+        size = size + 1
+    progstep = Register(size, "mma_progstep")  # 256 steps to program new weights (also serves as tag input)
+    with conditional_assignment:
+        with weights_we & (~programming):
+            programming.next |= 1
+        with programming & (progstep == matrix_size-1):
+            programming.next |= 0
+        with otherwise:
+            pass
+        with programming:  # while programming, increment state each cycle
+            progstep.next |= progstep + 1
+        with otherwise:
+            progstep.next |= Const(0)
+
+    # Divide FIFO output into rows (each row datawidth x matrixsize bits)
+    rowsize = data_width * matrix_size
+    # print(f"Matrix_size: {matrix_size}, rowsize: {rowsize}, len(weights_in): {len(weights_in)}")
+    weight_arr = [ weights_in[i*rowsize : i*rowsize + rowsize] for i in range(matrix_size) ] # weight_arr[i] is row i (bottom row is 0). # cells written from left to right.
+
+    for i in range(len(weight_arr)):
+        weight_arr_i = WireVector(len(weight_arr[i]), f"mma_weight_arr_{i}")
+        weight_arr_i <<= weight_arr[i]
+
+    # cells[i][j] is the value at row i, column j of fifo_buf4, with top left being (row 0, col 0)
+    # way more straightforward than the original system for what we need
+    cells = [ [ weight_arr[i][j*data_width:j*data_width+data_width] for j in reversed(range(matrix_size)) ] for i in reversed(range(matrix_size)) ]
+    for i in range(len(cells)):
+        for j in range(len(cells[i])):
+            cells[i][j].name = f"mma_cells_{i}_{j}"
+
+    # Mux the wire for this row
+    current_weights_wire = mux(progstep, *weight_arr)
+    # Split the wire into an array of 8-bit values
+    current_weights = [ current_weights_wire[i*data_width:i*data_width+data_width] for i in reversed(range(matrix_size)) ]
+
+    for i in range(len(current_weights)):
+        current_weights_i = WireVector(len(current_weights[i]), f"mma_current_weights_{i}")
+        current_weights_i <<= current_weights[i]
+
+    # Connect top row to input and control signals
+    for i, win in enumerate(weights_in_top):
+        # From the current 256-array, select the byte for this column
+        win <<= current_weights[i]
+    for we in weights_enable_top:
+        # Whole row gets same signal: high when programming new weights
+        we <<= programming
+    for wt in weights_tag_top:
+        # Tag is same for whole row; use state index (runs from 0 to 255)
+        wt <<= progstep
+
     # Build array of MACs
     for i in range(matrix_size):  # for each row
         din = data_in[i]
@@ -144,7 +206,9 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
             
             acc_out, din, switchin, newweight, newwe, newtag \
                 = MAC(data_width, matrix_size, din, data_out[j], switchin, 
-                      weights_in_last[j], weights_enable[j], weights_tag[j],
+                    #   weights_in_last[j], 
+                      cells[i][j], # using the cell from buf4 - way easier
+                      weights_enable[j], weights_tag[j],
                       i, j)
             #probe(data_out[j], "MACacc{}_{}".format(i, j))
             #probe(acc_out, "MACout{}_{}".format(i, j))
@@ -165,44 +229,6 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
             weights_enable[j] = newwe
             weights_tag[j] = newtag
             data_out[j] = acc_out
-    
-    # Handle weight reprogramming
-    programming = Register(1, "mma_programming")  # when 1, we're in the process of loading new weights
-    size = 1
-    while pow(2, size) < matrix_size:
-        size = size + 1
-    progstep = Register(size, "mma_progstep")  # 256 steps to program new weights (also serves as tag input)
-    with conditional_assignment:
-        with weights_we & (~programming):
-            programming.next |= 1
-        with programming & (progstep == matrix_size-1):
-            programming.next |= 0
-        with otherwise:
-            pass
-        with programming:  # while programming, increment state each cycle
-            progstep.next |= progstep + 1
-        with otherwise:
-            progstep.next |= Const(0)
-
-    # Divide FIFO output into rows (each row datawidth x matrixsize bits)
-    rowsize = data_width * matrix_size
-    print(f"Matrix_size: {matrix_size}, rowsize: {rowsize}, len(weights_in): {len(weights_in)}")
-    weight_arr = [ weights_in[i*rowsize : i*rowsize + rowsize] for i in range(matrix_size) ]
-    # Mux the wire for this row
-    current_weights_wire = mux(progstep, *weight_arr)
-    # Split the wire into an array of 8-bit values
-    current_weights = [ current_weights_wire[i*data_width:i*data_width+data_width] for i in reversed(range(matrix_size)) ]
-
-    # Connect top row to input and control signals
-    for i, win in enumerate(weights_in_top):
-        # From the current 256-array, select the byte for this column
-        win <<= current_weights[i]
-    for we in weights_enable_top:
-        # Whole row gets same signal: high when programming new weights
-        we <<= programming
-    for wt in weights_tag_top:
-        # Tag is same for whole row; use state index (runs from 0 to 255)
-        wt <<= progstep
 
     return [ x.sign_extended(32) for x in data_out ]
 
@@ -274,7 +300,9 @@ def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec)
         #probe(waddrin, "acc_{}_waddr".format(i))
         wein_before = WireVector(len(wein), f"accumulators_wein_before_{i}")
         wein_before <<= wein
-        dout, waddrin, wein, wclearin, lastvecin = accum(acc_mems[i], accsize, x, waddrin, wein, wclearin, raddr, lastvecin, i)
+        dout, waddrin, wein, wclearin, lastvecin = accum(acc_mems[i], accsize, x, 
+                                                         waddrin, wein, wclearin, 
+                                                         raddr, lastvecin, i)
         wein_after = WireVector(len(wein), f"accumulators_wein_after_{i}")
         wein_after <<= wein
         accout[i] = dout
@@ -356,14 +384,18 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
             full.next |= 0
 
     # Build buffers for remainder of FIFO
-    buf2, buf3, buf4 = Register(tilesize, "fifo_buf2"), Register(tilesize, "fifo_buf3"), Register(tilesize, "fifo_buf4")
+    buf2 = Register(tilesize, "fifo_buf2")
+    buf3 = Register(tilesize, "fifo_buf3")
+    buf4 = Register(tilesize, "fifo_buf4")
     #probe(concat_list(topbuf), "buf1")
     #probe(buf2, "buf2")
     #probe(buf3, "buf3")
     #probe(buf4, "buf4")
     #probe(full, "buf1_full")
     # If a given row is empty, track that so we can fill immediately
-    empty2, empty3, empty4 = Register(1, "fifo_empty2"), Register(1, "fifo_empty3"), Register(1, "fifo_empty4")
+    empty2 = Register(1, "fifo_empty2")
+    empty3 = Register(1, "fifo_empty3")
+    empty4 = Register(1, "fifo_empty4")
     #probe(empty2, "buf2_empty")
     #probe(empty3, "buf3_empty")
     #probe(empty4, "buf4_empty")
@@ -414,7 +446,8 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     clearout: clear signal for first accumulator
     doneout: done signal for first accumulator
     '''
-    print(f"systolic_setup({data_width}, {matsize}, {len(vec_in)}, {len(waddr)}, {len(valid)}, {len(clearbit)}, {len(lastvec)}, {len(switch)})")
+    # print(f"systolic_setup({data_width}, {matsize}, {len(vec_in)}, {len(waddr)}, \
+    #        {len(valid)}, {len(clearbit)}, {len(lastvec)}, {len(switch)})")
     # Use a diagonal set of buffer so that when a vector is read from SRAM, it "falls" into
     # the correct diagonal pattern.
     # The last column of buffers need extra bits for control signals, which propagate down
@@ -497,10 +530,16 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
     for din, reg in zip(datain, firstcolumn):
         reg.next <<= din
     
+    for i in range(len(lastcolumn)):
+        sys_lastcolumn_i = WireVector(len(lastcolumn[i]), f"sys_lastcolumn_{i}")
+        sys_lastcolumn_i <<= lastcolumn[i]
+
     return lastcolumn, switchout, addrout, weout, clearout, doneout
 
 
-def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, accum_waddr, vec_valid, accum_overwrite, lastvec, switch_weights, ddr_data, ddr_valid):  #, weights_in, weights_we):
+def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, 
+        accum_waddr, vec_valid, accum_overwrite, lastvec, switch_weights, 
+        ddr_data, ddr_valid, nvecs_reg):  #, weights_in, weights_we):
     
     logn1 = 1
     while pow(2, logn1) < (matrix_size + 1):
@@ -522,16 +561,56 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, a
 
     #rtl_assert(~(switch_weights & (weights_wait != 0)), Exception("Weights are not ready to switch. Need a minimum of {} + 1 cycles since last switch.".format(matrix_size)))
 
+    # advance FIFO after an MMC.S is finished with the front weight.
+    # don't advance FIFO just because an RW instruction is finished
+    acc_done_countdown = Register(32, "mmu_acc_done_countdown")
+    advance_fifo = WireVector(1, "mmu_advance_fifo")
+
+    # if an MMC.S came through, set the countdown to L + 2N, the duration 
+    # between an MMC.S issue and the last change in the accumulator.
+    # this might break if L + 2N was something tiny like 1 or 2, but that would
+    # be silly
+    with conditional_assignment:
+        with switch_weights:
+            acc_done_countdown.next |= nvecs_reg + Const(2 * matrix_size)
+        with acc_done_countdown > 0:
+            acc_done_countdown.next |= acc_done_countdown - 1
+    
+    # once the accumulator is done, the countdown will reach 1, and we can 
+    # safely advance the FIFO.
+    with conditional_assignment:
+        with acc_done_countdown == 1:
+            advance_fifo |= 1
+        with otherwise:
+            advance_fifo |= 0
+
     # FIFO
-    weights_tile, tile_ready, full = FIFO(matsize=matrix_size, mem_data=ddr_data, mem_valid=ddr_valid, advance_fifo=done_programming)
+    weights_tile, tile_ready, full = FIFO(matsize=matrix_size, 
+                                          mem_data=ddr_data, 
+                                          mem_valid=ddr_valid, 
+                                          advance_fifo=advance_fifo) # advance fifo after an MMC.S is finished with the front weight. 
+                                        #   advance_fifo=done_programming)
     #probe(tile_ready, "tile_ready")
     #probe(weights_tile, "FIFO_weights_out")
     
-    matin, switchout, addrout, weout, clearout, doneout = systolic_setup(data_width=data_width, matsize=matrix_size, vec_in=vector_in, waddr=accum_waddr, valid=vec_valid, clearbit=accum_overwrite, lastvec=lastvec, switch=switch_weights)
+    matin, switchout, addrout, weout, clearout, doneout = \
+        systolic_setup(data_width=data_width, matsize=matrix_size, 
+                       vec_in=vector_in, waddr=accum_waddr, valid=vec_valid, 
+                       clearbit=accum_overwrite, lastvec=lastvec, 
+                       switch=switch_weights)
 
-    mouts = MMArray(data_width=data_width, matrix_size=matrix_size, data_in=matin, new_weights=switchout, weights_in=weights_tile, weights_we=weights_we)
+    mouts = MMArray(data_width=data_width, matrix_size=matrix_size, 
+                    data_in=matin, new_weights=switchout, 
+                    weights_in=weights_tile, weights_we=weights_we)
+    
+    for i in range(len(mouts)):
+        mouts_i = WireVector(len(mouts[i]), f"mmu_mouts_{i}")
+        mouts_i <<= mouts[i]
 
-    accout, done = accumulators(acc_mems=acc_mems, accsize=accum_size, datas_in=mouts, waddr=addrout, we=weout, wclear=clearout, raddr=accum_raddr, lastvec=doneout)
+    accout, done = accumulators(acc_mems=acc_mems, accsize=accum_size, 
+                                datas_in=mouts, waddr=addrout, we=weout, 
+                                wclear=clearout, raddr=accum_raddr, 
+                                lastvec=doneout)
 
     switchstart = switchout[0]
     totalwait = Const(matrix_size + 1)
@@ -588,7 +667,9 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, a
 
     return accout, done
 
-def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata, accum_raddr, weights_dram_in, weights_dram_valid):
+def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, 
+            start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata,
+            accum_raddr, weights_dram_in, weights_dram_valid):
     '''
 
     Outputs
@@ -641,7 +722,13 @@ def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, start
                 accum_waddr.next |= accum_waddr + 1
                 last |= 0
         
-    acc_out, done = MMU(acc_mems=acc_mems, data_width=data_width, matrix_size=matrix_size, accum_size=accum_size, vector_in=ub_rdata, accum_raddr=accum_raddr, accum_waddr=accum_waddr, vec_valid=vec_valid, accum_overwrite=overwrite_reg, lastvec=last, switch_weights=swap_reg, ddr_data=weights_dram_in, ddr_valid=weights_dram_valid)
+    acc_out, done = MMU(acc_mems=acc_mems, data_width=data_width, 
+                        matrix_size=matrix_size, accum_size=accum_size, 
+                        vector_in=ub_rdata, accum_raddr=accum_raddr, 
+                        accum_waddr=accum_waddr, vec_valid=vec_valid, 
+                        accum_overwrite=overwrite_reg, lastvec=last, 
+                        switch_weights=swap_reg, ddr_data=weights_dram_in, 
+                        ddr_valid=weights_dram_valid, nvecs_reg=N)
 
     #probe(ub_raddr, "ub_mm_raddr")
 
@@ -690,7 +777,12 @@ def testall(input_vectors, weights_vectors):
     weightsdata = Input(64*8)
     weightsvalid = Input(1)
     
-    accout, done = MMU(data_width=DATWIDTH, matrix_size=MATSIZE, accum_size=ACCSIZE, vector_in=invec, accum_raddr=raddr, accum_waddr=waddr, vec_valid=valid, accum_overwrite=Const(0), lastvec=lastvec, switch_weights=swap, ddr_data=weightsdata, ddr_valid=weightsvalid)
+    accout, done = MMU(data_width=DATWIDTH, matrix_size=MATSIZE, 
+                       accum_size=ACCSIZE, vector_in=invec, accum_raddr=raddr, 
+                       accum_waddr=waddr, vec_valid=valid, 
+                       accum_overwrite=Const(0), lastvec=lastvec, 
+                       switch_weights=swap, ddr_data=weightsdata, 
+                       ddr_valid=weightsvalid)
 
     donesig <<= done
     for out, accout in zip(outs, accout):
@@ -768,6 +860,8 @@ if __name__ == "__main__":
     #weights = [[1, 3, 6, 4], [10, 9, 8, 1], [10, 6, 2, 8], [2, 2, 8, 6]]
     weights = [[2, 2, 8, 6], [10, 6, 2, 8], [10, 9, 8, 1], [1, 3, 6, 4]]  # reversed
 
-    vectors = [[12, 7, 2, 6], [21, 21, 18, 8], [1, 4, 18, 11], [6, 3, 25, 15], [21, 12, 1, 15], [1, 6, 13, 8], [24, 25, 18, 1], [2, 5, 13, 6], [19, 3, 1, 17], [25, 10, 20, 10]]
+    vectors = [[12, 7, 2, 6], [21, 21, 18, 8], [1, 4, 18, 11], [6, 3, 25, 15], 
+               [21, 12, 1, 15], [1, 6, 13, 8], [24, 25, 18, 1], [2, 5, 13, 6], 
+               [19, 3, 1, 17], [25, 10, 20, 10]]
 
     testall(vectors, weights)
