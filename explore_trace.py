@@ -2,7 +2,8 @@ import pickle
 from sys import stdout
 import pyrtl
 
-with open('32_8x8_no_preload/pickled_32_8x8.pkl', 'rb') as file:
+# with open('32_8x8_no_preload/pickled_32_8x8.pkl', 'rb') as file:
+with open('test_mmc/pickled_32_8x8.pkl', 'rb') as file:
 	sim_trace = pickle.load(file)
 
 wires = set()
@@ -50,6 +51,35 @@ def print_wire_1(wire_name, file=stdout):
 	vals = objs[wire_names.index(wire_name)]
 	for i in range(len(vals)):
 		print(f"#{i}: {wire_name} = {vals[i]}", file=file)
+	if file != stdout:
+		file.close()
+
+def print_wire_cat(wire_prefix, file=stdout):
+	cycles = len(objs[0])
+	if file != stdout:
+		file = open(file, 'w')
+	vals = []
+	wire_name_list = []
+	for wn in wire_names:
+		if wn.find(wire_prefix) == 0:
+			wire_name_list.append(wn)
+			vals.append(objs[wire_names.index(wn)])
+	for i in range(len(vals[0])):
+		print(f"#{i}:", file=file)
+		for j in range(len(wire_name_list)):
+			print(f"\t{wire_name_list[j]} = {vals[j][i]}", file=file)
+	if file != stdout:
+		file.close()
+
+def print_cycle_diff(file=stdout):
+	if file != stdout:
+		file = open(file, 'w')
+	for i in range(1, len(objs[0])):
+		print(f"Cycle {i-1} -> {i}:", file=file)
+		print(i, end = ' ')
+		for wn in wire_names:
+			if objs[wire_names.index(wn)][i] != objs[wire_names.index(wn)][i-1]:
+				print(f"\t{wn}: {objs[wire_names.index(wn)][i-1]} -> {objs[wire_names.index(wn)][i]}", file=file)
 	if file != stdout:
 		file.close()
 # for wn in sim_trace2.trace:
