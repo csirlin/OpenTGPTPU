@@ -9,7 +9,9 @@ from activate import act_top
 # accumulator memories
 acc_mems = []
 for i in range(MATSIZE):
-    acc_mems.append(MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, max_write_ports=None, max_read_ports=None, name=f"acc_mems_{i}"))
+    acc_mems.append(MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, 
+                             max_write_ports=None, max_read_ports=None, 
+                             name=f"acc_mems_{i}"))
 
 
 ############################################################
@@ -55,7 +57,11 @@ UB2MM = UBuffer[ub_mm_raddr]
 #  Decoder
 ############################################################
 
-dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, ub_start_addr, ub_dec_addr, ub_dest_addr, rhm_dec_addr, whm_dec_addr, rhm_length, whm_length, mmc_length, act_length, act_type, accum_raddr, accum_waddr, accum_overwrite, switch_weights, weights_raddr, weights_read = decode(instr)
+dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, \
+    ub_start_addr, ub_dec_addr, ub_dest_addr, rhm_dec_addr, whm_dec_addr, \
+    rhm_length, whm_length, mmc_length, act_length, act_type, accum_raddr, \
+    accum_waddr, accum_overwrite, switch_weights, weights_raddr, \
+    weights_read = decode(instr)
 
 halt <<= dispatch_halt
 
@@ -63,7 +69,13 @@ halt <<= dispatch_halt
 #  Matrix Multiply Unit
 ############################################################
 
-ub_mm_raddr_sig, acc_out, mm_busy, mm_done = MMU_top(acc_mems=acc_mems, data_width=DWIDTH, matrix_size=MATSIZE, accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, overwrite=accum_overwrite, swap_weights=switch_weights, ub_rdata=UB2MM, accum_raddr=accum_act_raddr, weights_dram_in=weights_dram_in, weights_dram_valid=weights_dram_valid)
+ub_mm_raddr_sig, acc_out, mm_busy, mm_done = MMU_top(
+    acc_mems=acc_mems, data_width=DWIDTH, matrix_size=MATSIZE, 
+    accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, 
+    start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, 
+    overwrite=accum_overwrite, swap_weights=switch_weights, ub_rdata=UB2MM, 
+    accum_raddr=accum_act_raddr, weights_dram_in=weights_dram_in, 
+    weights_dram_valid=weights_dram_valid)
 
 ub_mm_raddr <<= ub_mm_raddr_sig
 
@@ -71,7 +83,11 @@ ub_mm_raddr <<= ub_mm_raddr_sig
 #  Activate Unit
 ############################################################
 
-accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy = act_top(start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, func=act_type, accum_out=acc_out, matsize=MATSIZE, pc=pc, acc_mems=acc_mems)
+accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy = act_top(
+    start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, 
+    nvecs=act_length, func=act_type, accum_out=acc_out, matsize=MATSIZE, 
+    pc=pc, acc_mems=acc_mems)
+
 accum_act_raddr <<= accum_raddr_sig
 
 # Write the result of activate to the unified buffer
@@ -127,13 +143,14 @@ rhm_N = Register(len(rhm_length), "tpu_rhm_N")
 rhm_addr = Register(len(rhm_dec_addr), "tpu_rhm_addr")
 rhm_busy = Register(1, "tpu_rhm_busy")
 rhm_ub_waddr = Register(len(ub_dec_addr), "tpu_rhm_ub_waddr")
+# hostmem_raddr_reg = Register(HOST_ADDR_SIZE, "tpu_hostmem_raddr_reg")
 with conditional_assignment:
     with dispatch_rhm:
         rhm_N.next |= rhm_length
         rhm_busy.next |= 1
         hostmem_raddr |= rhm_dec_addr
         hostmem_re |= 1
-        rhm_addr.next |=  + 1
+        rhm_addr.next |= rhm_dec_addr + 1
         rhm_ub_waddr.next |= ub_dec_addr
     with rhm_busy:
         rhm_N.next |= rhm_N - 1

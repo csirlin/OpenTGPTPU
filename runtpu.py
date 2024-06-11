@@ -61,6 +61,14 @@ def make_vec(value, bits=8):
         value = value >> bits
     return list(reversed(vec))
 
+def make_vec_2(value, bits=8, size=8):
+    vec = []
+    mask = int('1'*bits, 2)
+    for i in range(size):
+        vec.append(value & mask)
+        value = value >> bits
+    return list(vec)
+
 def print_mem(mem):
     ks = sorted(mem.keys())
     for a in ks:
@@ -173,6 +181,7 @@ while True:
     if sim.inspect(hostmem_re):
         print("Reading host memory")
         raddr = sim.inspect(hostmem_raddr)
+        print("Read Host Memory: addr {}".format(raddr))
         if raddr in hostmem: #this causes a pre-mature read of hostmem[end+1] after an RHM read from [start:end]. only lasts for one cycle and doesn't seem to affect anything else
             d[hostmem_rdata] = hostmem[raddr]
 
@@ -200,9 +209,29 @@ while True:
     # print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
     # print(f"data_width_temp = {sim.inspect('data_width_temp')}")
     # print(f"act_acc_mems_wv_0 = {sim.inspect('act_acc_mems_wv_0')}")
-    # if 314 < cycle < 318:
-    #     print(f"UBuffer@{cycle}: {sim.inspect_mem(UBuffer)}")
-    #     print(f"AccMems[0]@{cycle}: {sim.inspect_mem(acc_mems[0])}")
+    print(f"UBuffer@{cycle}:")
+    ub = sim.inspect_mem(UBuffer)
+    for k in sorted(ub.keys()):
+        print(f"\t{k}: {make_vec_2(ub[k], DWIDTH, MATSIZE)}")
+
+    print(f"AccMems@{cycle}:")
+    max_addrs = 0
+    for i in range(len(acc_mems)):
+        # print("keys = ", sim.inspect_mem(acc_mems[i]).keys())
+        max_addrs = max(max_addrs, max(sim.inspect_mem(acc_mems[i]).keys(), default=0))
+    # print(max_addrs)
+    amems = np.zeros([max_addrs+1, len(acc_mems)+1])
+    for i in range(len(acc_mems)):
+        ami = sim.inspect_mem(acc_mems[i])
+        for k in sorted(ami.keys()):
+            amems[k][i+1] = ami[k]
+    np.set_printoptions(linewidth=np.inf)
+    print(f"mmu_advance_fifo = {sim.inspect('mmu_advance_fifo')}")
+
+    for i in range(amems.shape[0]):
+        amems[i][0] = i
+    print(amems.astype(int))
+    print("\n\n")
     sim.step(d)
     cycle += 1
 
@@ -212,7 +241,7 @@ print("Final Host memory:")
 print_mem(hostmem)
 
 
-with open(f'pickled{DWIDTH}.pkl', 'wb') as file:
+with open(f'pickled_{DWIDTH}_{MATSIZE}x{MATSIZE}.pkl', 'wb') as file:
     pickle.dump(sim_trace, file)
 
 # sim_trace.render_trace()

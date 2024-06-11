@@ -4,10 +4,11 @@ import pyrtl
 
 
 # load traces
-with open('branch_eq_pyrtl_32/pickled8.pkl', 'rb') as file:
+with open('branch_eq_pyrtl_32_16x16/pickled_32_16x16.pkl', 'rb') as file:
 	sim_trace1 = pickle.load(file)
 
-with open('branch_eq_pyrtl_32/pickled32.pkl', 'rb') as file:
+# with open('branch_eq_pyrtl_32_16x16/pickled_32_16x16_before_matsize_changes.pkl', 'rb') as file:
+with open('branch_eq_pyrtl_32_8x8/pickled_32_8x8.pkl', 'rb') as file:
 	sim_trace2 = pickle.load(file)
 
 
@@ -50,6 +51,7 @@ print(len(t1_objs), len(t2_objs), len(t1_objs[0]), len(t2_objs[0]))
 
 def print_all_diffs():
 	with open('differences.txt', 'w') as file:
+		diffs = False
 		for i in range(min(len(t1_objs[0]), len(t2_objs[0]))):
 			inequality = False
 			for j in range(min(len(t1_objs), len(t1_objs))):
@@ -58,6 +60,9 @@ def print_all_diffs():
 						inequality = True
 						print(f"Timestep #{i}:", file=file)
 					print(f"\t{wire_names[j]}: {t1_objs[j][i]} vs {t2_objs[j][i]}", file=file)
+					diffs = True
+		if not diffs:
+			print("No differences found.", file=file)
 
 def print_wire_2(wire_name, file=stdout):
 	if file != stdout:
@@ -84,5 +89,15 @@ def print_wire_1(num, wire_name, file=stdout):
 		print(f"#{i}: {wire_name} = {vals[i]}", file=file)
 	if file != stdout:
 		file.close()
+
+def full_cycle_1(num, cycle, file=stdout):
+	if file != stdout:
+		file = open(file, 'w')
+	if num == 1:
+		for i in range(len(t1_objs)):
+			print(f"{wire_names[i]} = {t1_objs[i][cycle]}", file=file)
+	if num == 2:
+		for i in range(len(t2_objs)):
+			print(f"{wire_names[i]} = {t2_objs[i][cycle]}", file=file)
 # for wn in sim_trace2.trace:
 # 	print(len(sim_trace2.wires_to_track))
