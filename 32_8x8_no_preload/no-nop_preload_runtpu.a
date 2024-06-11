@@ -1,0 +1,14 @@
+RHM     0,  0, 8 #0
+RHM     8,  8, 8 #1
+RHM    16, 16, 8 #2
+RW      0        #3
+RW      1        #4
+MMC.SO  8, 8, 8  #5
+ACT     8, 8, 8  #6
+RW      2        #7
+MMC.S  16, 8, 8  #8 #tpu is MMC[flags] [UB] [ACC] [SIZE]. sim is MMC[flags] [ACC] [UB] [SIZE] - this is TPU. 
+RW      1        #9
+MMC.SO  0, 0, 8  #10
+ACT     0, 0, 8  #11
+WHM     8, 8, 8  #12
+HLT              #13
