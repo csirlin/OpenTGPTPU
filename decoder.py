@@ -39,14 +39,19 @@ def decode(instruction):
 
     # parse instruction
     op = instruction[ isa.OP_START*8 : isa.OP_END*8 ]
+    op.name = "dec_op"
     #probe(op, "op")
     iflags = instruction[ isa.FLAGS_START*8 : isa.FLAGS_END*8 ]
+    iflags.name = "dec_flags"
     #probe(iflags, "flags")
     #probe(accum_overwrite, "decode_overwrite")
     ilength = instruction[ isa.LEN_START*8 : isa.LEN_END*8 ]
+    ilength.name = "dec_length"
     memaddr = instruction[ isa.ADDR_START*8 : isa.ADDR_END*8 ]
+    memaddr.name = "dec_memaddr"
     #probe(memaddr, "addr")
     ubaddr = instruction[ isa.UBADDR_START*8 : isa.UBADDR_END*8 ]
+    ubaddr.name = "dec_ubaddr"
     #probe(ubaddr, "ubaddr")
 
     with conditional_assignment:

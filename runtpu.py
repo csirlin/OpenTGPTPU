@@ -188,6 +188,9 @@ while True:
     # Write host memory signal
     if sim.inspect(hostmem_we):
         print("Writing host memory")
+        # print("hostmem_waddr = ", sim.inspect(hostmem_waddr))
+        # print("hostmem_wdata = ", sim.inspect(hostmem_wdata))
+        # print("wdata = ", sim.inspect('wdata'))
         waddr = sim.inspect(hostmem_waddr)
         wdata = sim.inspect(hostmem_wdata)
         hostmem[waddr] = wdata
@@ -228,6 +231,8 @@ while True:
     np.set_printoptions(linewidth=np.inf)
     print(f"mmu_advance_fifo = {sim.inspect('mmu_advance_fifo')}")
 
+    # for i in range(MATSIZE):
+    #     print(f"AccMems[i][start_addr_reg] = {sim.inspect(f'act_acc_mems_at_start_addr_reg_{i}')}")
     for i in range(amems.shape[0]):
         amems[i][0] = i
     print(amems.astype(int))
