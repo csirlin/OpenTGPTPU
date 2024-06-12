@@ -72,7 +72,7 @@ def make_vec_2(value, bits=8, size=8):
 def print_mem(mem):
     ks = sorted(mem.keys())
     for a in ks:
-        print(a, make_vec(mem[a], DWIDTH))
+        print(a, make_vec_2(mem[a], DWIDTH, MATSIZE))
 
 def print_weight_mem(mem, bits=8, size=8):
     ks = sorted(mem.keys())
