@@ -4,11 +4,11 @@ import pyrtl
 
 
 # load traces
-with open('branch_eq_pyrtl_32_16x16/pickled_32_16x16.pkl', 'rb') as file:
+with open('andrews_example/runtpu/pickled_32_8x8_out.pkl', 'rb') as file:
 	sim_trace1 = pickle.load(file)
 
 # with open('branch_eq_pyrtl_32_16x16/pickled_32_16x16_before_matsize_changes.pkl', 'rb') as file:
-with open('branch_eq_pyrtl_32_8x8/pickled_32_8x8.pkl', 'rb') as file:
+with open('andrews_example/runtpu/pickled_32_8x8_mod.pkl', 'rb') as file:
 	sim_trace2 = pickle.load(file)
 
 

@@ -3,7 +3,7 @@ from sys import stdout
 import pyrtl
 
 # with open('32_8x8_no_preload/pickled_32_8x8.pkl', 'rb') as file:
-with open('test_mmc/pickled_32_8x8.pkl', 'rb') as file:
+with open('andrews_example/runtpu/pickled_32_8x8.pkl', 'rb') as file:
 	sim_trace = pickle.load(file)
 
 wires = set()
