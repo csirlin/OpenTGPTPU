@@ -7,24 +7,41 @@ MMC operations are expected to take L + 2N cycles, where
 
 There are 4 testcases:
 - 8x8 matrix, only output 4 rows
-  - python ../runtpu.py duration_8x8_4.out hm_8x8.npy w_8x8.npy > 8x8_4.txt
+  - ``` 
+    python generate_8x8.py
+    python ../../assembler.py duration_8x8_4.a
+    python ../../runtpu.py duration_8x8_4.out hm_8x8.npy w_8x8.npy > 8x8_4.txt 
+    ```
   - should take 4 + 2*8 = 20 cycles
   - success, accumulator last changes in cycle 120 per 8x8_4.txt
 
 - 8x8 matrix, multiply all 8 rows
-  - python ../runtpu.py duration_8x8_8.out hm_8x8.npy w_8x8.npy > 8x8_8.txt
+  - ```
+    python generate_8x8.py
+    python ../../assembler.py duration_8x8_8.a
+    python ../../runtpu.py duration_8x8_8.out hm_8x8.npy w_8x8.npy > 8x8_8.txt
+    ```
   - should take 8 + 2*8 = 24 cycles
   - success, accumulator last changes in cycle 124 per 8x8_8.txt
 
 - 16x16 matrix, only output 8 rows
-  - python ../runtpu.py duration_16x16_8.out hm_16x16.npy w_16x16.npy > 16x16_8.txt
+  - ```
+    python generate_16x16.py
+    python ../../assembler.py duration_16x16_8.a
+    python ../../runtpu.py duration_16x16_8.out hm_16x16.npy w_16x16.npy > 16x16_8.txt
+    ```
   - should take 8 + 2*16 = 40 cycles
   - success, accumulator last changes in cycle 140 per 16x16_8.txt
 
 - 16x16 matrix, multiply all 16 rows
-  - python ../runtpu.py duration_16x16_16.out hm_16x16.npy w_16x16.npy > 16x16_16.txt
+  - ```
+    python generate_16x16.py
+    python ../../assembler.py duration_16x16_16.a
+    python ../../runtpu.py duration_16x16_16.out hm_16x16.npy w_16x16.npy > 16x16_16.txt
+    ```
   - should take 16 + 2*16 = 48 cycles
   - success, accumulator last changes in cycle 148 per 16x16_16.txt
 
 So we can probably switch the weights in the following cycle (issue + L + 2N + 1). 
 
+Errors: any errors are likely caused by mismatch between matrix size in config.py and chosen test case.
