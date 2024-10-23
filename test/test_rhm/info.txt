@@ -1,0 +1,11 @@
+Testing functionality of RHM and WHM instructions.
+Combos of RHM (host memory to unified buffer) and WHM (unified buffer to host memory) of different sizes
+
+test_rhm.py outputs initial configuration for the weights and host memory
+test_rhm.a contains the instructions for the test
+expected_output.txt contains the expected results of running the pyrtl sim 
+
+Running the test (assuming test_rhm is your current directory):
+python test_rhm.py
+python ../../assembler.py test_rhm.a
+python ../../runtpu.py test_rhm.out input.npy weights.npy
