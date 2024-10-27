@@ -1,0 +1,9 @@
+A way to test what the arguments to instructions look like in pyrtl decode.
+Every instruction argument is a unique number that's unlikely to appear in the wire traces for an unrelated reason, so you can be fairly certain which wire values correspond to which arguments when looking at the wire trace.
+
+runtpu_decode_no-nop.py: no nop version
+- python ../../assembler.py 
+- python 
+runtpu_decode_nop.py:    same code but with 49 nops inserted between each functional instruction so that instructions won't conflict with each other and appear at easy intervals (PC's 0, 50, 100, etc).
+
+Run with

@@ -34,6 +34,11 @@ class TPUSim(object):
         # load program and execute instructions
         instructions = self.decode()
         opcodes, operands = instructions[0], instructions[1]
+        # print(f"Instructions:")
+        # if (len(instructions[0]) != len(instructions[1])):
+        #     raise ValueError("Mismatched instruction and operand lengths.")
+        # for i in range(len(instructions[0])):
+        #     print(f"{i}: {opcodes[i]}, {operands[i]}")
         
         # use self.pc to select next instruction, starting from 0, and finishing when halt is reached
         while True:
