@@ -1,6 +1,6 @@
 # UCSB ArchLab OpenTGPTPU Project - Fork of OpenTPU
 
-True general purpose tensor processing unit
+True general purpose tensor processing unit - matrix multiplication is all you need!
 
 ## Python and package versions
 - python     3.8.18
@@ -17,39 +17,6 @@ True general purpose tensor processing unit
 - Instructions to move data between the unified buffer and weight fifo (either as vectors or full matrices)
 - Removing pyrtl simulator's dependence on manually inserted NOPs
 - Optionally prevent a branch instruction from writing back to UB
-
-## Run examples
-
-### Pyrtl simulator
-- From ./branch_eq_pyrtl:
-- ```python ../assembler.py branch_eq_pyrtl.a```
-- ```python branch_eq_pyrtl.py```
-- ```python ../runtpu.py branch_eq_pyrtl.out branch_eq_pyrtl_input.npy branch_eq_pyrtl_weights.npy```
-
-### Software simulator
-Original example
-- From ./branch_eq_sim_orig:
-- ```python ../assembler.py branch_eq_sim_short.a```
-- ```python branch_eq_sim_short.py```
-- ```python ../sim.py branch_eq_sim_short.out branch_eq_sim_short_input.npy branch_eq_sim_short_weights.npy```
-
-Modified example with NOPs to mimic pyrtl simulator
-- From ./branch_eq_sim_orig:
-- ```python ../assembler.py branch_eq_sim_long.a```
-- ```python branch_eq_sim_long.py```
-- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_long_input.npy branch_eq_sim_long_weights.npy```
-
-Modified example that always keeps a weight loaded to mimic pyrtl simulator
-- From ./branch_eq_sim_preload:
-- ```python ../assembler.py branch_eq_sim_short.a```
-- ```python branch_eq_sim_short.py```
-- ```python ../sim.py branch_eq_sim_short.out branch_eq_sim_short_input.npy branch_eq_sim_short_weights.npy```
-
-Modified example with NOPs and weight loading
-- From ./branch_eq_sim_preload:
-- ```python ../assembler.py branch_eq_sim_long.a```
-- ```python branch_eq_sim_long.py```
-- ```python ../sim.py branch_eq_sim_long.out branch_eq_sim_long_input.npy branch_eq_sim_long_weights.npy```
 
 <br />
 <br />
@@ -154,13 +121,13 @@ Hi Norm! Tim welcomes you to Santa Barbara to talk about all things TPU :)
 - RHM src, dst, N
 Read Host Memory.
 Read _N_ vectors from host memory beginning at address _src_ and save them in the UB (unified buffer) beginning at address _dst_.
-- WHM src, dst, N
+- WHM dst, src, N
 Write Host Memory.
 Write _N_ vectors from the UB beginning at address _src_ to host memory beginning at address _dst_.
 - RW addr
 Read Weights.
 Load the weights tile from the weights DRAM at address _addr_ into the on-chip FIFO.
-- MMC.{OS} src, dst, N
+- MMC.{OS} dst, src, N
 Matrix Multiply/Convolution.
 Perform a matrix multiply operation on the _N_ vectors beginning at UB address _src_, storing the result in the accumulator buffers beginning at address _dst_. If the _O_ (overwrite) flag is specified, overwrite the contents of the accumulator buffers at the destination addresses; default behavior is to add to the value there and store the new sum. If the _S_ (switch) flag is specified, switch to using the next tile of weights, which must have already been pre-loaded. The first `MMC` instruction in a program should always use the _S_ flag.
 - ACT.{RQ} src, dst, N
