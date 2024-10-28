@@ -8,4 +8,4 @@ expected_output.txt contains the expected results of running the pyrtl sim
 Running the test (assuming test_rhm is your current directory):
 python test_rhm.py
 python ../../assembler.py test_rhm.a
-python ../../runtpu.py test_rhm.out input.npy weights.npy
+python ../../{runtpu|sim}.py test_rhm.out input.npy weights.npy

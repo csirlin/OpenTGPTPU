@@ -1,4 +1,4 @@
-RHM 0, 0, 3    #0
+RHM     0,  0,  3 #0
 NOP
 NOP
 NOP
@@ -49,7 +49,7 @@ NOP
 NOP
 NOP
 # Block Entry
-RW 0           #1
+RW      0         #1
 NOP
 NOP
 NOP
@@ -99,7 +99,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO 0, 0, 1  #2
+MMC.SO  0,  0,  1 #2
 NOP
 NOP
 NOP
@@ -149,7 +149,7 @@ NOP
 NOP
 NOP
 NOP
-ACT 0, 4, 1    #3
+ACT     0,  4,  1 #3
 NOP
 NOP
 NOP
@@ -199,7 +199,7 @@ NOP
 NOP
 NOP
 NOP
-RW 1           #4
+RW      1         #4
 NOP
 NOP
 NOP
@@ -249,7 +249,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO 2, 0, 1  #5
+MMC.SO  0,  2,  1 #5
 NOP
 NOP
 NOP
@@ -299,7 +299,7 @@ NOP
 NOP
 NOP
 NOP
-RW 2           #6
+RW      2         #6
 NOP
 NOP
 NOP
@@ -349,7 +349,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.S 4, 0, 1    #7
+MMC.S   0,  4,  1 #7
 NOP
 NOP
 NOP
@@ -399,7 +399,7 @@ NOP
 NOP
 NOP
 NOP
-ACT 0, 4, 1    #8
+ACT     0,  4,  1 #8
 NOP
 NOP
 NOP
@@ -450,7 +450,7 @@ NOP
 NOP
 NOP
 # Block Entry
-WHM 0, 1, 1    #9
+WHM     1,  0,  1 #9
 NOP
 NOP
 NOP
@@ -500,7 +500,7 @@ NOP
 NOP
 NOP
 NOP
-HLT            #10
+HLT               #10
 NOP
 NOP
 NOP
@@ -551,7 +551,7 @@ NOP
 NOP
 NOP
 # Block Entry
-RW 3           #11
+RW      3         #11
 NOP
 NOP
 NOP
@@ -601,7 +601,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO 0, 0, 1  #12
+MMC.SO  0,  0,  1 #12
 NOP
 NOP
 NOP
@@ -651,7 +651,7 @@ NOP
 NOP
 NOP
 NOP
-ACT 0, 4, 1    #13
+ACT     0,  4,  1 #13
 NOP
 NOP
 NOP
@@ -701,7 +701,7 @@ NOP
 NOP
 NOP
 NOP
-RW 4           #14
+RW      4         #14
 NOP
 NOP
 NOP
@@ -751,7 +751,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO 0, 0, 1  #15
+MMC.SO  0,  0,  1 #15
 NOP
 NOP
 NOP
@@ -801,7 +801,7 @@ NOP
 NOP
 NOP
 NOP
-ACT 0, 5, 1    #16
+ACT     0,  5,  1 #16
 NOP
 NOP
 NOP
@@ -851,7 +851,7 @@ NOP
 NOP
 NOP
 NOP
-RW 2           #17
+RW      2         #17
 NOP
 NOP
 NOP
@@ -901,7 +901,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO 4, 0, 1  #18
+MMC.SO  0,  4,  1 #18
 NOP
 NOP
 NOP
@@ -951,7 +951,7 @@ NOP
 NOP
 NOP
 NOP
-RW 2           #19
+RW      2         #19
 NOP
 NOP
 NOP
@@ -1001,7 +1001,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.S 5, 0, 1    #20
+MMC.S   0,  5,  1 #20
 NOP
 NOP
 NOP
@@ -1051,7 +1051,7 @@ NOP
 NOP
 NOP
 NOP
-ACT 0, 6, 1    #21
+ACT     0,  6,  1 #21
 NOP
 NOP
 NOP
@@ -1101,7 +1101,7 @@ NOP
 NOP
 NOP
 NOP
-RW 5           #22
+RW      5         #22   
 NOP
 NOP
 NOP
@@ -1151,7 +1151,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.SO 6, 0, 1  #23
+MMC.SO  0,  6,  1 #23
 NOP
 NOP
 NOP
@@ -1201,7 +1201,7 @@ NOP
 NOP
 NOP
 NOP
-ACT 0, 3, 1    #24
+ACT     0,  3,  1 #24
 NOP
 NOP
 NOP
@@ -1251,7 +1251,7 @@ NOP
 NOP
 NOP
 NOP
-WHM 3, 1, 1    #25
+WHM     1,  3,  1 #25
 NOP
 NOP
 NOP
@@ -1301,4 +1301,4 @@ NOP
 NOP
 NOP
 NOP
-HLT            #26
+HLT               #26

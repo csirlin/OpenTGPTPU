@@ -1,4 +1,4 @@
-RHM 0, 0, 24
+RHM  0,  0, 24 # read 24 lines from HM 0 to UB 0
 NOP
 NOP
 NOP
@@ -23,7 +23,7 @@ NOP
 NOP
 NOP
 NOP
-WHM 0, 24, 24
+WHM 24,  0, 24 # write 24 lines from UB 0 to HM 24
 NOP
 NOP
 NOP
@@ -48,7 +48,7 @@ NOP
 NOP
 NOP
 NOP
-RHM 16, 4, 8
+RHM 16,  4,  8
 NOP
 NOP
 NOP
@@ -57,7 +57,7 @@ NOP
 NOP
 NOP
 NOP
-RHM 8, 12, 8
+RHM  8, 12,  8
 NOP
 NOP
 NOP
@@ -66,7 +66,7 @@ NOP
 NOP
 NOP
 NOP
-WHM 0, 48, 24
+WHM 48,  0, 24
 NOP
 NOP
 NOP
@@ -91,22 +91,22 @@ NOP
 NOP
 NOP
 NOP
-RHM 0, 30, 1
+RHM  0, 30, 1
 NOP
-RHM 8, 31, 1
+RHM  8, 31, 1
 NOP
 RHM 16, 32, 1
 NOP
-RHM 1, 33, 2
+RHM  1, 33, 2
 NOP
 NOP
-RHM 9, 35, 2
+RHM  9, 35, 2
 NOP
 NOP
 RHM 17, 37, 2
 NOP
 NOP
-WHM 30, 72, 9
+WHM 72, 30, 9
 NOP
 NOP
 NOP

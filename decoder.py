@@ -59,16 +59,16 @@ def decode(instruction):
             pass
         with op == isa.OPCODE2BIN['WHM'][0]:
             dispatch_whm |= 1
-            ub_raddr |= ubaddr
-            whm_addr |= memaddr
+            ub_raddr |= memaddr # memaddr and ubaddr are switched to match the simulator
+            whm_addr |= ubaddr
             whm_length |= ilength
         with op == isa.OPCODE2BIN['RW'][0]:
             weights_raddr |= memaddr
             weights_read |= 1
         with op == isa.OPCODE2BIN['MMC'][0]:
             dispatch_mm |= 1
-            ub_addr |= ubaddr
-            accum_waddr |= memaddr
+            ub_addr |= memaddr # memaddr and ubaddr are switched to match the simulator
+            accum_waddr |= ubaddr
             mmc_length |= ilength
             accum_overwrite |= iflags[isa.OVERWRITE_BIT]
             switch_weights |= iflags[isa.SWITCH_BIT]

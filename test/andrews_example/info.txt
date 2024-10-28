@@ -1,0 +1,15 @@
+Testing an example from Andrew's compiler for two different inputs, with sim and pyrtl.
+
+Using input f0, the input is doubled. 2 is input and 4 is output.
+Using input f1, the input stays as 2. 
+
+Original: No NOPs. The difference is that all MMC's need a .S flag to switch weights. 
+python ../../../assembler.py open_tpu.a
+python store_npy_mats.py
+python ../../../sim.py open_tpu.out input_f{0|1}.npy weights.npy 
+
+NOP: Includes NOPs for pyrtl use. There are 49 NOPs between each instruction so that each real instruction is a nice number of cycles (50) apart. Also includes the .S flag. 
+python ../../../assembler.py open_tpu_nop.a
+python store_npy_mats.py
+python ../../../{runtpu|sim}.py open_tpu_nop.out input_f{0|1}.npy weights.npy 
+

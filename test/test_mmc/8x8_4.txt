@@ -1,7 +1,6 @@
 DWIDTH = 32, len(state) = 1
-systolic_setup(32, 8, 256, 16, 1, 1, 1, 1)
-[<pyrtl.wire.WireVector object at 0x7f31bfebd3a0>, <pyrtl.wire.WireVector object at 0x7f31bfebda30>, <pyrtl.wire.WireVector object at 0x7f31bfebdbe0>, <pyrtl.wire.WireVector object at 0x7f31bfebdc40>, <pyrtl.wire.WireVector object at 0x7f31bfebdca0>, <pyrtl.wire.WireVector object at 0x7f31bfebdd00>, <pyrtl.wire.WireVector object at 0x7f31bfebdd60>, <pyrtl.wire.WireVector object at 0x7f31bfebddc0>]
-[<pyrtl.wire.WireVector object at 0x7f31bfebde20>, <pyrtl.wire.WireVector object at 0x7f31bfebdeb0>, <pyrtl.wire.WireVector object at 0x7f31bfebdf10>, <pyrtl.wire.WireVector object at 0x7f31bfebdf70>, <pyrtl.wire.WireVector object at 0x7f31bfebdfd0>, <pyrtl.wire.WireVector object at 0x7f31bfec0070>, <pyrtl.wire.WireVector object at 0x7f31bfec00d0>, <pyrtl.wire.WireVector object at 0x7f31bfec0130>]
+[<pyrtl.wire.WireVector object at 0x1028e95b0>, <pyrtl.wire.WireVector object at 0x1028e9c40>, <pyrtl.wire.WireVector object at 0x1028e9df0>, <pyrtl.wire.WireVector object at 0x1028e9e50>, <pyrtl.wire.WireVector object at 0x1028e9eb0>, <pyrtl.wire.WireVector object at 0x1028e9f10>, <pyrtl.wire.WireVector object at 0x1028e9f70>, <pyrtl.wire.WireVector object at 0x1028e9fd0>]
+[<pyrtl.wire.WireVector object at 0x1028ed070>, <pyrtl.wire.WireVector object at 0x1028ed100>, <pyrtl.wire.WireVector object at 0x1028ed160>, <pyrtl.wire.WireVector object at 0x1028ed1c0>, <pyrtl.wire.WireVector object at 0x1028ed220>, <pyrtl.wire.WireVector object at 0x1028ed280>, <pyrtl.wire.WireVector object at 0x1028ed2e0>, <pyrtl.wire.WireVector object at 0x1028ed340>]
 [0 1 2 3 4 5 6 7] 188719626707717088982296698380167795313645871959412740063448560304128
 [ 8  9 10 11 12 13 14 15] 404399200095139021234418278288380638370035170338255113138063712190472
 [16 17 18 19 20 21 22 23] 620078773482560953486539858196593481426424468717097486212678864076816
@@ -2530,11 +2529,11 @@ mmu_advance_fifo = 0
 
 Simulation terminated at cycle 150
 Final Host memory:
-0 [7, 6, 5, 4, 3, 2, 1, 0]
-1 [15, 14, 13, 12, 11, 10, 9, 8]
-2 [23, 22, 21, 20, 19, 18, 17, 16]
-3 [31, 30, 29, 28, 27, 26, 25, 24]
-4 [39, 38, 37, 36, 35, 34, 33, 32]
-5 [47, 46, 45, 44, 43, 42, 41, 40]
-6 [55, 54, 53, 52, 51, 50, 49, 48]
-7 [63, 62, 61, 60, 59, 58, 57, 56]
+0 [0, 1, 2, 3, 4, 5, 6, 7]
+1 [8, 9, 10, 11, 12, 13, 14, 15]
+2 [16, 17, 18, 19, 20, 21, 22, 23]
+3 [24, 25, 26, 27, 28, 29, 30, 31]
+4 [32, 33, 34, 35, 36, 37, 38, 39]
+5 [40, 41, 42, 43, 44, 45, 46, 47]
+6 [48, 49, 50, 51, 52, 53, 54, 55]
+7 [56, 57, 58, 59, 60, 61, 62, 63]
