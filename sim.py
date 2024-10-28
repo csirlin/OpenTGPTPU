@@ -171,20 +171,19 @@ class TPUSim(object):
 
         if opcode == 'RHM':
             print(f'RHM: read host memory [{src_addr}:{src_addr + length}], write to unified buffer [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
-            # for i in range(src_addr, src_addr + length):
-            #     print(f'  UB[{dest_addr + i - src_addr}] = {self.host_memory[i]}')
             print(self.host_memory[src_addr:src_addr + length])
             self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[src_addr:src_addr + length]
         elif opcode == 'WHM':
             print(f'WHM: read unified buffer [{src_addr}:{src_addr + length}], write to host memory [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
-            # for i in range(src_addr, src_addr + length):
-            #     print(f'  HM[{dest_addr + i - src_addr}] = {self.host_memory[i]}')
             print(self.unified_buffer[src_addr:src_addr + length])
+            
+            # extend the host memory if needed
+            if (self.host_memory.shape[0] < dest_addr + length):
+                self.host_memory.resize((dest_addr + length, WIDTH))
+            
             self.host_memory[dest_addr:dest_addr + length] = self.unified_buffer[src_addr:src_addr + length]
         elif opcode == 'RW':
             print(f'RW {src_addr}: read weight matrix {src_addr} into weight FIFO')
-            # for i in range(len(self.weight_memory[src_addr])):
-            #     print(f'  {self.weight_memory[src_addr][i]}')
             print(self.weight_memory[src_addr])
             self.weight_fifo.append(self.weight_memory[src_addr])
         else:
