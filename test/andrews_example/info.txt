@@ -1,4 +1,4 @@
-Testing an example from Andrew's compiler for two different inputs, with sim and pyrtl.
+Testing an example from Andrew's compiler (example.asm) for two different inputs, with sim and pyrtl.
 
 Using input f0, the input is doubled. 2 is input and 4 is output.
 Using input f1, the input stays as 2. 
