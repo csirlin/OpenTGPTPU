@@ -2,85 +2,97 @@ import pickle
 from sys import stdout
 import pyrtl
 
-# with open('32_8x8_no_preload/pickled_32_8x8.pkl', 'rb') as file:
-with open('../test/andrews_example/nop/pickled_32_8x8.pkl', 'rb') as file:
+
+# load pyrtl trace from pickle file
+with open('../test/test_rhm/pickled_32_8x8.pkl', 'rb') as file:
 	sim_trace = pickle.load(file)
 
+# get all the non-const wire names
 wires = set()
 for wn in sim_trace.trace:
 	if wn.find('const') != 0:
 		wires.add(wn)
 
+# load all the wires into objs
+# objs[i][j] is the value of wire i (in alphabetical order) at cycle j
 wire_names = sorted(list(wires))
 objs = []
 for wn in wire_names:
 	objs.append(sim_trace.trace[wn])
 
-# for i in range(len(t1_objs)):
-# 	if len(t1_objs[i]) != 601:
-# 		print(f"len(t1_objs[{i}]) == {len(t1_objs[i])}")
-# 		print(f"t1_wires[{i}] == {t1_wires[i]}")
 
-# def print_all_diffs():
-# 	with open('differences.txt', 'w') as file:
-# 		for i in range(len(t1_objs[0])):
-# 			inequality = False
-# 			for j in range(len(t1_objs)):
-# 				if t1_objs[j][i] != t2_objs[j][i]:
-# 					if not inequality:
-# 						inequality = True
-# 						print(f"Timestep #{i}:", file=file)
-# 					print(f"\t{t1_wires[j]}: {t1_objs[j][i]} vs {t2_objs[j][i]}", file=file)
-
-# def print_wire_2(wire_name, file=stdout):
-# 	if file != stdout:
-# 		file = open(file, 'w')
-# 	vals1 = sim_trace1.trace[wire_name]
-# 	vals2 = sim_trace2.trace[wire_name]
-# 	for i in range(len(vals1)):
-# 		if vals1[i] == vals2[i]:
-# 			print(f"#{i}: {wire_name} (same) = {vals1[i]}", file=file)
-# 		else:
-# 			print(f"#{i}: {wire_name} (diff) = {vals1[i]} vs {vals2[i]}", file=file)
-# 	if file != stdout:
-# 		file.close()
-
+# print the values of wire_name for each cycle
 def print_wire_1(wire_name, file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
+
 	vals = objs[wire_names.index(wire_name)]
 	for i in range(len(vals)):
 		print(f"#{i}: {wire_name} = {vals[i]}", file=file)
+
 	if file != stdout:
 		file.close()
 
-def print_wire_cat(wire_prefix, file=stdout):
-	cycles = len(objs[0])
+
+# print the values of all wires that match a given prefix for each cycle
+def print_wire_prefix(wire_prefix, file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
-	vals = []
-	wire_name_list = []
+
+	# filter out wires that don't have the prefix
+	filtered_objs = []
+	filtered_wire_names = []
 	for wn in wire_names:
 		if wn.find(wire_prefix) == 0:
-			wire_name_list.append(wn)
-			vals.append(objs[wire_names.index(wn)])
-	for i in range(len(vals[0])):
+			filtered_wire_names.append(wn)
+			filtered_objs.append(objs[wire_names.index(wn)])
+
+	# print the values of the filtered wires for each cycle 
+	for i in range(len(filtered_objs[0])):
 		print(f"#{i}:", file=file)
-		for j in range(len(wire_name_list)):
-			print(f"\t{wire_name_list[j]} = {vals[j][i]}", file=file)
+		for j in range(len(filtered_wire_names)):
+			print(f"\t{filtered_wire_names[j]} = {filtered_objs[j][i]}", file=file)
+			
 	if file != stdout:
 		file.close()
 
+
+# print changes in wire values between consecutive cycles
 def print_cycle_diff(file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
-	for i in range(1, len(objs[0])):
-		print(f"Cycle {i-1} -> {i}:", file=file)
-		print(i, end = ' ')
-		for wn in wire_names:
-			if objs[wire_names.index(wn)][i] != objs[wire_names.index(wn)][i-1]:
-				print(f"\t{wn}: {objs[wire_names.index(wn)][i-1]} -> {objs[wire_names.index(wn)][i]}", file=file)
+
+	# iterate through each cycle
+	for cycle in range(1, len(objs[0])):
+		print(f"Cycle {cycle-1} -> {cycle}:", file=file)
+		print(cycle, end = ' ') # log progress to console
+		
+		# go through each wire value and print if it has changed
+		for w_index, wn in enumerate(wire_names):	
+			if objs[w_index][cycle] != objs[w_index][cycle-1]: 
+				print(f"\t{wn}: {objs[wire_names.index(wn)][cycle-1]} -> {objs[wire_names.index(wn)][cycle]}", file=file)
+	
 	if file != stdout:
 		file.close()
-# for wn in sim_trace2.trace:
-# 	print(len(sim_trace2.wires_to_track))
+
+
+# find all the unique wires that change between cycles start and end
+def find_changed_wires(start, end, file=stdout):
+	
+	# go through each cycle change (from start -> start+1 to end-1 -> end) 
+	# and create a set of unique wires that change
+	changed_wires = set()
+	for cycle in range(start, end):
+		for w_index, wn in enumerate(wire_names):
+			if objs[w_index][cycle] != objs[w_index][cycle+1]:
+				changed_wires.add(wn)
+	
+	if file != stdout:
+		file = open(file, 'w')
+
+	# print the changed wires
+	for wn in sorted(list(changed_wires)):
+		print(wn, file=file)
+
+	if file != stdout:
+		file.close()
