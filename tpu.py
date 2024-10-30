@@ -104,7 +104,7 @@ with conditional_assignment:
 #  Read/Write Host Memory
 ############################################################
 
-hostmem_raddr = Output(HOST_ADDR_SIZE, "tpu_raddr")
+hostmem_raddr = Output(HOST_ADDR_SIZE, "tpu_hostmem_raddr")
 hostmem_rdata = Input(DWIDTH*MATSIZE, "tpu_hostmem_rdata")
 hostmem_re = Output(1, "tpu_hostmem_re")
 hostmem_waddr = Output(HOST_ADDR_SIZE, "tpu_hostmem_waddr")
