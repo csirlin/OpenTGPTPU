@@ -4,10 +4,10 @@ import pyrtl
 
 
 # load pyrtl traces from pickle file
-with open('../test/andrews_example/nop/pickled_32_8x8.pkl', 'rb') as file:
+with open('../test/test_rhm/pickled_32_8x8_0_0_24.pkl', 'rb') as file:
 	sim_trace1 = pickle.load(file)
 
-with open('../test/andrews_example/nop/pickled_32_8x8_mod.pkl', 'rb') as file:
+with open('../test/test_rhm/pickled_32_8x8_4_4_20.pkl', 'rb') as file:
 	sim_trace2 = pickle.load(file)
 
 # get all the non-const wire names
@@ -51,7 +51,7 @@ def print_all_diffs():
 			inequality = False
 			
 			# ...print each wire with a different value in the two traces
-			for j in range(t1_objs):
+			for j in range(len(t1_objs)):
 				if t1_objs[j][i] != t2_objs[j][i] and not (t1_objs[j][i] == 8 and t2_objs[j][i] == 32):
 					if not inequality: # only print cycle number if there are differences in that cycle, and only once
 						inequality = True
