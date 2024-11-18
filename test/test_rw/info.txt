@@ -1,0 +1,11 @@
+Testing functionality of RW instructions.
+Load different weight matrices up to and past the 4-weight capacity of the buffer
+
+test_rhm.py outputs initial configuration for the weights and host memory
+test_rhm.a contains the instructions for the test
+expected_output.txt contains the expected results of running the pyrtl sim 
+
+Running the test (assuming test_rw is your current directory):
+python test_rw.py
+python ../../assembler.py test_rw.a
+python ../../{runtpu|sim}.py test_rw.out input.npy weights.npy
