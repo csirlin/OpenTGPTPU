@@ -1,0 +1,12 @@
+fifo_empty2
+fifo_empty3
+fifo_empty4
+fifo_startup
+mac_weight_tag_reg_0_0
+mma_in_weights_tag_1_0
+mma_out_newtag_0_0
+mmu_startup
+mmu_waiting
+tpu_pc
+tpu_pc_out
+weights_wait

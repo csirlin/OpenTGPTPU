@@ -1,0 +1,17 @@
+dec_dispatch_rhm
+dec_length
+dec_memaddr
+dec_op
+dec_rhm_addr
+dec_rhm_length
+dec_ub_raddr
+dec_ubaddr
+tpu_hostmem_raddr
+tpu_hostmem_rdata
+tpu_hostmem_re
+tpu_pc
+tpu_pc_out
+tpu_rhm_N
+tpu_rhm_addr
+tpu_rhm_busy
+tpu_rhm_ub_waddr

@@ -1,0 +1,15 @@
+dec_memaddr
+dec_op
+dec_weights_raddr
+dec_weights_read
+fifo_full
+fifo_mem_valid_wv
+fifo_state
+fifo_state_wv
+fifo_topbuf_0
+tpu_pc
+tpu_pc_out
+tpu_weights_dram_in
+tpu_weights_dram_raddr
+tpu_weights_dram_read
+tpu_weights_dram_valid

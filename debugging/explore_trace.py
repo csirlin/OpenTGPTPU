@@ -4,7 +4,7 @@ import pyrtl
 
 
 # load pyrtl trace from pickle file
-with open('../test/test_rhm/pickled_32_8x8.pkl', 'rb') as file:
+with open('../test/test_mmc/pickled_32_8x8.pkl', 'rb') as file:
 	sim_trace = pickle.load(file)
 
 # get all the non-const wire names
