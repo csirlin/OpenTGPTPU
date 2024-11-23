@@ -1,6 +1,7 @@
 pyenv/*
-__pycache__/*
+**/__pycache__/*
 *.npy
 *.pkl
 *.out
 traces/*
+**/.DS_Store

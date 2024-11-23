@@ -5,10 +5,10 @@ import pyrtl
 
 # load pyrtl traces from pickle file
 with open('../test/test_rhm/pickled_32_8x8_0_0_24.pkl', 'rb') as file:
-	sim_trace1 = pickle.load(file)
+	(hostmem1, sim_trace1) = pickle.load(file)
 
 with open('../test/test_rhm/pickled_32_8x8_4_4_20.pkl', 'rb') as file:
-	sim_trace2 = pickle.load(file)
+	(hostmem1, sim_trace2) = pickle.load(file)
 
 # get all the non-const wire names
 t1_wires = set()

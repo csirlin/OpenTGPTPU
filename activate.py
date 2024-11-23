@@ -50,8 +50,8 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
 
     acc_mems_wvs = [WireVector(len(acc_mems[i][start_addr_reg]), f"act_acc_mems_wv_{i}") for i in range(len(acc_mems))]
     acc_outs_wvs = [WireVector(len(accum_out[i]), f"act_acc_outs_wv_{i}") for i in range(len(accum_out))]
-    print(acc_mems_wvs)
-    print(acc_outs_wvs)
+    # print(acc_mems_wvs)
+    # print(acc_outs_wvs)
     for i in range(len(acc_mems)):
         acc_mems_wvs[i] <<= acc_mems[i][start_addr_reg]
     for i in range(len(accum_out)):
