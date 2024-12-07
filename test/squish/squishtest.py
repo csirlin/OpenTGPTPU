@@ -105,7 +105,7 @@ class Instruction:
     # this allows for testing with different matsizes without changing the provided instructions.
     # absolute addressing is still allowed to enable future work to determine how far you can
     # compress partial-length instrs, like a matmul of only 4 rows with a matsize of 8.
-    def to_string(self, bitwidth: int, absolute_addresses: bool) -> str:
+    def to_string(self, matsize: int, absolute_addresses: bool) -> str:
         instruction_str = self.operation.value
         if self.opflag:
             instruction_str += f".{self.opflag.value}"
@@ -114,7 +114,7 @@ class Instruction:
             if absolute_addresses:
                 instruction_str += f" {self.arg1}, {self.arg2}, {self.arg3}"
             else:
-                instruction_str += f" {self.arg1 * bitwidth}, {self.arg2 * bitwidth}, {self.arg3 * bitwidth}"
+                instruction_str += f" {self.arg1 * matsize}, {self.arg2 * matsize}, {self.arg3 * matsize}"
         elif self.operation in [Operation.RW]:
             instruction_str += f" {self.arg1}"
         
@@ -181,34 +181,34 @@ class Program:
 
             # all generated files should start with 50 NOPs (PCs 0-49)
             for _ in range(50):
-                f.write(f"{nop.to_string(self.bitwidth, self.absolute_addresses)}\n")
+                f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
             
             # after that, every 50th instruction is a setup instruction
             for i in range(len(self.setup)):
-                f.write(f"{self.setup[i].to_string(self.bitwidth, self.absolute_addresses)}\n")
+                f.write(f"{self.setup[i].to_string(self.matsize, self.absolute_addresses)}\n")
                 for _ in range(49):
-                    f.write(f"{nop.to_string(self.bitwidth, self.absolute_addresses)}\n")
+                    f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
 
             # then the instructions under test, self.distance instructions apart
             if len(self.instrs) != 2:
                 raise ValueError("Please provide exactly two instructions to test.")
-            f.write(f"{self.instrs[0].to_string(self.bitwidth, self.absolute_addresses)}\n")
+            f.write(f"{self.instrs[0].to_string(self.matsize, self.absolute_addresses)}\n")
             for _ in range(self.distance - 1):
-                f.write(f"{nop.to_string(self.bitwidth, self.absolute_addresses)}\n")
-            f.write(f"{self.instrs[1].to_string(self.bitwidth, self.absolute_addresses)}\n")
+                f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
+            f.write(f"{self.instrs[1].to_string(self.matsize, self.absolute_addresses)}\n")
 
             # pad with NOPs so that the first cleanup instruction is 100 lines after the first instruction under test 
             for _ in range(99-self.distance):
-                f.write(f"{nop.to_string(self.bitwidth, self.absolute_addresses)}\n")
+                f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
 
             # after that, every 50th instruction is a cleanup instruction
             for i in range(len(self.cleanup)):
-                f.write(f"{self.cleanup[i].to_string(self.bitwidth, self.absolute_addresses)}\n")
+                f.write(f"{self.cleanup[i].to_string(self.matsize, self.absolute_addresses)}\n")
                 for _ in range(49):
-                    f.write(f"{nop.to_string(self.bitwidth, self.absolute_addresses)}\n")
+                    f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
 
             # finally, HLT
-            f.write(f"{hlt.to_string(self.bitwidth, self.absolute_addresses)}\n")
+            f.write(f"{hlt.to_string(self.matsize, self.absolute_addresses)}\n")
 
 
 parser = argparse.ArgumentParser(description='Generate test cases that squish TPU instructions together.')
@@ -236,28 +236,28 @@ program_dir = f"{os.path.dirname(__file__)}/{args.name}"
 program = Program(args, program_dir) 
 
 # make folder for the test (squish/name/) and add weights and inputs if they don't already exist
-weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 16)
-hostmem_filename = make_hostmem(program_dir, program.matsize, program.bitwidth, 16)
+weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 4)
+hostmem_filename = make_hostmem(program_dir, program.matsize, program.bitwidth, 4)
 
 
 # if -r is set, or the following don't exist, or the test name is default (test):
-    # generate .a file for d=50 (control)
+# generate .a file for d=50 (control)
 if args.reset or not os.path.exists(program.get_filepath(binary=False, control=True)) or program.name == "test":
     program.generate_dot_a(control=True)
 
-    # assemble into .out file for d=50 (control)
+# assemble into .out file for d=50 (control)
 if args.reset or not os.path.exists(program.get_filepath(binary=True, control=True)) or program.name == "test":
     assemble(f"{program_dir}/control.a", 0)
 
-    # generate .a file (test)
+# generate .a file (test)
 if args.reset or not os.path.exists(program.get_filepath(binary=False, control=False)) or program.name == "test":
     program.generate_dot_a(control=False)    
 
-    # assemble into .out file (test)
+# assemble into .out file (test)
 if args.reset or not os.path.exists(program.get_filepath(binary=True, control=False)) or program.name == "test":
     assemble(f"{program_dir}/{program.name}.a", 0)
 
-    # run d=50 .out file (control) and get the resulting matrix and final trace
+# run d=50 .out file (control) and get the resulting matrix and final trace
 ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl"
 if args.reset or not os.path.exists(ctrl_output_filename) or program.name == "test":
     runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=True), hostmem=hostmem_filename, weightsmem=weights_filename)
@@ -272,14 +272,17 @@ runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, con
 (test_hostmem, test_sim_trace) = runtpu(runtpu_test_args, name=test_output_filename)
 
 # compare results and output a verdict
-#    comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
+# comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
 # let's just do a comparison of the host memory for now
 print("Control host memory:")
 print_mem(ctrl_hostmem)
 print("Test host memory:")
 print_mem(test_hostmem)
 
-
+if ctrl_hostmem == test_hostmem:
+    print(f"Test {args.name} matches control")
+else:
+    print(f"Test failed! {args.name} does not match control")
 
 
 # print(args.instrs)      # Output: ['instr1', 'instr2']
