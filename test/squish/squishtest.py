@@ -10,22 +10,13 @@ parameters for:
 - cleanup instructions
 """
 
-# from argparse import Namespace
-
-# # Manually create a Namespace
-# args = Namespace(MATSIZE=8, HOST_ADDR_SIZE=64, DWIDTH=32)
-
-# # Access attributes
-# print(args.MATSIZE)         # Output: 8
-# print(args.HOST_ADDR_SIZE)  # Output: 64
-# print(args.DWIDTH)          # Output: 32
 from datetime import datetime
 from typing import List, Optional
 import pickle
 import sys
 import os
 
-# add root folder (OPENTGPTPU) to sys.path
+# add base folder (OPENTGPTPU) to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from dataclasses import dataclass
@@ -211,84 +202,84 @@ class Program:
             f.write(f"{hlt.to_string(self.matsize, self.absolute_addresses)}\n")
 
 
-parser = argparse.ArgumentParser(description='Generate test cases that squish TPU instructions together.')
-parser.add_argument("instrs", nargs=2, help="Instructions under test.")
-parser.add_argument("-d", "--distance", type=int, default=50, help="Distance between instructions under test.")
-parser.add_argument("-b", "--bitwidth", type=int, default=32, help="Bitwidth of the instructions.")
-parser.add_argument("-m", "--matsize", type=int, default=8, help="Size of the matrices.")
-parser.add_argument("-n", "--name", type=str, default="test", help="Name of the test.")
-parser.add_argument("-s", "--setup", type=str, action="append", help="Setup instructions.")
-parser.add_argument("-c", "--cleanup", type=str, action="append", help="Cleanup instructions.")
-parser.add_argument("-r", "--reset", action="store_true", help="Rebuild test folder from the beginning.")
-parser.add_argument("-a", "--absoluteaddrs", action="store_true", help="Use absolute addresses.")
-args = parser.parse_args()
-print(args.instrs)
-if len(args.instrs) != 2:
-    print("Please provide two instructions to test.")
-    exit(1)
+# run the squish test given the args
+def squish_test(args: argparse.Namespace) -> None:
 
-if args.distance < 1 or args.distance > 50:
-    print("Distance must be between 1 and 50.")
-    exit(1)
+    if len(args.instrs) != 2:
+        print("Please provide two instructions to test.")
+        exit(1)
 
-# parse args into Program object
-program_dir = f"{os.path.dirname(__file__)}/{args.name}"
-program = Program(args, program_dir) 
+    if args.distance < 1 or args.distance > 50:
+        print("Distance must be between 1 and 50.")
+        exit(1)
 
-# make folder for the test (squish/name/) and add weights and inputs if they don't already exist
-weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 4)
-hostmem_filename = make_hostmem(program_dir, program.matsize, program.bitwidth, 4)
+    # parse args into Program object
+    program_dir = f"{os.path.dirname(__file__)}/{args.name}"
+    program = Program(args, program_dir) 
+
+    # make folder for the test (squish/name/) and add weights and inputs if they don't already exist
+    weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 4)
+    hostmem_filename = make_hostmem(program_dir, program.matsize, program.bitwidth, 4)
 
 
-# if -r is set, or the following don't exist, or the test name is default (test):
-# generate .a file for d=50 (control)
-if args.reset or not os.path.exists(program.get_filepath(binary=False, control=True)) or program.name == "test":
-    program.generate_dot_a(control=True)
+    # if -r is set, or the following don't exist, or the test name is default (test):
+    # generate .a file for d=50 (control)
+    if args.reset or not os.path.exists(program.get_filepath(binary=False, control=True)) or program.name == "test":
+        program.generate_dot_a(control=True)
 
-# assemble into .out file for d=50 (control)
-if args.reset or not os.path.exists(program.get_filepath(binary=True, control=True)) or program.name == "test":
-    assemble(f"{program_dir}/control.a", 0)
+    # assemble into .out file for d=50 (control)
+    if args.reset or not os.path.exists(program.get_filepath(binary=True, control=True)) or program.name == "test":
+        assemble(f"{program_dir}/control.a", 0)
 
-# generate .a file (test)
-if args.reset or not os.path.exists(program.get_filepath(binary=False, control=False)) or program.name == "test":
-    program.generate_dot_a(control=False)    
+    # generate .a file (test)
+    if args.reset or not os.path.exists(program.get_filepath(binary=False, control=False)) or program.name == "test":
+        program.generate_dot_a(control=False)    
 
-# assemble into .out file (test)
-if args.reset or not os.path.exists(program.get_filepath(binary=True, control=False)) or program.name == "test":
-    assemble(f"{program_dir}/{program.name}.a", 0)
+    # assemble into .out file (test)
+    if args.reset or not os.path.exists(program.get_filepath(binary=True, control=False)) or program.name == "test":
+        assemble(f"{program_dir}/{program.name}.a", 0)
 
-# run d=50 .out file (control) and get the resulting matrix and final trace
-ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl"
-if args.reset or not os.path.exists(ctrl_output_filename) or program.name == "test":
-    runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=True), hostmem=hostmem_filename, weightsmem=weights_filename)
-    (ctrl_hostmem, ctrl_sim_trace) = runtpu(runtpu_ctrl_args, name=ctrl_output_filename)
-else:
-    with open(ctrl_output_filename, "rb") as f:
-        (ctrl_hostmem, ctrl_sim_trace) = pickle.load(f)
+    # run d=50 .out file (control) and get the resulting matrix and final trace
+    ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl"
+    if args.reset or not os.path.exists(ctrl_output_filename) or program.name == "test":
+        runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=True), hostmem=hostmem_filename, weightsmem=weights_filename)
+        (ctrl_hostmem, ctrl_sim_trace) = runtpu(runtpu_ctrl_args, name=ctrl_output_filename)
+    else:
+        with open(ctrl_output_filename, "rb") as f:
+            (ctrl_hostmem, ctrl_sim_trace) = pickle.load(f)
 
-# run runtpu.py in standard mode and get result
-test_output_filename = f'{program_dir}/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl'
-runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=False), hostmem=hostmem_filename, weightsmem=weights_filename)
-(test_hostmem, test_sim_trace) = runtpu(runtpu_test_args, name=test_output_filename)
+    # run runtpu.py in standard mode and get result
+    test_output_filename = f'{program_dir}/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl'
+    runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=False), hostmem=hostmem_filename, weightsmem=weights_filename)
+    (test_hostmem, test_sim_trace) = runtpu(runtpu_test_args, name=test_output_filename)
 
-# compare results and output a verdict
-# comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
-# let's just do a comparison of the host memory for now
-print("Control host memory:")
-print_mem(ctrl_hostmem)
-print("Test host memory:")
-print_mem(test_hostmem)
+    # compare results and output a verdict
+    # comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
+    # let's just do a comparison of the host memory for now
+    print("Control host memory:")
+    print_mem(ctrl_hostmem)
+    print("Test host memory:")
+    print_mem(test_hostmem)
 
-if ctrl_hostmem == test_hostmem:
-    print(f"Test {args.name} matches control")
-else:
-    print(f"Test failed! {args.name} does not match control")
+    if ctrl_hostmem == test_hostmem:
+        print(f"Test {args.name} matches control")
+    else:
+        print(f"Test failed! {args.name} does not match control")
 
 
-# print(args.instrs)      # Output: ['instr1', 'instr2']
-# print(args.distance)    # Output: 50
-# print(args.bitwidth)    # Output: 32
-# print(args.matsize)     # Output: 8
-# print(args.name)        # Output: 'test'
-# print(args.setup)       # Output: ['setup1', 'setup2']
-# print(args.cleanup)     # Output: ['cleanup1', 'cleanup2']
+# invoke squish test from command line
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate test cases that squish TPU instructions together.')
+    parser.add_argument("instrs", nargs=2, help="Instructions under test.")
+    parser.add_argument("-d", "--distance", type=int, default=50, help="Distance between instructions under test.")
+    parser.add_argument("-b", "--bitwidth", type=int, default=32, help="Bitwidth of the instructions.")
+    parser.add_argument("-m", "--matsize", type=int, default=8, help="Size of the matrices.")
+    parser.add_argument("-n", "--name", type=str, default="test", help="Name of the test.")
+    parser.add_argument("-s", "--setup", type=str, action="append", help="Setup instructions.")
+    parser.add_argument("-c", "--cleanup", type=str, action="append", help="Cleanup instructions.")
+    parser.add_argument("-r", "--reset", action="store_true", help="Rebuild test folder from the beginning.")
+    parser.add_argument("-a", "--absoluteaddrs", action="store_true", help="Use absolute addresses.")
+    args = parser.parse_args()
+
+    squish_test(args)
+
