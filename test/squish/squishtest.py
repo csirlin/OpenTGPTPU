@@ -127,29 +127,29 @@ class Program:
 
     # parse instrs, setup, and cleanup into Instruction objects
     # load the rest of the args into the Program object
-    def __init__(self, args: argparse.Namespace, program_dir: str) -> 'Program':
+    def __init__(self, instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir: str) -> 'Program':
         self.instrs = []
         self.setup = []
         self.cleanup = []
 
-        for i in range(len(args.instrs)):
-            self.instrs.append(Instruction(args.instrs[i]))
+        for i in range(len(instrs)):
+            self.instrs.append(Instruction(instrs[i]))
 
-        if args.setup:
-            for i in range(len(args.setup)):
-                self.setup.append(Instruction(args.setup[i]))
+        if setup:
+            for i in range(len(setup)):
+                self.setup.append(Instruction(setup[i]))
 
-        if args.cleanup:
-            for i in range(len(args.cleanup)):
-                self.cleanup.append(Instruction(args.cleanup[i]))
+        if cleanup:
+            for i in range(len(cleanup)):
+                self.cleanup.append(Instruction(cleanup[i]))
 
-        self.distance = args.distance
-        self.bitwidth = args.bitwidth
-        self.matsize = args.matsize
-        self.name = args.name
-        self.reset = args.reset
+        self.distance = distance
+        self.bitwidth = bitwidth
+        self.matsize = matsize
+        self.name = name
+        self.reset = reset
         self.program_dir = program_dir
-        self.absolute_addresses = args.absoluteaddrs
+        self.absolute_addresses = absoluteaddrs
 
     def get_filepath(self, binary: bool, control: bool) -> str:
         filepath = self.program_dir
@@ -203,19 +203,21 @@ class Program:
 
 
 # run the squish test given the args
-def squish_test(args: argparse.Namespace) -> None:
+def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int, 
+                name: str, setup: list, cleanup: list, reset: bool, 
+                absoluteaddrs: bool) -> tuple[bool, dict[int, int]]:
 
-    if len(args.instrs) != 2:
+    if len(instrs) != 2:
         print("Please provide two instructions to test.")
         exit(1)
 
-    if args.distance < 1 or args.distance > 50:
+    if distance < 1 or distance > 50:
         print("Distance must be between 1 and 50.")
         exit(1)
 
     # parse args into Program object
-    program_dir = f"{os.path.dirname(__file__)}/{args.name}"
-    program = Program(args, program_dir) 
+    program_dir = f"{os.path.dirname(__file__)}/{name}"
+    program = Program(instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir) 
 
     # make folder for the test (squish/name/) and add weights and inputs if they don't already exist
     weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 4)
@@ -224,24 +226,24 @@ def squish_test(args: argparse.Namespace) -> None:
 
     # if -r is set, or the following don't exist, or the test name is default (test):
     # generate .a file for d=50 (control)
-    if args.reset or not os.path.exists(program.get_filepath(binary=False, control=True)) or program.name == "test":
+    if reset or not os.path.exists(program.get_filepath(binary=False, control=True)) or program.name == "test":
         program.generate_dot_a(control=True)
 
     # assemble into .out file for d=50 (control)
-    if args.reset or not os.path.exists(program.get_filepath(binary=True, control=True)) or program.name == "test":
+    if reset or not os.path.exists(program.get_filepath(binary=True, control=True)) or program.name == "test":
         assemble(f"{program_dir}/control.a", 0)
 
     # generate .a file (test)
-    if args.reset or not os.path.exists(program.get_filepath(binary=False, control=False)) or program.name == "test":
+    if reset or not os.path.exists(program.get_filepath(binary=False, control=False)) or program.name == "test":
         program.generate_dot_a(control=False)    
 
     # assemble into .out file (test)
-    if args.reset or not os.path.exists(program.get_filepath(binary=True, control=False)) or program.name == "test":
+    if reset or not os.path.exists(program.get_filepath(binary=True, control=False)) or program.name == "test":
         assemble(f"{program_dir}/{program.name}.a", 0)
 
     # run d=50 .out file (control) and get the resulting matrix and final trace
     ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl"
-    if args.reset or not os.path.exists(ctrl_output_filename) or program.name == "test":
+    if reset or not os.path.exists(ctrl_output_filename) or program.name == "test":
         runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=True), hostmem=hostmem_filename, weightsmem=weights_filename)
         (ctrl_hostmem, ctrl_sim_trace) = runtpu(runtpu_ctrl_args, name=ctrl_output_filename)
     else:
@@ -262,9 +264,11 @@ def squish_test(args: argparse.Namespace) -> None:
     print_mem(test_hostmem)
 
     if ctrl_hostmem == test_hostmem:
-        print(f"Test {args.name} matches control")
+        print(f"Test {name} matches control")
+        return True, test_hostmem
     else:
-        print(f"Test failed! {args.name} does not match control")
+        print(f"Test failed! {name} does not match control")
+        return False, test_hostmem
 
 
 # invoke squish test from command line
@@ -281,5 +285,15 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--absoluteaddrs", action="store_true", help="Use absolute addresses.")
     args = parser.parse_args()
 
-    squish_test(args)
+    instrs: list = args.instrs
+    distance: int = args.distance
+    bitwidth: int = args.bitwidth
+    matsize: int = args.matsize
+    name: str = args.name
+    setup: list = args.setup if args.setup else []
+    cleanup: list = args.cleanup if args.cleanup else []
+    reset: bool = args.reset
+    absoluteaddrs: bool = args.absoluteaddrs
 
+    squish_test(instrs, distance, bitwidth, matsize, name, 
+                setup, cleanup, reset, absoluteaddrs)
