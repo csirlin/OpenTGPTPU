@@ -11,7 +11,7 @@ parameters for:
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict
 import pickle
 import sys
 import os
@@ -205,7 +205,7 @@ class Program:
 # run the squish test given the args
 def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int, 
                 name: str, setup: list, cleanup: list, reset: bool, 
-                absoluteaddrs: bool) -> tuple[bool, dict[int, int]]:
+                absoluteaddrs: bool) -> Tuple[bool, Dict[int, int]]:
 
     if len(instrs) != 2:
         print("Please provide two instructions to test.")

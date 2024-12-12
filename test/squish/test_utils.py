@@ -28,6 +28,36 @@ def min_viable_distance_all(function, bitwidths, matsizes):
             d[bitwidth][matsize] = distance
     return d
 
+### custom tests ###
+
+# test the behavior of the MMC switch instruction. the expected behavior is that
+# a loaded weight will enter the back of the queue. An MMC with or without the
+# .S flag will use the weight at the front of the queue. If the .S flag is not
+# used, then the instruction will use the front weight and not switch it. If the
+# .S is used, then the instruction will use the front weight and afterwards, 
+# discard the front instruction to let the next one come to the front.
+# this test loads HM0, HM1, and HM2 to UB0, UB1, and UB2, respectively.
+# it then loads RW0 and RW1 to the weight queue.
+# it then does the following multiplication operations:
+#     UB0 * RW0 -> ACC0 (no .S)
+#     UB1 * RW0 -> ACC1 (.S)
+#     UB2 * RW1 -> ACC2 (.S but it doesn't matter)
+# it then writes ACC0 to UB3, ACC1 to UB4, and ACC2 to UB5.
+# it then writes UB3 to HM3, UB4 to HM4, and UB5 to HM5.
+# the expected results are that HM3 = HM0 * RW0, HM4 = HM1 * RW0, and 
+# HM5 = HM2 * RW1.
+def test_mmc_switch_behavior(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RHM 2 2 1",
+                              "RW 0", "RW 1",
+                              "MMC 0 0 1", "MMC.S 1 1 1", "MMC.S 2 2 1",
+                              "ACT 0 3 1", "ACT 1 4 1", "ACT 2 5 1",
+                              "WHM 3 3 1", "WHM 4 4 1", "WHM 5 5 1"],
+                       instrs=["NOP", "NOP"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="test_mmc_switch_behavior",
+                       reset=True, absoluteaddrs=False)
+
 
 
 ### RHM-RHM TESTS ###
@@ -833,14 +863,164 @@ def rw_act(distance, bitwidth, matsize):
 
 
 
+### MMC-RHM TESTS ###
 def run_all_mmc_rhm():
     pass
 
+# multiplying UB0 into ACC0, no .S, moving from HM0 to UB0 (same UB)
+# setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
+# instrs multiply UB0 with RW0 into ACC0 and then move a matrix from HM0 to UB0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM2.
+#     it also does another matmul to confirm that the weight queue isn't 
+#     switched. this involves reading HM3 into UB2, multiplying UB2 with RW0
+#     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
+def mmc_rhm_same_ub_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
+                       instrs=["MMC 0 0 1", "RHM 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 2 1 1", 
+                                "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
+                                "WHM 4 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_rhm_same_ub_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# multiplying UB0 into ACC0, w/ .S, moving from HM0 to UB0 (same UB)
+# setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
+# instrs multiply UB0 with RW0 into ACC0 and then move a matrix from HM0 to UB0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM2.
+#     it also does another matmul to confirm that the weight queue is
+#     switched. this involves reading HM3 into UB2, multiplying UB2 with RW1
+#     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
+def mmc_rhm_same_ub_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
+                       instrs=["MMC.S 0 0 1", "RHM 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 2 1 1", 
+                                "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
+                                "WHM 4 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_rhm_same_ub_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+# multiplying UB0 into ACC0, no .S, moving from HM0 to UB1 (different UB)
+# setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
+# instrs multiply HM0 with RW0 into ACC0 and then move a matrix from HM0 to UB1.
+# cleanup writes the result of the multiplication from ACC0 to UB2 and then HM3.
+#     it also does another matmul to confirm that the weight queue isn't 
+#     switched. this involves reading HM4 into UB3, multiplying UB3 with RW0
+#     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5. Lastly, we 
+#     have to write the result of the RHM into UB1 back to the HM (HM2).
+def mmc_rhm_no_overlap_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
+                       instrs=["MMC 0 0 1", "RHM 0 1 1"],
+                       cleanup=["ACT 0 2 1", "WHM 3 2 1", 
+                                "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
+                                "WHM 5 4 1",
+                                "WHM 2 1 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_rhm_no_overlap_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# multiplying UB0 into ACC0, w/ .S, moving from HM0 to UB1 (different UB)
+# setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
+# instrs multiply HM0 with RW0 into ACC0 and then move a matrix from HM0 to UB1.
+# cleanup writes the result of the multiplication from ACC0 to UB2 and then HM3.
+#     it also does another matmul to confirm that the weight queue is 
+#     switched. this involves reading HM4 into UB3, multiplying UB3 with RW1
+#     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5. Lastly, we 
+#     have to write the result of the RHM into UB1 back to the HM (HM2).
+def mmc_rhm_no_overlap_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
+                       instrs=["MMC.S 0 0 1", "RHM 0 1 1"],
+                       cleanup=["ACT 0 2 1", "WHM 3 2 1", 
+                                "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
+                                "WHM 5 4 1",
+                                "WHM 2 1 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_rhm_no_overlap_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### MMC-WHM TESTS ###
 def run_all_mmc_whm():
     pass
 
+# multiplying UB0 into ACC0, no .S, moving from UB0 to HM0 (same UB)
+# setup reads HM1 into UB0 so that it has a different value, loads RW0 and RW1.
+# instrs multiply UB0 with RW0 into ACC0 and then move a matrix from UB0 to HM0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM2.
+#     it also does another matmul to confirm that the weight queue isn't
+#     switched. this involves reading HM3 into UB2, multiplying UB2 with RW0
+#     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
+def mmc_whm_same_ub_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
+                       instrs=["MMC 0 0 1", "WHM 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 2 1 1", 
+                                "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
+                                "WHM 4 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_whm_same_ub_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# multiplying UB0 into ACC0, w/ .S, moving from UB0 to HM0 (same UB)
+# setup reads HM1 into UB0 so that it has a different value, loads RW0 and RW1.
+# instrs multiply UB0 with RW0 into ACC0 and then move a matrix from UB0 to HM0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM2.
+#     it also does another matmul to confirm that the weight queue is
+#     switched. this involves reading HM3 into UB2, multiplying UB2 with RW1
+#     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
+def mmc_whm_same_ub_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
+                       instrs=["MMC.S 0 0 1", "WHM 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 2 1 1", 
+                                "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
+                                "WHM 4 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_whm_same_ub_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+# multiplying UB0 into ACC0, no .S, moving from UB0 to HM1 (different UB)
+# setup reads HM1 into UB0 and HM2 into UB1 and loads RW0 and RW1.
+# instrs multiply UB0 with RW0 into ACC0 and then move a matrix from UB1 to HM0.
+# cleanup writes the result of the multiplication from ACC0 to UB2 and then HM3.
+#    it also does another matmul to confirm that the weight queue isn't
+#    switched. this involves reading HM4 into UB3, multiplying UB3 with RW0
+#    into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
+def mmc_whm_no_overlap_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1", "RW 0", "RW 1"],
+                       instrs=["MMC 0 0 1", "WHM 0 1 1"],
+                       cleanup=["ACT 0 2 1", "WHM 3 2 1", 
+                                "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
+                                "WHM 5 4 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_whm_no_overlap_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# multiplying UB0 into ACC0, w/ .S, moving from UB1 to HM0 (different UB)
+# setup reads HM1 into UB0 and HM2 into UB1 and loads RW0 and RW1.
+# instrs multiply UB0 with RW0 into ACC0 and then move a matrix from UB1 to HM0.
+# cleanup writes the result of the multiplication from ACC0 to UB2 and then HM3.
+#    it also does another matmul to confirm that the weight queue is
+#    switched. this involves reading HM4 into UB3, multiplying UB3 with RW1
+#    into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
+def mmc_whm_no_overlap_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1", "RW 0", "RW 1"],
+                       instrs=["MMC.S 0 0 1", "WHM 0 1 1"],
+                       cleanup=["ACT 0 2 1", "WHM 3 2 1", 
+                                "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
+                                "WHM 5 4 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_whm_no_overlap_no_s",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### MMC-RW TESTS ###
 def run_all_mmc_rw():
     pass
+
+# multiplying UB0 into ACC0, no .S, reading from RW0, buffer starts empty
+
 
 def run_all_mmc_mmc():
     pass

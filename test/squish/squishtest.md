@@ -190,10 +190,10 @@ multiplying UB0 into ACC0, no .S, moving from UB0 to HM0 (same UB) \
 multiplying UB0 into ACC0, w/ .S, moving from UB0 to HM0 (same UB) \
 ```python test/squish/squishtest.py ```
 
-multiplying UB0 into ACC0, no .S, moving from UB0 to HM1 (different UB) \
+multiplying UB0 into ACC0, no .S, moving from UB1 to HM0 (different UB) \
 ```python test/squish/squishtest.py ```
 
-multiplying UB0 into ACC0, w/ .S, moving from UB0 to HM1 (different UB) \
+multiplying UB0 into ACC0, w/ .S, moving from UB1 to HM0 (different UB) \
 ```python test/squish/squishtest.py ```
 
 
