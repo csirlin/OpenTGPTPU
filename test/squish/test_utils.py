@@ -501,20 +501,336 @@ def whm_act_no_overlap(distance, bitwidth, matsize):
 
 
 
+### RW-RHM TESTS ###
 def run_all_rw_rhm():
     pass
 
+# reading from RW0 and moving from HM0 to UB0
+# setup not needed.
+# instrs load a weight into RW0 and then move a matrix from HM0 to UB0
+# cleanup loads a matrix from UB0 to HM1 so it can be read. it also does a 
+#     matmul to confirm that the weight was loaded correctly. this involves
+#     loading HM2 into UB1, multiplying UB1 with RW0 into ACC0, writing ACC0 to
+#     UB2, and then writing UB2 to HM3.
+def rw_rhm(distance, bitwidth, matsize):
+    return squish_test(setup=[],
+                       instrs=["RW 0", "RHM 0 0 1"],
+                       cleanup=["WHM 1 0 1", "RHM 2 1 1", "MMC 0 1 1", 
+                                "ACT 0 2 1", "WHM 3 2 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_rhm",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### RW-WHM TESTS ###
 def run_all_rw_whm():
     pass
 
+# reading from RW0 and moving from UB0 to HM0
+# setup loads a matrix from HM1 into UB0 so that it has a value.
+# instrs load a weight into RW0 and then move a matrix from UB0 to HM0.
+# cleanup needs to perform a matmul to show that the weight was loaded 
+#     correctly. this involves loading HM2 into UB1, multiplying UB1 with RW0
+#     into ACC0, writing ACC0 to UB2, and then writing UB2 to HM3.
+def rw_whm(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 0 1"],
+                       instrs=["RW 0", "WHM 0 0 1"],
+                       cleanup=["RHM 2 1 1", "MMC 0 1 1", "ACT 0 2 1", 
+                                "WHM 3 2 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_whm",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### RW-RW TESTS ###
 def run_all_rw_rw():
     pass
 
+# reading from RW0 and RW0, buffer starts empty (same weights)
+# setup not needed.
+# instrs load RW0 into the weight queue and then load RW0 again.
+# cleanup needs to confirm that the weights were loaded correctly. so it loads 
+#     matrices from HM0 and HM1 into UB0 and UB1, multiplies UB0 with the first 
+#     RW0 into ACC0, multiplies UB1 with the second RW0 into ACC1, writes ACC0
+#     to UB2, writes ACC1 to UB3, and lastly writes UB2 and UB3 to HM2 and HM3.
+def rw_rw_same_weights_empty(distance, bitwidth, matsize):
+    return squish_test(setup=[],
+                       instrs=["RW 0", "RW 0"],
+                       cleanup=["RHM 0 0 1", "RHM 1 1 1", 
+                                "MMC.S 0 0 1", "MMC.S 1 1 1", 
+                                "ACT 0 2 1", "ACT 1 3 1", 
+                                "WHM 2 2 1", "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_rw_same_weights_empty",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0 and RW1, buffer starts empty (different weights)
+# setup not needed.
+# instrs load RW0 into the weight queue and then load RW1.
+# cleanup needs to confirm that the weights were loaded correctly. so it loads 
+#     matrices from HM0 and HM1 into UB0 and UB1, multiplies UB0 with the first 
+#     RW0 into ACC0, multiplies UB1 with the second RW0 into ACC1, writes ACC0
+#     to UB2, writes ACC1 to UB3, and lastly writes UB2 and UB3 to HM2 and HM3.
+def rw_rw_diff_weights_empty(distance, bitwidth, matsize):
+    return squish_test(setup=[],
+                       instrs=["RW 0", "RW 1"],
+                       cleanup=["RHM 0 0 1", "RHM 1 1 1", 
+                                "MMC.S 0 0 1", "MMC.S 1 1 1", 
+                                "ACT 0 2 1", "ACT 1 3 1", 
+                                "WHM 2 2 1", "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_rw_same_weights_empty",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0 and RW0, buffer starts with one space (same weights)
+# setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
+#     remaining.
+# instrs load RW3 into the weight queue and then load RW3 again.
+# cleanup needs to confirm that the weights were loaded correctly. it does four
+#     matmuls, one for each slot in the weight queue, which should be full after
+#     the instrs. load 4 matrices from HM to UB, multiply them into ACC, write
+#     them back to UB, and then write them to HM.
+def rw_rw_same_weights_one_space(distance, bitwidth, matsize):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2"],
+                       instrs=["RW 3", "RW 3"],
+                       cleanup=["RHM 0 0 1", "RHM 1 1 1", "RHM 2 2 1", 
+                                "RHM 3 3 1", 
+                                "MMC.S 0 0 1", "MMC.S 1 1 1", "MMC.S 2 2 1", 
+                                "MMC.S 3 3 1", 
+                                "ACT 0 4 1", "ACT 1 5 1", "ACT 2 6 1", 
+                                "ACT 3 7 1", 
+                                "WHM 4 4 1", "WHM 5 5 1", "WHM 6 6 1", 
+                                "WHM 7 7 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_rw_same_weights_one_space",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0 and RW1, buffer starts with one space (different weights)
+# setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
+#     remaining.
+# instrs load RW3 into the weight queue and then load RW4.
+# cleanup needs to confirm that the weights were loaded correctly. it does four
+#     matmuls, one for each slot in the weight queue, which should be full after
+#     the instrs. load 4 matrices from HM to UB, multiply them into ACC, write
+#     them back to UB, and then write them to HM.
+def rw_rw_diff_weights_one_space(distance, bitwidth, matsize):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2"],
+                       instrs=["RW 3", "RW 4"],
+                       cleanup=["RHM 0 0 1", "RHM 1 1 1", "RHM 2 2 1", 
+                                "RHM 3 3 1", 
+                                "MMC.S 0 0 1", "MMC.S 1 1 1", "MMC.S 2 2 1", 
+                                "MMC.S 3 3 1", 
+                                "ACT 0 4 1", "ACT 1 5 1", "ACT 2 6 1", 
+                                "ACT 3 7 1", 
+                                "WHM 4 4 1", "WHM 5 5 1", "WHM 6 6 1", 
+                                "WHM 7 7 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_rw_diff_weights_one_space",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0 and RW0, buffer starts full (same weights)
+# setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's one 
+#     slot remaining.
+# instrs load RW4 into the weight queue and then load RW4 again.
+# cleanup needs to confirm that the weights were loaded correctly. it does four
+#     matmuls, one for each slot in the weight queue, which should be full after
+#     the instrs. load 4 matrices from HM to UB, multiply them into ACC, write
+#     them back to UB, and then write them to HM.
+def rw_rw_same_weights_full(distance, bitwidth, matsize):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3"],
+                       instrs=["RW 4", "RW 4"],
+                       cleanup=["RHM 0 0 1", "RHM 1 1 1", "RHM 2 2 1", 
+                                "RHM 3 3 1", 
+                                "MMC.S 0 0 1", "MMC.S 1 1 1", "MMC.S 2 2 1", 
+                                "MMC.S 3 3 1", 
+                                "ACT 0 4 1", "ACT 1 5 1", "ACT 2 6 1", 
+                                "ACT 3 7 1", 
+                                "WHM 4 4 1", "WHM 5 5 1", "WHM 6 6 1", 
+                                "WHM 7 7 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_rw_same_weights_full",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0 and RW1, buffer starts full (different weights)
+# setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's one 
+#     slot remaining.
+# instrs load RW4 into the weight queue and then load RW5.
+# cleanup needs to confirm that the weights were loaded correctly. it does four
+#     matmuls, one for each slot in the weight queue, which should be full after
+#     the instrs. load 4 matrices from HM to UB, multiply them into ACC, write
+#     them back to UB, and then write them to HM.
+def rw_rw_diff_weights_full(distance, bitwidth, matsize):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3"],
+                       instrs=["RW 4", "RW 5"],
+                       cleanup=["RHM 0 0 1", "RHM 1 1 1", "RHM 2 2 1", 
+                                "RHM 3 3 1", 
+                                "MMC.S 0 0 1", "MMC.S 1 1 1", "MMC.S 2 2 1", 
+                                "MMC.S 3 3 1", 
+                                "ACT 0 4 1", "ACT 1 5 1", "ACT 2 6 1", 
+                                "ACT 3 7 1", 
+                                "WHM 4 4 1", "WHM 5 5 1", "WHM 6 6 1", 
+                                "WHM 7 7 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_rw_diff_weights_full",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### RW-MMC TESTS ###
 def run_all_rw_mmc():
     pass
 
+# reading from RW0, buffer starts empty, multiplying UB0 into ACC0, no .S
+# setup reads HM0 into UB0.
+# instrs load RW0 into the weight queue and then multiply UB0 and RW0 into ACC0.
+# cleanup writes the result of the multiplication to UB1 and then HM1. it also
+#     does another matmul to confirm that the weight queue isn't switched. this
+#     involves reading HM2 into UB2, reading RW1 into the weight queue, 
+#     multiplying UB2 with RW0 into ACC1, writing ACC1 to UB3, and then writing
+#     UB3 to HM3.
+def rw_mmc_empty_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1"],
+                       instrs=["RW 0", "MMC 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1", 
+                                "RHM 2 2 1", "RW 1", "MMC 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_mmc_empty_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0, buffer starts empty, multiplying UB0 into ACC0, w/ .S
+# setup reads HM0 into UB0.
+# instrs load RW0 into the weight queue and then multiply UB0 and RW0 into ACC0.
+# cleanup writes the result of the multiplication to UB1 and then HM1. it also
+#     does another matmul to confirm that the weight queue is switched. this
+#     involves reading HM2 into UB2, reading RW1 into the weight queue,
+#     multiplying UB2 with RW1 into ACC1, writing ACC1 to UB3, and then writing
+#     UB3 to HM3.
+def rw_mmc_empty_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1"],
+                       instrs=["RW 0", "MMC.S 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1", 
+                                "RHM 2 2 1", "RW 1", "MMC 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_mmc_empty_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0, buffer starts with one space, multiplying UB0 into ACC0, no .S
+# setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
+#     remaining. it also reads HM0 into UB0.
+# instrs load RW3 into the weight queue and then multiply UB0 and RW0 into ACC0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM1.
+#     it also does more matmuls to write the whole weight queue to HM, which 
+#     will check that the weight matrix should be RW0, RW1, RW2, RW3 after 
+#     instrs.
+def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2"],
+                       instrs=["RW 3", "MMC 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1", 
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
+                                "WHM 5 5 1",
+                                "RHM 6 6 1", "MMC.S 3 6 1", "ACT 3 7 1", 
+                                "WHM 7 7 1",
+                                "RHM 8 8 1", "MMC.S 4 8 1", "ACT 4 9 1", 
+                                "WHM 9 9 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_mmc_one_space_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0, buffer starts with one space, multiplying UB0 into ACC0, w/ .S
+# setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
+#     remaining. it also reads HM0 into UB0.
+# instrs load RW3 into the weight queue and then multiply UB0 and RW0 into ACC0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM1.
+#     it also does more matmuls to write the whole weight queue to HM, which 
+#     will check that the weight matrix should be RW1, RW2, RW3 after instrs.
+def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2"],
+                       instrs=["RW 3", "MMC.S 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1", 
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
+                                "WHM 5 5 1",
+                                "RHM 6 6 1", "MMC.S 3 6 1", "ACT 3 7 1", 
+                                "WHM 7 7 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_mmc_one_space_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0, buffer starts full, multiplying UB0 into ACC0, no .S
+# setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's no
+#     space remaining. it also reads HM0 into UB0.
+# instrs load RW4 into the weight queue and then multiply UB0 and RW0 into ACC0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM1.
+#     it also does more matmuls to write the whole weight queue to HM, which
+#     will check that the weight matrix should be RW0, RW1, RW2, RW3 (or RW4? I'm not actually sure what it does or should do in this position. does it refuse to input after it's full, or does it just replace the 4th slot?)
+#     after the instrs under test finish.
+def rw_mmc_full_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2", "RW 3"],
+                       instrs=["RW 4", "MMC 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1", 
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
+                                "WHM 5 5 1",
+                                "RHM 6 6 1", "MMC.S 3 6 1", "ACT 3 7 1", 
+                                "WHM 7 7 1",
+                                "RHM 8 8 1", "MMC.S 4 8 1", "ACT 4 9 1", 
+                                "WHM 9 9 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_mmc_full_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# reading from RW0, buffer starts full, multiplying UB0 into ACC0, w/ .S
+# setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's no
+#     space remaining. it also reads HM0 into UB0.
+# instrs load RW4 into the weight queue and then multiply UB0 and RW0 into ACC0.
+# cleanup writes the result of the multiplication from ACC0 to UB1 and then HM1.
+#     it also does more matmuls to write the whole weight queue to HM, which
+#     will check that the weight matrix should be RW1, RW2, RW3 (or RW4? I'm not actually sure what it does or should do in this position. does it refuse to input after it's full, or does it just replace the 4th slot?)
+#     after the instrs under test finish.
+def rw_mmc_full_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2", "RW 3"],
+                       instrs=["RW 4", "MMC 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1", 
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
+                                "WHM 5 5 1",
+                                "RHM 6 6 1", "MMC.S 3 6 1", "ACT 3 7 1", 
+                                "WHM 7 7 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_mmc_full_no_s",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### RW-ACT TESTS ###
 def run_all_rw_act():
     pass
+
+# reading from RW0 and accumulate from ACC0 to UB0
+# setup reads HM1 into UB1 so that it has a value, loads RW0, and multiplies
+#     them into ACC0 while switching weights. 
+# instrs load RW1 into the weight queue and then accumulate from ACC0 to UB0.
+# cleanup writes the accumulated UB0 to HM0, and confirms that RW1 loaded
+#     correctly. this involves loading HM2 into UB2, multiplying UB2 with RW1
+#     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM3.
+def rw_act(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC.S 0 1 1"],
+                       instrs=["RW 1", "ACT 0 0 1"],
+                       cleanup=["WHM 0 0 1", "RHM 2 2 1", "MMC 1 2 1", 
+                                "ACT 1 3 1", "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_act",
+                       reset=True, absoluteaddrs=False)
+
 
 
 def run_all_mmc_rhm():
