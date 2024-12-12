@@ -44,6 +44,7 @@ class TPUSim(object):
         while True:
             # print(f'operands = {operands[self.pc]}')
             print(f"PC = {self.pc}")
+            print(len(self.weight_fifo))
             if opcodes[self.pc] in ['RHM', 'WHM', 'RW']:
                 self.memops(opcodes[self.pc], *operands[self.pc])
             elif opcodes[self.pc] == 'MMC':
@@ -196,7 +197,7 @@ class TPUSim(object):
 
         inp = self.unified_buffer[ub_addr: ub_addr + size]
         # print('MMC input shape: {}'.format(inp.shape))
-        weight_mat = self.weight_fifo.popleft()
+        weight_mat = self.weight_fifo.popleft() # shouldn't this only happen when using .S?
         if not args.raw:
             inp = inp.astype(np.int32)
             weight_mat = weight_mat.astype(np.int32)
