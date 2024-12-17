@@ -23,7 +23,7 @@ class TPUSim(object):
         #     assert self.weight_memory.dtype == np.int8, 'DRAM weight mem is not 8-bit ints'
         #     assert self.host_memory.dtype == np.int8, 'Hostmem not 8-bit ints'
         self.unified_buffer = (np.zeros((96000, WIDTH), dtype=np.float32) if args.raw else
-            np.zeros((96000, WIDTH), dtype=np.int8))
+            np.zeros((96000, WIDTH), dtype=np.int32)) # update to match the bitwidth specified in config.py
         self.accumulator = (np.zeros((4000, WIDTH), dtype=np.float32) if args.raw else
             np.zeros((4000, WIDTH), dtype=np.int32))
         self.weight_fifo = deque()
@@ -44,7 +44,6 @@ class TPUSim(object):
         while True:
             # print(f'operands = {operands[self.pc]}')
             print(f"PC = {self.pc}")
-            print(len(self.weight_fifo))
             if opcodes[self.pc] in ['RHM', 'WHM', 'RW']:
                 self.memops(opcodes[self.pc], *operands[self.pc])
             elif opcodes[self.pc] == 'MMC':
@@ -197,7 +196,9 @@ class TPUSim(object):
 
         inp = self.unified_buffer[ub_addr: ub_addr + size]
         # print('MMC input shape: {}'.format(inp.shape))
-        weight_mat = self.weight_fifo.popleft() # shouldn't this only happen when using .S?
+        weight_mat = self.weight_fifo[0]
+        if isa.SWITCH_MASK & flags:  # shouldn't this only happen when using .S?
+            self.weight_fifo.popleft()
         if not args.raw:
             inp = inp.astype(np.int32)
             weight_mat = weight_mat.astype(np.int32)
