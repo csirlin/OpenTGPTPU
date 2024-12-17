@@ -65,7 +65,7 @@ class TPUSim(object):
         savepath = 'sim32.npy' if args.raw else 'sim8.npy'
         np.save(savepath, self.host_memory)
         print(f'Final host memory:')
-        print(self.host_memory.astype('uint8'))
+        print(self.host_memory)
         self.program.close()
 
         print("""\nALL DONE!
