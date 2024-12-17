@@ -90,49 +90,73 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
         acc_mems_at_start_addr_reg[i] = WireVector(len(acc_mems[i][start_addr_reg]), f"act_acc_mems_at_start_addr_reg_{i}")
         acc_mems_at_start_addr_reg[i] <<= acc_mems[i][start_addr_reg]
 
-    # new activation #
-    # activation behavior:
+    first_cycle = Register(1, "act_first_cycle") # true for the first busy activation cycle, false otherwise
+    pc_incr_reg = Register(len(pc), "act_pc_incr_reg") # hold the pc jump obtained in this cycle for future cycles
+    pc_incr_wv = WireVector(len(pc), "act_pc_incr_wv")
+    
+    # first busy cycle: store the jump value in pc_incr_reg if there is one
+    # and store modified accumulator values in accum_mod
     with conditional_assignment:
-        with cond:
+        with first_cycle:
             # branch
-            with acc_mems[-1][start_addr_reg] == 1: 
-                with acc_mems[-2][start_addr_reg] == 1:
-                    pc_incr |= acc_mems[0][start_addr_reg]
-                with acc_mems[-2][start_addr_reg] == 0:
-                    pc_incr |= acc_mems[1][start_addr_reg]
+            with accum_out[-1] == 1: 
+                with accum_out[-2] == 1:
+                    pc_incr_wv |= accum_out[0]
+                with accum_out[-2] == 0:
+                    pc_incr_wv |= accum_out[1]
                 for i in range(len(accum_mod)):
-                    accum_mod[i] |= acc_mems[i][start_addr_reg]
-            # # equality check
-            with acc_mems[-1][start_addr_reg] == 2:
+                    accum_mod[i] |= accum_out[i]
+
+            # equality check
+            with accum_out[-1] == 2:
                 accum_mod[-1] |= 0
-                with acc_mems[0][start_addr_reg] == acc_mems[1][start_addr_reg]:
+                with accum_out[0] == accum_out[1]:
                     accum_mod[0] |= 1
-                with acc_mems[0][start_addr_reg] != acc_mems[1][start_addr_reg]:
+                with accum_out[0] != accum_out[1]:
                     accum_mod[0] |= 0
                 accum_mod[1] |= 0
                 for i in range(2, len(accum_mod)-1):
-                    accum_mod[i] |= acc_mems[i][start_addr_reg]
-                pc_incr |= 1
+                    accum_mod[i] |= accum_out[i]
+                pc_incr_wv |= 1
+
             # less than check
-            with acc_mems[-1][start_addr_reg] == 3:
+            with accum_out[-1] == 3:
                 accum_mod[-1] |= 0
-                with acc_mems[0][start_addr_reg] < acc_mems[1][start_addr_reg]:
+                with accum_out[0] < accum_out[1]:
                     accum_mod[0] |= 1
-                with acc_mems[0][start_addr_reg] >= acc_mems[1][start_addr_reg]:
+                with accum_out[0] >= accum_out[1]:
                     accum_mod[0] |= 0
                 accum_mod[1] |= 0
                 for i in range(2, len(accum_mod)-1):
-                    accum_mod[i] |= acc_mems[i][start_addr_reg]
-                pc_incr |= 1
+                    accum_mod[i] |= accum_out[i]
+                pc_incr_wv |= 1
+            
+            # normal activation
             with otherwise:
-                pc_incr |= 1
                 for i in range(len(accum_mod)):
-                    accum_mod[i] |= acc_mems[i][start_addr_reg]
+                    accum_mod[i] |= accum_out[i]
+                pc_incr_wv |= 1
+
+            # set pc_incr_reg for the rest of the ACT instruction
+            pc_incr_reg.next |= pc_incr_wv
+
+        # pc_incr_reg holds it's value until the next ACT instruction
+        with otherwise:
+            pc_incr_reg.next |= pc_incr_reg
+
+    # jump to the right PC after the last busy cycle
+    with conditional_assignment:
+        with N == 1:
+            # if ACT length is 1, first_cycle is the only cycle, and 
+            # pc_incr_reg doesn't hold anything yet
+            with first_cycle: 
+                pc_incr |= pc_incr_wv
+            # otherwise, pc_incr_wv is blank, and the value is in
+            # pc_incr_reg
+            with otherwise:
+                pc_incr |= pc_incr_reg
         with otherwise:
             pc_incr |= 1
-            for i in range(len(accum_mod)):
-                    accum_mod[i] |= acc_mems[i][start_addr_reg]
-    # end new activation #
 
     pc.next <<= select(cond, (pc + pc_incr)[0:len(pc)], pc + 1)
 
@@ -143,6 +167,7 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             N.next |= nvecs
             act_func.next |= func
             busy.next |= 1
+            first_cycle.next |= 1
             
         with busy:  # Do activate on another vector this cycle
             accum_addr.next |= accum_addr + 1
@@ -150,6 +175,9 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             N.next |= N - 1
             with N == 1:  # this was the last vector
                 busy.next |= 0
+
+        with first_cycle:
+            first_cycle.next |= 0
 
     # old: accum_out. new: accum_mod
     invals = concat_list([ x[:DWIDTH] for x in accum_mod ]) 
