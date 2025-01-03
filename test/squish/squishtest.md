@@ -321,16 +321,28 @@ accumulate from ACC0 to UB0, read from RW0 \
 
 
 ### ACT/MMC:
-accumulate from ACC0 to UB0, multiplying UB0 into ACC0 no .S (different UB) \
+accumalate from ACC0 to UB0, multiplying UB1 into ACC1 no .S (different ACC and UB) \
 ```python test/squish/squishtest.py ```
 
-accumulate from ACC0 to UB0, multiplying UB0 into ACC0 w/ .S (different UB) \
+accumulate from ACC0 to UB0, multiplying UB1 into ACC1 w/ .S (different ACC and UB) \
 ```python test/squish/squishtest.py ```
 
-accumulate from ACC0 to UB0, multiplying UB1 into ACC0 no .S (same UB) \
+accumulate from ACC0 to UB0, multiplying UB0 into ACC1 no .S (same UB) \
 ```python test/squish/squishtest.py ```
 
-accumulate from ACC0 to UB0, multiplying UB1 into ACC0 w/ .S (same UB) \
+accumulate from ACC0 to UB0, multiplying UB0 into ACC1 w/ .S (same UB) \
+```python test/squish/squishtest.py ```
+
+accumulate from ACC0 to UB0, multiplying UB1 into ACC0 no .S (same ACC) \
+```python test/squish/squishtest.py ```
+
+accumulate from ACC0 to UB0, multiplying UB1 into ACC0 w/ .S (same ACC) \
+```python test/squish/squishtest.py ```
+
+accumulate from ACC0 to UB0, multiplying UB0 into ACC0 no .S (same ACC and UB) \
+```python test/squish/squishtest.py ```
+
+accumulate from ACC0 to UB0, multiplying UB0 into ACC0 w/ .S (same ACC and UB) \
 ```python test/squish/squishtest.py ```
 
 
