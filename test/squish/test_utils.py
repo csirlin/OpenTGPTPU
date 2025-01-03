@@ -1609,22 +1609,311 @@ def mmc_act_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
 
 
 
+### ACT-RHM TESTS ###
 def run_all_act_rhm():
     pass
 
+# accumulate from ACC0 to UB0, move from HM0 to UB0 (same UB)
+# setup reads HM1 into UB1, loads RW0, and multiplies UB1 with RW0 (no S) into 
+#     ACC0 to prepare for instr 1 to write it back to UB.
+# instrs write ACC0 to UB0 and write from HM0 to UB0.
+# cleanup writes the result of the accumulation from UB0 to HM2.
+def act_rhm_same_ub(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
+                       instrs=["ACT 0 0 1", "RHM 0 0 1"],
+                       cleanup=["WHM 2 0 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_rhm_same_ub",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, move from HM0 to UB1 (different UB)
+# setup reads HM2 into UB2, loads RW0, and multiplies UB2 with RW0 (no S) into 
+#     ACC0 to prepare for instr 1 to write it back to UB.
+# instrs write ACC0 to UB0 and write from HM0 to UB1.
+# cleanup writes the result of the accumulation from UB0 to HM1 to test instr1
+#     and writes the result of the RHM into UB1 from UB1 to HM3 to test instr2.
+def act_rhm_diff_ub(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 2 2 1", "RW 0", "MMC 0 2 1"],
+                       instrs=["ACT 0 0 1", "RHM 0 1 1"],
+                       cleanup=["WHM 1 0 1", "WHM 3 1 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_rhm_diff_ub",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### ACT-WHM TESTS ###
 def run_all_act_whm():
     pass
 
+# accumulate from ACC0 to UB0, move from UB0 to HM0 (same UB)
+# setup reads HM1 into UB1, loads RW0, and multiplies UB1 with RW0 (no S) into
+#     ACC0 to prepare for instr 1 to write it back to UB.
+# instrs write ACC0 to UB0 and write from UB0 to HM0.
+# cleanup is not needed because the instrs under test already write to HM.
+def act_whm_same_ub(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
+                       instrs=["ACT 0 0 1", "WHM 0 0 1"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_whm_same_ub",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, move from UB1 to HM0 (different UB)
+# setup reads HM1 into HM1, loads HM2 into HM2, loads RW0, and multiplies HM2
+#     with RW0 (no S) into ACC0 to prepare for instr 1 to write it back to UB.
+# instrs write ACC0 to UB0 and write from UB1 to HM0.
+# cleanup writes from UB0 to HM3 to test instr1.
+def act_whm_diff_ub(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 1 1", "RHM 2 2 1", "RW 0", "MMC 0 2 1"],
+                       instrs=["ACT 0 0 1", "WHM 0 1 1"],
+                       cleanup=["WHM 3 0 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_whm_diff_ub",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### ACT-RW TESTS ###
 def run_all_act_rw():
     pass
 
+# accumulate from ACC0 to UB0, read from RW0
+# setup reads HM1 into UB1, loads RW0, and multiplies UB1 with RW0 (no S) into
+#     ACC0 to prepare for instr 1 to write it back to UB.
+# instrs write ACC0 to UB0 and load RW1 into the weight queue.
+# cleanup writes the result of the accumulation from UB0 to HM0 and then does
+#     two more matmuls to confirm that RW0 (from setup) is still at the front of
+#     the queue and RW1 (instr2) is next.
+def act_rw(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
+                       instrs=["ACT 0 0 1", "RW 1"],
+                       cleanup=["WHM 0 0 1",
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
+                                "WHM 5 5 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_rw",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### ACT-MMC TESTS ###
 def run_all_act_mmc():
     pass
 
+# accumulate from ACC0 to UB0, multiplying UB1 into ACC1 no .S (different ACC and UB)
+# setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and 
+#     multiplies UB0 with RW0 (no S) into ACC0 to prepare for instr 1 to write 
+#     ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB1 with RW0 (no S) into ACC1.
+# cleanup writes the result of instr1 from UB0 to HM0, then writes the result of
+#     instr2 from ACC1 to UB1 and HM1, then does two more matmuls to confirm
+#     that RW0 is still at the front of the queue and RW1 is next.
+def act_mmc_diff_ub_diff_acc_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
+                              "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC 1 1 1"],
+                       cleanup=["ACT 1 1 1", "WHM 0 0 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 3 4 1", "ACT 3 5 1", 
+                                "WHM 5 5 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_diff_ub_diff_acc_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, multiplying UB1 into ACC1 w/ .S (different ACC and UB)
+# setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and
+#     multiplies UB0 with RW0 (no S) into ACC0 to prepare for instr 1 to write
+#     ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB1 with RW0 (w/ S) into ACC1.
+# cleanup writes the result of instr1 from UB0 to HM0, then writes the result of
+#     instr2 from ACC1 to UB1 and HM1, then does one more matmul to confirm
+#     that RW1 is now at the front of the queue.
+def act_mmc_diff_ub_diff_acc_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
+                              "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC.S 1 1 1"],
+                       cleanup=["ACT 1 1 1", "WHM 0 0 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
+                                "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_diff_ub_diff_acc_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, multiplying UB0 into ACC1 no .S (same UB)
+# setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0
+#     (no S) into ACC0 to prepare for instr 1 to write ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB0 with RW0 (no S) into ACC1.
+# cleanup writes the result of instr2 from ACC1 to UB1 and HM1, then does two
+#     more matmuls to confirm that RW0 is still at the front of the queue and
+#     RW1 is next.
+def act_mmc_same_ub_diff_acc_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC 1 0 1"],
+                       cleanup=["ACT 1 1 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 3 4 1", "ACT 3 5 1", 
+                                "WHM 5 5 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_same_ub_diff_acc_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, multiplying UB0 into ACC1 w/ .S (same UB)
+# setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0
+#     (no S) into ACC0 to prepare for instr 1 to write ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB0 with RW0 (w/ S) into ACC1.
+# cleanup writes the result of instr2 from ACC1 to UB1 and HM1, then does one
+#     more matmul to confirm that RW1 is now at the front of the queue.
+def act_mmc_same_ub_diff_acc_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC.S 1 0 1"],
+                       cleanup=["ACT 1 1 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
+                                "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_same_ub_diff_acc_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, multiplying UB1 into ACC0 no .S (same ACC)
+# setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and 
+#     multiplies UB0 with RW0 (no S) into ACC0 to prepare for instr 1 to write
+#     ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB1 with RW0 (no S) into ACC0.
+# cleanup writes the result of instr1 from UB0 to HM0, then writes the result of
+#     instr2 from ACC0 to UB1 and HM1, then does two more matmuls to confirm
+#     that RW0 is still at the front of the queue and RW1 is next.
+def act_mmc_diff_ub_same_acc_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
+                              "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC 0 1 1"],
+                       cleanup=["ACT 0 1 1", "WHM 0 0 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
+                                "WHM 5 5 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_diff_ub_same_acc_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, multiplying UB1 into ACC0 w/ .S (same ACC)
+# setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and
+#     multiplies UB0 with RW0 (no S) into ACC0 to prepare for instr 1 to write
+#     ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB1 with RW0 (w/ S) into ACC0.
+# cleanup writes the result of instr1 from UB0 to HM0, then writes the result of
+#     instr2 from ACC0 to UB1 and HM1, then does one more matmul to confirm
+#     that RW1 is now at the front of the queue.
+def act_mmc_diff_ub_same_acc_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
+                              "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC.S 0 1 1"],
+                       cleanup=["ACT 0 1 1", "WHM 0 0 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_diff_ub_same_acc_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, multiplying UB0 into ACC0 no .S (same ACC and UB)
+# setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0 
+#     (no S) into ACC0 to prepare for instr 1 to write ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB0 with RW0 (no S) into ACC0.
+# cleanup writes the result of the accumulation from ACC0 to UB1 and HM1, then 
+#     does two more matmuls to confirm that RW0 is still at the front of the
+#     queue and RW1 is next.
+def act_mmc_same_ub_same_acc_no_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1",
+                                "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
+                                "WHM 5 5 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_same_ub_same_acc_no_s",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, multiplying UB0 into ACC0 w/ .S (same ACC and UB)
+# setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0
+#     (no S) into ACC0 to prepare for instr 1 to write ACC0 back to UB.
+# instrs write ACC0 to UB0 and multiply UB0 with RW0 (w/ S) into ACC0.
+# cleanup writes the result of the accumulation from ACC0 to UB1 and HM1, then
+#     does one more matmul to confirm that RW1 is now at the front of the queue.
+def act_mmc_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "MMC.S 0 0 1"],
+                       cleanup=["ACT 0 1 1", "WHM 1 1 1",
+                                "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
+                                "WHM 3 3 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_mmc_same_ub_same_acc_yes_s",
+                       reset=True, absoluteaddrs=False)
+
+
+
+### ACT-ACT TESTS ###
 def run_all_act_act():
     pass
+
+# accumulate from ACC0 to UB0, accumulate from ACC1 to UB1 (different UB and ACC)
+# setup reads HM0 into UB0, reads HM1 into UB1, loads RW0, multiplies UB0 with
+#     RW0 (no S) into ACC0, and multiplies UB1 with RW0 (no S) into ACC1.
+# instrs write ACC0 to UB0 and write ACC1 to UB1.
+# cleanup writes UB0 to HM0 and UB1 to HM1.
+def act_act_diff_ub_diff_acc(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "MMC 0 0 1",
+                              "MMC 1 1 1"],
+                       instrs=["ACT 0 0 1", "ACT 1 1 1"],
+                       cleanup=["WHM 0 0 1", "WHM 1 1 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_act_diff_ub_diff_acc",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, accumulate from ACC1 to UB0 (same UB)
+# setup reads HM0 into UB0, reads HM1 into UB1, loads RW0, multiplies UB0 with
+#     RW0 (no S) into ACC0, and multiplies UB1 with RW0 (no S) into ACC1.
+# instrs write ACC0 and ACC1 to UB0.
+# cleanup writes UB0 to HM0.
+def act_act_same_ub_diff_acc(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "MMC 0 0 1",
+                              "MMC 1 1 1"],
+                       instrs=["ACT 0 0 1", "ACT 1 0 1"],
+                       cleanup=["WHM 0 0 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_act_same_ub_diff_acc",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, accumulate from ACC0 to UB1 (same ACC)
+# setup reads HM0 into UB0, loads RW0, and multiples UB0 with RW0 (no S) into
+#     ACC0.
+# instrs write ACC0 to UB0 and UB1.
+# cleanup writes UB0 to HM0 and UB1 to HM1.
+def act_act_diff_ub_same_acc(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "ACT 0 1 1"],
+                       cleanup=["WHM 0 0 1", "WHM 1 1 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_act_diff_ub_same_acc",
+                       reset=True, absoluteaddrs=False)
+
+# accumulate from ACC0 to UB0, accumulate from ACC0 to UB0 (same UB and ACC)
+# setup reads HM0 into UB0, loads RW0, and multiples UB0 with RW0 (no S) into
+#     ACC0.
+# instrs both write ACC0 to UB0.
+# cleanup writes UB0 to HM0.
+def act_act_same_ub_same_acc(distance, bitwidth, matsize):
+    return squish_test(setup=["RHM 0 0 1", "RW 0", "MMC 0 0 1"],
+                       instrs=["ACT 0 0 1", "ACT 0 0 1"],
+                       cleanup=["WHM 0 0 1"],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_act_same_ub_same_acc",
+                       reset=True, absoluteaddrs=False)
+
 
 
 def run_all_squish_tests():
     pass
-
