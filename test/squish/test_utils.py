@@ -62,6 +62,13 @@ def test_mmc_switch_behavior(distance, bitwidth, matsize):
 
 ### RHM-RHM TESTS ###
 def run_all_rhm_rhm(bitwidths, matsizes):
+    
+    # return {
+    #     "rhm_rhm_no_overlap": min_viable_distance_all(rhm_rhm_no_overlap, bitwidths, matsizes),
+    #     "rhm_rhm_same_ub": min_viable_distance_all(rhm_rhm_same_ub, bitwidths, matsizes),
+    #     "rhm_rhm_same_hm": min_viable_distance_all(rhm_rhm_same_hm, bitwidths, matsizes),
+    #     "rhm_rhm_identical": min_viable_distance_all(rhm_rhm_identical, bitwidths, matsizes)
+    # }
     pass
 
 # from HM0 to UB0 and from HM1 to UB1 (no overlap in HM or UB)
@@ -70,24 +77,24 @@ def run_all_rhm_rhm(bitwidths, matsizes):
 # instrs write the correct matrices to slots 0 and 1.
 # cleanup writes the content of the UB back to different slots in the HM. that
 #     way, the test confirms that the right data was actually written to the UB.
-def rhm_rhm_no_overlap(distance, bitwidth, matsize):
+def rhm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1", "RHM 3 1 1"],
                        instrs=["RHM 0 0 1", "RHM 1 1 1"],
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_rhm_no_overlap", 
+                       name="rhm_rhm_diff_hm_diff_ub", 
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and from HM1 to UB0 (same destination in UB)
 # setup is not needed to test that data is overwritten correctly.
 # instrs write HM 0 to UB 0 and then overwrite UB 0 with HM 1.
 # cleanup writes the content of UB 0 back to a new slot in the HM (slot 2).
-def rhm_rhm_same_ub(distance, bitwidth, matsize):
+def rhm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
                        instrs=["RHM 0 0 1", "RHM 1 0 1"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_rhm_same_ub", 
+                       name="rhm_rhm_diff_hm_same_ub", 
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and from HM0 to UB1 (same origin in HM)
@@ -95,24 +102,24 @@ def rhm_rhm_same_ub(distance, bitwidth, matsize):
 #     correctly.
 # instrs write HM 0 to UB 0 and write HM 0 again to UB 1.
 # cleanup writes the content of UB 0 and UB 1 back to new slots in the HM.
-def rhm_rhm_same_hm(distance, bitwidth, matsize):
+def rhm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
                        instrs=["RHM 0 0 1", "RHM 0 1 1"],
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_rhm_same_hm", 
+                       name="rhm_rhm_same_hm_diff_ub", 
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and from HM0 to UB0 (same origin in HM and destination in UB)
 # setup is not needed to test that data is written to the same place twice.
 # instrs write HM 0 to UB 0 and then write HM 0 to UB 0 again.
 # cleanup writes the content of UB 0 back to a new slot in the HM (slot 2).
-def rhm_rhm_identical(distance, bitwidth, matsize):
+def rhm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
                        instrs=["RHM 0 0 1", "RHM 0 0 1"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_rhm_identical", 
+                       name="rhm_rhm_same_hm_same_ub", 
                        reset=True, absoluteaddrs=False)
 
 
@@ -126,12 +133,12 @@ def run_all_rhm_whm():
 # instrs write HM 0 to UB 0 and then write UB 1 to HM 1.
 # cleanup is not needed, since at this point HM2 should already be written to
 #     HM1.
-def rhm_whm_no_overlap(distance, bitwidth, matsize):
+def rhm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 1 1"],
                        instrs=["RHM 0 0 1", "WHM 1 1 1"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_whm_no_overlap",
+                       name="rhm_whm_diff_hm_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and from UB0 to HM1 (same UB)
@@ -139,12 +146,12 @@ def rhm_whm_no_overlap(distance, bitwidth, matsize):
 #     back to HM in a different slot (1).
 # instrs write HM 0 to UB 0 and then write UB 0 to HM 1.
 # cleanup is not needed, since at this point HM1 should already be written to
-def rhm_whm_same_ub(distance, bitwidth, matsize):
+def rhm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
                        instrs=["RHM 0 0 1", "WHM 1 0 1"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_whm_same_ub",
+                       name="rhm_whm_diff_hm_same_ub",
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and from UB1 to HM0 (same HM)
@@ -152,12 +159,12 @@ def rhm_whm_same_ub(distance, bitwidth, matsize):
 #     HM0.
 # instrs write HM 0 to UB 0 and then write UB 1 to HM 0.
 # cleanup writes UB 0 back to HM 1 to ensure that the correct data was written.
-def rhm_whm_same_hm(distance, bitwidth, matsize):
+def rhm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 1 1"],
                        instrs=["RHM 0 0 1", "WHM 0 1 1"],
                        cleanup=["WHM 1 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_whm_same_hm",
+                       name="rhm_whm_same_hm_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and from UB0 to HM0 (same UB and HM)
@@ -166,12 +173,12 @@ def rhm_whm_same_hm(distance, bitwidth, matsize):
 # instrs write HM 0 to UB 0 and then write UB 0 directly back to HM 0.
 # cleanup writes UB 0 back to a third HM slot (HM2) to ensure that the correct
 #     data was written to UB 0.
-def rhm_whm_identical(distance, bitwidth, matsize):
+def rhm_whm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
                        instrs=["RHM 0 0 1", "WHM 0 0 1"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_whm_identical",
+                       name="rhm_whm_same_hm_same_ub",
                        reset=True, absoluteaddrs=False)
 
 
@@ -218,12 +225,12 @@ def rhm_mmc_same_ub_no_s(distance, bitwidth, matsize):
 # instrs write HM0 to UB0 and then multiply UB1 with RW0 into ACC0.
 # cleanup writes the result of the multiplication back to UB2 and then HM2, and
 #     writes the matrix from UB0 to HM3.
-def rhm_mmc_no_overlap_no_s(distance, bitwidth, matsize):
+def rhm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RHM 1 1 1"],
                        instrs=["RHM 0 0 1", "MMC 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1", "WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_mmc_no_overlap_no_s",
+                       name="rhm_mmc_diff_ub_no_s",
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and multiplying UB0 with ACC0, w/ .S (same UB)
@@ -239,7 +246,7 @@ def rhm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", "RHM 2 2 1", 
                                 "MMC 1 2 1", "WHM 1 3 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_mmc_same_ub_s",
+                       name="rhm_mmc_same_ub_yes_s",
                        reset=True, absoluteaddrs=False)
 
 # from HM0 to UB0 and multiplying UB1 with ACC0, w/ .S (different UBs)
@@ -251,14 +258,14 @@ def rhm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
 #     UB3 with RW0 (as the new weight should be there now), writes the result to
 #     UB4, and then writes UB4 back to HM4. lastly, it writes the matrix
 #     originally written into UB0 into HM5 to make sure it got written.
-def rhm_mmc_no_overlap_yes_s(distance, bitwidth, matsize):
+def rhm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1", "RHM 1 1 1"],
                        instrs=["RHM 0 0 1", "MMC.S 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1", "RHM 3 3 1", 
                                 "MMC 1 3 1", "WHM 1 4 1", "WHM 4 4 1",
                                 "WHM 5 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_mmc_no_overlap_s",
+                       name="rhm_mmc_diff_ub_yes_s",
                        reset=True, absoluteaddrs=False)
 
 
@@ -286,12 +293,12 @@ def rhm_act_same_ub(distance, bitwidth, matsize):
 #     them into ACC0.
 # instrs write HM0 to UB0 and then accumulate from ACC0 to UB1.
 # cleanup writes UB0 into HM2 and writes the accumulated UB1 into HM3.
-def rhm_act_no_overlap(distance, bitwidth, matsize):
+def rhm_act_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
                        instrs=["RHM 0 0 1", "ACT 0 1 1"],
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rhm_act_no_overlap",
+                       name="rhm_act_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 
@@ -304,48 +311,48 @@ def run_all_whm_rhm():
 # setup writes a matrix from HM2 to UB0
 # instrs write from UB0 to HM0 and from HM1 to UB1
 # cleanup writes UB1 to HM3
-def whm_rhm_no_overlap(distance, bitwidth, matsize):
+def whm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1"],
                        instrs=["WHM 0 0 1", "RHM 1 1 1"],
                        cleanup=["WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_rhm_no_overlap",
+                       name="whm_rhm_diff_hm_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and from HM1 to UB0 (same UB)
 # setup writes a matrix from HM2 to UB0 so that it has content to start with
 # instrs write from UB0 to HM0 and from HM1 to UB0
 # cleanup writes UB0 to HM3 so we can see the overwritten data
-def whm_rhm_same_ub(distance, bitwidth, matsize):
+def whm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1"],
                        instrs=["WHM 0 0 1", "RHM 1 0 1"],
                        cleanup=["WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_rhm_same_ub",
+                       name="whm_rhm_diff_hm_same_ub",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and from HM0 to UB1 (same HM)
 # setup writes a matrix from HM1 to UB1 so that it has content to start with
 # instrs write from UB0 to HM0 and from HM0 to UB1
 # cleanup writes UB1 to HM2 so we can see the overwritten data
-def whm_rhm_same_hm(distance, bitwidth, matsize):
+def whm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
                        instrs=["WHM 0 0 1", "RHM 0 1 1"],
                        cleanup=["WHM 2 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_rhm_same_hm",
+                       name="whm_rhm_same_hm_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and from HM0 to UB0 (same UB and HM)
 # setup writes a matrix from HM1 to UB0 so that it has content to start with
 # instrs write from UB0 to HM0 and from HM0 to UB0
 # cleanup writes UB0 to HM2 so we can see the overwritten data
-def whm_rhm_identical(distance, bitwidth, matsize):
+def whm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
                        instrs=["WHM 0 0 1", "RHM 0 0 1"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_rhm_identical",
+                       name="whm_rhm_same_hm_same_ub",
                        reset=True, absoluteaddrs=False)
 
 
@@ -359,12 +366,12 @@ def run_all_whm_whm():
 #     values in them.
 # instrs write from UB0 to HM0 and from UB1 to HM1
 # cleanup is not needed
-def whm_whm_no_overlap(distance, bitwidth, matsize):
+def whm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1", "RHM 3 1 1"],
                        instrs=["WHM 0 0 1", "WHM 1 1 1"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_whm_no_overlap",
+                       name="whm_whm_diff_hm_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and from UB1 to HM0 (same destination in HM)
@@ -372,37 +379,38 @@ def whm_whm_no_overlap(distance, bitwidth, matsize):
 #     values in them.
 # instrs write from UB0 to HM0 and then write from UB1 to HM0
 # cleanup is not needed
-def whm_whm_same_hm(distance, bitwidth, matsize):
+def whm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1"],
                        instrs=["WHM 0 0 1", "WHM 0 1 1"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_whm_same_hm",
+                       name="whm_whm_same_hm_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and from UB0 to HM1 (same origin in UB)
 # setup writes a matrix from HM2 to UB0 to gett different values in it.
 # instrs write from UB0 to HM0 and HM1.
 # cleanup is not needed
-def whm_whm_same_ub(distance, bitwidth, matsize):
+def whm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1"],
                        instrs=["WHM 0 0 1", "WHM 1 0 1"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_whm_same_ub",
+                       name="whm_whm_diff_hm_same_ub",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and from UB0 to HM0 (same origin in UB and destination in HM)
 # setup writes a matrix from HM1 to UB0 to get different values in it.
 # instrs write from UB0 to HM0 and then write from UB0 to HM0 again
 # cleanup is not needed
-def whm_whm_identical(distance, bitwidth, matsize):
+def whm_whm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
                        instrs=["WHM 0 0 1", "WHM 0 0 1"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_whm_identical",
+                       name="whm_whm_same_hm_same_ub",
                        reset=True, absoluteaddrs=False)
+
 
 
 ### WHM-RW TESTS ###
@@ -454,13 +462,13 @@ def whm_mmc_same_ub_no_s(distance, bitwidth, matsize):
 #     then it does another matmul which confirms that the weight queue isn't
 #     switched. this involves reading HM4 into UB3, multiplying UB3 with RW0
 #     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
-def whm_mmc_no_overlap_no_s(distance, bitwidth, matsize):
+def whm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "RW 1"],
                        instrs=["WHM 0 0 1", "MMC 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", "RHM 4 3 1", 
                                 "MMC 1 3 1", "ACT 1 4 1", "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_mmc_no_overlap_no_s",
+                       name="whm_mmc_diff_ub_no_s",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and multiplying UB0 into ACC0, w/ .S (same UB)
@@ -477,7 +485,7 @@ def whm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
                        cleanup=["ACT 0 1 1", "WHM 2 1 1", "RHM 3 2 1", 
                                 "MMC 1 2 1", "ACT 1 3 1", "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_mmc_same_ub_no_s",
+                       name="whm_mmc_same_ub_yes_s",
                        reset=True, absoluteaddrs=False)
 
 # from UB0 to HM0 and multiplying UB1 into ACC0, w/ .S (different UBs)
@@ -488,13 +496,13 @@ def whm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
 #     then it does another matmul which confirms that the weight queue isn't
 #     switched. this involves reading HM4 into UB3, multiplying UB3 with RW0
 #     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
-def whm_mmc_no_overlap_no_s(distance, bitwidth, matsize):
+def whm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "RW 1"],
                        instrs=["WHM 0 0 1", "MMC.S 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", "RHM 4 3 1", 
                                 "MMC 1 3 1", "ACT 1 4 1", "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_mmc_no_overlap_no_s",
+                       name="whm_mmc_diff_ub_yes_s",
                        reset=True, absoluteaddrs=False)
 
 
@@ -521,12 +529,12 @@ def whm_act_same_ub(distance, bitwidth, matsize):
 #     RW0 into the weight queue, and multiplies UB2 with RW0 into ACC0.
 # instrs write from UB0 to HM0 and then accumulate from ACC0 to UB1.
 # cleanup writes the accumulated UB1 to HM1.
-def whm_act_no_overlap(distance, bitwidth, matsize):
+def whm_act_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 3 0 1", "RHM 2 2 1", "RW 0", "MMC 0 2 1"],
                        instrs=["WHM 0 0 1", "ACT 0 1 1"],
                        cleanup=["WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="whm_act_no_overlap",
+                       name="whm_act_diff_ub",
                        reset=True, absoluteaddrs=False)
 
 
@@ -611,7 +619,7 @@ def rw_rw_diff_weights_empty(distance, bitwidth, matsize):
                                 "ACT 0 2 1", "ACT 1 3 1", 
                                 "WHM 2 2 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rw_rw_same_weights_empty",
+                       name="rw_rw_diff_weights_empty",
                        reset=True, absoluteaddrs=False)
 
 # reading from RW0 and RW0, buffer starts with one space (same weights)
@@ -779,7 +787,7 @@ def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
 # cleanup writes the result of the multiplication from ACC0 to UB1 and then HM1.
 #     it also does more matmuls to write the whole weight queue to HM, which 
 #     will check that the weight matrix should be RW1, RW2, RW3 after instrs.
-def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
+def rw_mmc_one_space_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2"],
                        instrs=["RW 3", "MMC.S 0 0 1"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
@@ -790,7 +798,7 @@ def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
                                 "RHM 6 6 1", "MMC.S 3 6 1", "ACT 3 7 1", 
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rw_mmc_one_space_no_s",
+                       name="rw_mmc_one_space_yes_s",
                        reset=True, absoluteaddrs=False)
 
 # reading from RW0, buffer starts full, multiplying UB0 into ACC0, no .S
@@ -825,7 +833,7 @@ def rw_mmc_full_no_s(distance, bitwidth, matsize):
 #     it also does more matmuls to write the whole weight queue to HM, which
 #     will check that the weight matrix should be RW1, RW2, RW3 (or RW4? I'm not actually sure what it does or should do in this position. does it refuse to input after it's full, or does it just replace the 4th slot?)
 #     after the instrs under test finish.
-def rw_mmc_full_no_s(distance, bitwidth, matsize):
+def rw_mmc_full_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2", "RW 3"],
                        instrs=["RW 4", "MMC 0 0 1"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
@@ -836,7 +844,7 @@ def rw_mmc_full_no_s(distance, bitwidth, matsize):
                                 "RHM 6 6 1", "MMC.S 3 6 1", "ACT 3 7 1", 
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="rw_mmc_full_no_s",
+                       name="rw_mmc_full_yes_s",
                        reset=True, absoluteaddrs=False)
 
 
@@ -909,7 +917,7 @@ def mmc_rhm_same_ub_yes_s(distance, bitwidth, matsize):
 #     switched. this involves reading HM4 into UB3, multiplying UB3 with RW0
 #     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5. Lastly, we 
 #     have to write the result of the RHM into UB1 back to the HM (HM2).
-def mmc_rhm_no_overlap_no_s(distance, bitwidth, matsize):
+def mmc_rhm_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
                        instrs=["MMC 0 0 1", "RHM 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
@@ -917,7 +925,7 @@ def mmc_rhm_no_overlap_no_s(distance, bitwidth, matsize):
                                 "WHM 5 4 1",
                                 "WHM 2 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="mmc_rhm_no_overlap_no_s",
+                       name="mmc_rhm_diff_ub_no_s",
                        reset=True, absoluteaddrs=False)
 
 # multiplying UB0 into ACC0, w/ .S, moving from HM0 to UB1 (different UB)
@@ -928,7 +936,7 @@ def mmc_rhm_no_overlap_no_s(distance, bitwidth, matsize):
 #     switched. this involves reading HM4 into UB3, multiplying UB3 with RW1
 #     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5. Lastly, we 
 #     have to write the result of the RHM into UB1 back to the HM (HM2).
-def mmc_rhm_no_overlap_yes_s(distance, bitwidth, matsize):
+def mmc_rhm_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
                        instrs=["MMC.S 0 0 1", "RHM 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
@@ -936,7 +944,7 @@ def mmc_rhm_no_overlap_yes_s(distance, bitwidth, matsize):
                                 "WHM 5 4 1",
                                 "WHM 2 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="mmc_rhm_no_overlap_yes_s",
+                       name="mmc_rhm_diff_ub_yes_s",
                        reset=True, absoluteaddrs=False)
 
 
@@ -986,14 +994,14 @@ def mmc_whm_same_ub_yes_s(distance, bitwidth, matsize):
 #    it also does another matmul to confirm that the weight queue isn't
 #    switched. this involves reading HM4 into UB3, multiplying UB3 with RW0
 #    into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
-def mmc_whm_no_overlap_no_s(distance, bitwidth, matsize):
+def mmc_whm_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1", "RW 0", "RW 1"],
                        instrs=["MMC 0 0 1", "WHM 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
                                 "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
                                 "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="mmc_whm_no_overlap_no_s",
+                       name="mmc_whm_diff_ub_no_s",
                        reset=True, absoluteaddrs=False)
 
 # multiplying UB0 into ACC0, w/ .S, moving from UB1 to HM0 (different UB)
@@ -1003,14 +1011,14 @@ def mmc_whm_no_overlap_no_s(distance, bitwidth, matsize):
 #    it also does another matmul to confirm that the weight queue is
 #    switched. this involves reading HM4 into UB3, multiplying UB3 with RW1
 #    into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
-def mmc_whm_no_overlap_no_s(distance, bitwidth, matsize):
+def mmc_whm_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1", "RW 0", "RW 1"],
                        instrs=["MMC.S 0 0 1", "WHM 0 1 1"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
                                 "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
                                 "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="mmc_whm_no_overlap_no_s",
+                       name="mmc_whm_diff_ub_yes_s",
                        reset=True, absoluteaddrs=False)
 
 
@@ -1052,7 +1060,7 @@ def mmc_rw_empty_yes_s(distance, bitwidth, matsize):
                                 "RHM 2 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="mmc_rw_empty_no_s",
+                       name="mmc_rw_empty_yes_s",
                        reset=True, absoluteaddrs=False)
 
 # multiplying UB0 into ACC0, no .S, reading from RW0, buffer starts with one space
@@ -1135,7 +1143,7 @@ def mmc_rw_full_no_s(distance, bitwidth, matsize):
 # cleanup writes the result of the multiplication from ACC0 to UB1 and then HM1.
 #     it also does 4 more matmuls to process the rest of the FIFO queue (RW1,
 #     RW2, RW3, and RW4).
-def mmc_rw_full_no_s(distance, bitwidth, matsize):
+def mmc_rw_full_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3", "RHM 0 0 1"],
                        instrs=["MMC 0 0 1", "RW 4"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
@@ -1148,7 +1156,7 @@ def mmc_rw_full_no_s(distance, bitwidth, matsize):
                                 "RHM 8 8 1", "MMC 4 8 1", "ACT 4 9 1", 
                                 "WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
-                       name="mmc_rw_full_no_s",
+                       name="mmc_rw_full_yes_s",
                        reset=True, absoluteaddrs=False)
 
 
