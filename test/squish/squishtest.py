@@ -207,6 +207,9 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
                 name: str, setup: list, cleanup: list, reset: bool, 
                 absoluteaddrs: bool) -> Tuple[bool, Dict[int, int]]:
 
+    config.MATSIZE = matsize
+    config.DWIDTH = bitwidth
+
     if len(instrs) != 2:
         print("Please provide two instructions to test.")
         exit(1)
@@ -220,8 +223,8 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
     program = Program(instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir) 
 
     # make folder for the test (squish/name/) and add weights and inputs if they don't already exist
-    weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 4)
-    hostmem_filename = make_hostmem(program_dir, program.matsize, program.bitwidth, 4)
+    weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 8)
+    hostmem_filename = make_hostmem(program_dir, program.matsize, program.bitwidth, 8)
 
 
     # if -r is set, or the following don't exist, or the test name is default (test):
@@ -242,6 +245,8 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
         assemble(f"{program_dir}/{program.name}.a", 0)
 
     # run d=50 .out file (control) and get the resulting matrix and final trace
+    print(f"Testing {name} for d = {distance}. b = {bitwidth}, m = {matsize}")
+    print(f"Control test")
     ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl"
     if reset or not os.path.exists(ctrl_output_filename) or program.name == "test":
         runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=True), hostmem=hostmem_filename, weightsmem=weights_filename)
@@ -251,6 +256,7 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
             (ctrl_hostmem, ctrl_sim_trace) = pickle.load(f)
 
     # run runtpu.py in standard mode and get result
+    print(f"Distance test")
     test_output_filename = f'{program_dir}/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl'
     runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=False), hostmem=hostmem_filename, weightsmem=weights_filename)
     (test_hostmem, test_sim_trace) = runtpu(runtpu_test_args, name=test_output_filename)
@@ -258,10 +264,10 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
     # compare results and output a verdict
     # comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
     # let's just do a comparison of the host memory for now
-    print("Control host memory:")
-    print_mem(ctrl_hostmem)
-    print("Test host memory:")
-    print_mem(test_hostmem)
+    # print("Control host memory:")
+    # print_mem(ctrl_hostmem)
+    # print("Test host memory:")
+    # print_mem(test_hostmem)
 
     if ctrl_hostmem == test_hostmem:
         print(f"Test {name} matches control")

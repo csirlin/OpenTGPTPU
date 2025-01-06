@@ -6,7 +6,7 @@ import numpy as np
 
 #set_debug_mode()
 
-from tpu import *
+from tpu import tpu
 import config
 
 
@@ -15,7 +15,7 @@ def concat_vec(vec, bits=8):
     mask = int('1'*bits, 2)
     for x in reversed(vec):
         t = (t<<bits) | (int(x) & mask)
-    print(vec, t)
+    # print(vec, t)
     return t
 
 def concat_tile(tile, bits=8):
@@ -48,7 +48,7 @@ def make_vec_2(value, bits=8, size=8):
 def print_mem(mem):
     ks = sorted(mem.keys())
     for a in ks:
-        print(a, make_vec_2(mem[a], DWIDTH, MATSIZE))
+        print(a, make_vec_2(mem[a], config.DWIDTH, config.MATSIZE))
 
 def print_weight_mem(mem, bits=8, size=8):
     ks = sorted(mem.keys())
@@ -58,7 +58,7 @@ def print_weight_mem(mem, bits=8, size=8):
         vec = []
         tile = mem[a]
         while tile > 0:
-            vec.append(make_vec(tile & mask, DWIDTH))
+            vec.append(make_vec(tile & mask, config.DWIDTH))
             tile = tile >> (bits*size) ###hmmm
         if vec != []:
             vecs.append(vec)
@@ -98,25 +98,25 @@ def runtpu(args, name='test'):
         flat_host = hostarray
     # print("Flat host array:")
     # print(flat_host)
-    hostmem = { a : concat_vec(vec, DWIDTH) for a,vec in enumerate(flat_host) }
+    hostmem = { a : concat_vec(vec, config.DWIDTH) for a,vec in enumerate(flat_host) }
     # print("Host memory start:")
     # print(hostmem)
     # print_mem(hostmem)
 
     weightsarray = np.load(args.weightsmem)
-    print("Weightsarray")
-    print(weightsarray)
-    print(weightsarray.shape)
+    # print("Weightsarray")
+    # print(weightsarray)
+    # print(weightsarray.shape)
     size = weightsarray.shape[-1]
     weight_shape = weightsarray.shape
     if len(weight_shape) == 3:
-        weightsmem = { a : concat_tile(tile, DWIDTH) for a,tile in enumerate(weightsarray) }
+        weightsmem = { a : concat_tile(tile, config.DWIDTH) for a,tile in enumerate(weightsarray) }
     if len(weight_shape) == 2:
         weightsmem = np.zeros(())
     #weightsmem = { a : concat_vec(vec, DWIDTH) for a,vec in enumerate(weightsarray) }
-    print("Weight memory:")
-    print_weight_mem(weightsmem, size=size, bits=DWIDTH)
-    print(weightsmem)
+    # print("Weight memory:")
+    # print_weight_mem(weightsmem, size=size, bits=config.DWIDTH)
+    # print(weightsmem)
 
     '''
     Left-most element of each vector should be left-most in memory: use concat_list for each vector
@@ -126,18 +126,25 @@ def runtpu(args, name='test'):
 
     For host mem, each vector goes at one address. First vector at address 0.
     '''
-
     tilesize = config.MATSIZE * config.MATSIZE  # number of weights in a tile
     nchunks = max(tilesize / 64, 1)  # Number of DRAM transfers needed from Weight DRAM for one tile
-    print(f"nchunks = {nchunks}")
-    chunkmask = pow(2,64*DWIDTH)-1
+    # print(f"nchunks = {nchunks}")
+    chunkmask = pow(2,64*config.DWIDTH)-1
 
     def getchunkfromtile(tile, chunkn):
         #print("Get chunk: ", chunkn, nchunks, chunkmask, tile)
         #print((tile >> ((nchunks - chunkn - 1)*64*8)) & chunkmask)
         if chunkn >= nchunks:
             raise Exception("Reading more weights than are present in one tile?")
-        return (tile >> int(((nchunks - chunkn - 1))*64*DWIDTH)) & chunkmask
+        return (tile >> int(((nchunks - chunkn - 1))*64*config.DWIDTH)) & chunkmask
+
+    reset_working_block()
+    IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, halt, \
+        hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, hostmem_wdata, \
+        weights_dram_read, weights_dram_raddr, acc_mems \
+        = tpu(config.MATSIZE, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
+        config.WEIGHT_DRAM_ADDR_SIZE, config.ACC_ADDR_SIZE, config.DWIDTH, 
+        config.INSTRUCTION_WIDTH, config.IMEM_ADDR_SIZE)
 
 
     # Run Simulation
@@ -164,24 +171,24 @@ def runtpu(args, name='test'):
 
         # Check if we're doing a Read Weights
         if chunkaddr < nchunks:
-            print("Sending weights from chunk {}: {}".format(chunkaddr, getchunkfromtile(weighttile, chunkaddr)))
-            print(getchunkfromtile(weighttile, chunkaddr))
-            print(weighttile)
+            # print("Sending weights from chunk {}: {}".format(chunkaddr, getchunkfromtile(weighttile, chunkaddr)))
+            # print(getchunkfromtile(weighttile, chunkaddr))
+            # print(weighttile)
             d[weights_dram_in] = getchunkfromtile(weighttile, chunkaddr)
             d[weights_dram_valid] = 1
             chunkaddr += 1
 
         # Read host memory signal
         if sim.inspect(hostmem_re):
-            print("Reading host memory")
+            # print("Reading host memory")
             raddr = sim.inspect(hostmem_raddr)
-            print("Read Host Memory: addr {}".format(raddr))
+            # print("Read Host Memory: addr {}".format(raddr))
             if raddr in hostmem: #this causes a pre-mature read of hostmem[end+1] after an RHM read from [start:end]. only lasts for one cycle and doesn't seem to affect anything else
                 d[hostmem_rdata] = hostmem[raddr]
 
         # Write host memory signal
         if sim.inspect(hostmem_we):
-            print("Writing host memory")
+            # print("Writing host memory")
             # print("hostmem_waddr = ", sim.inspect(hostmem_waddr))
             # print("hostmem_wdata = ", sim.inspect(hostmem_wdata))
             # print("wdata = ", sim.inspect('wdata'))
@@ -191,27 +198,27 @@ def runtpu(args, name='test'):
 
         # Read weights memory signal
         if sim.inspect(weights_dram_read):
-            print("Reading weights memory")
+            # print("Reading weights memory")
             weightaddr = sim.inspect(weights_dram_raddr)
             weighttile = weightsmem[weightaddr]
             chunkaddr = 0
-            print("Read Weights: addr {}".format(weightaddr))
+            # print("Read Weights: addr {}".format(weightaddr))
             #print(weighttile)
         
         # print(d)
         
         # sim_trace.print_trace
-        print(f"cycle = {cycle}, pc = {sim.inspect('tpu_pc')}")
+        # print(f"cycle = {cycle}, pc = {sim.inspect('tpu_pc')}")
         # print(f"mma_in_data_width_0_0 = {sim.inspect('mma_in_matrix_size_0_0')}")
         # print(f"mma_data_width_temp = {sim.inspect('mma_data_width_temp')}")
         # print(f"data_width_temp = {sim.inspect('data_width_temp')}")
         # print(f"act_acc_mems_wv_0 = {sim.inspect('act_acc_mems_wv_0')}")
-        print(f"UBuffer@{cycle}:")
+        # print(f"UBuffer@{cycle}:")
         ub = sim.inspect_mem(UBuffer)
-        for k in sorted(ub.keys()):
-            print(f"\t{k}: {make_vec_2(ub[k], DWIDTH, MATSIZE)}")
+        # for k in sorted(ub.keys()):
+        #     print(f"\t{k}: {make_vec_2(ub[k], config.DWIDTH, config.MATSIZE)}")
 
-        print(f"AccMems@{cycle}:")
+        # print(f"AccMems@{cycle}:")
         max_addrs = 0
         for i in range(len(acc_mems)):
             # print("keys = ", sim.inspect_mem(acc_mems[i]).keys())
@@ -223,21 +230,21 @@ def runtpu(args, name='test'):
             for k in sorted(ami.keys()):
                 amems[k][i+1] = ami[k]
         np.set_printoptions(linewidth=np.inf)
-        print(f"mmu_advance_fifo = {sim.inspect('mmu_advance_fifo')}")
+        # print(f"mmu_advance_fifo = {sim.inspect('mmu_advance_fifo')}")
 
         # for i in range(MATSIZE):
         #     print(f"AccMems[i][start_addr_reg] = {sim.inspect(f'act_acc_mems_at_start_addr_reg_{i}')}")
         for i in range(amems.shape[0]):
             amems[i][0] = i
-        print(amems.astype(int))
-        print("\n\n")
+        # print(amems.astype(int))
+        # print("\n\n")
         sim.step(d)
         cycle += 1
 
-    print("\n\n")
+    # print("\n\n")
     print("Simulation terminated at cycle {}".format(cycle))
-    print("Final Host memory:")
-    print_mem(hostmem)
+    # print("Final Host memory:")
+    # print_mem(hostmem)
 
     with open(f'{name}.pkl', 'wb') as file:
         pickle.dump((hostmem, sim_trace), file)
@@ -263,4 +270,4 @@ if __name__ == '__main__':
     parser.add_argument("weightsmem", metavar="WeightsMemoryArray", help="A file containing a numpy array containing the contents of the weights memroy. Each row represents one tile (the first row corresponds to the top row of the weights matrix).")
     args = parser.parse_args()
 
-    runtpu(args, name=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{DWIDTH}b_{MATSIZE}x{MATSIZE}')
+    runtpu(args, name=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}')

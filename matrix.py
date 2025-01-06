@@ -2,7 +2,7 @@ from functools import reduce
 from pyrtl import *
 from pyrtl import rtllib
 from pyrtl.rtllib import multipliers
-from config import *
+# from config import *
 
 #set_debug_mode()
 globali = 0  # To give unique numbers to each MAC
@@ -311,7 +311,7 @@ def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec)
     return accout, done
 
 
-def FIFO(matsize, mem_data, mem_valid, advance_fifo):
+def FIFO(mem_data, mem_valid, advance_fifo, MATSIZE, DWIDTH):
     '''
     matsize is the length of one row of the Matrix.
     mem_data is the connection from the DRAM controller, which is assumed to be 64 bytes wide.
@@ -338,7 +338,7 @@ def FIFO(matsize, mem_data, mem_valid, advance_fifo):
     while pow(2, size) < (totalsize/ddrwidth):  # compute log of number of transfers required
         size = size + 1
     state = Register(size, "fifo_state")  # Number of reads to receive (each read is ddrwidth bytes)
-    print(f"DWIDTH = {DWIDTH}, len(state) = {len(state)}")
+    # print(f"DWIDTH = {DWIDTH}, len(state) = {len(state)}")
     state_wv = WireVector(len(state), "fifo_state_wv")
     state_wv <<= state
     mem_valid_wv = WireVector(len(mem_valid), "fifo_mem_valid_wv")
@@ -539,7 +539,7 @@ def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec,
 
 def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr, 
         accum_waddr, vec_valid, accum_overwrite, lastvec, switch_weights, 
-        ddr_data, ddr_valid, nvecs_reg):  #, weights_in, weights_we):
+        ddr_data, ddr_valid, nvecs_reg, MATSIZE, DWIDTH):  #, weights_in, weights_we):
     
     logn1 = 1
     while pow(2, logn1) < (matrix_size + 1):
@@ -585,10 +585,11 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr,
             advance_fifo |= 0
 
     # FIFO
-    weights_tile, tile_ready, full = FIFO(matsize=matrix_size, 
-                                          mem_data=ddr_data, 
+    weights_tile, tile_ready, full = FIFO(mem_data=ddr_data, 
                                           mem_valid=ddr_valid, 
-                                          advance_fifo=advance_fifo) # advance fifo after an MMC.S is finished with the front weight. 
+                                          advance_fifo=advance_fifo,
+                                          MATSIZE=MATSIZE,
+                                          DWIDTH=DWIDTH) # advance fifo after an MMC.S is finished with the front weight. 
                                         #   advance_fifo=done_programming)
     #probe(tile_ready, "tile_ready")
     #probe(weights_tile, "FIFO_weights_out")
@@ -669,7 +670,7 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr,
 
 def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, 
             start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata,
-            accum_raddr, weights_dram_in, weights_dram_valid):
+            accum_raddr, weights_dram_in, weights_dram_valid, MATSIZE, DWIDTH):
     '''
 
     Outputs
@@ -728,7 +729,8 @@ def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start,
                         accum_waddr=accum_waddr, vec_valid=vec_valid, 
                         accum_overwrite=overwrite_reg, lastvec=last, 
                         switch_weights=swap_reg, ddr_data=weights_dram_in, 
-                        ddr_valid=weights_dram_valid, nvecs_reg=N)
+                        ddr_valid=weights_dram_valid, nvecs_reg=N, 
+                        MATSIZE=MATSIZE, DWIDTH=DWIDTH)
 
     #probe(ub_raddr, "ub_mm_raddr")
 
@@ -771,7 +773,7 @@ def testall(input_vectors, weights_vectors):
     #ws = [ Const(item, bitwidth=DATWIDTH) for sublist in weights_vectors for item in sublist ]  # flatten weight matrix
     #ws = concat_list(ws)  # combine weights into single wire
     ws = [ item for sublist in weights_vectors for item in sublist ]  # flatten weight matrix
-    print(ws)
+    # print(ws)
     #ws = reduce(lambda x, y : (x<<8)+y, ws)  # "concat" weights into one integer
     
     weightsdata = Input(64*8)
@@ -804,7 +806,7 @@ def testall(input_vectors, weights_vectors):
     # divide weights into dram-transfer sized chunks
     ws = reduce(lambda x, y : (x<<8)+y, ws)  # "concat" weights into one integer
     ws = [ (ws >> (64*8*i)) & pow(2, 64*8)-1 for i in range(max(1,len(weights_vectors)/64)) ]
-    print(ws)
+    # print(ws)
     for block in ws:
         d = din.copy()
         d.update({ins[j] : 0 for j in range(MATSIZE)})

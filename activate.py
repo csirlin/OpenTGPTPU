@@ -2,7 +2,7 @@ from functools import reduce
 
 #import pyrtl
 from pyrtl import *
-from config import *
+# from config import *
 
 def relu_vector(vec, offset):
     assert offset <= 24
@@ -19,7 +19,7 @@ def sigmoid_vector(vec):
     return concat_list([ sigmoid(x) for x in vec ])
 
 
-def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, matsize):
+def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, DWIDTH):
 
     # func: 0 - nothing
     #       1 - ReLU
