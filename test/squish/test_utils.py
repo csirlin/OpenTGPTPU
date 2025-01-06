@@ -22,10 +22,12 @@ def min_viable_distance_fixed(function, bitwidth, matsize, start_distance=50):
 def min_viable_distance_all(function, bitwidths, matsizes):
     d = {}
     for bitwidth in bitwidths:
-        d[bitwidth] = {}
+        b_index = "b" + str(bitwidth)
+        d[b_index] = {}
         for matsize in matsizes:
             distance = min_viable_distance_fixed(function, bitwidth, matsize)
-            d[bitwidth][matsize] = distance
+            m_index = "m" + str(matsize)
+            d[b_index][m_index] = distance
     return d
 
 ### custom tests ###
@@ -62,14 +64,12 @@ def test_mmc_switch_behavior(distance, bitwidth, matsize):
 
 ### RHM-RHM TESTS ###
 def run_all_rhm_rhm(bitwidths, matsizes):
-    
-    # return {
-    #     "rhm_rhm_no_overlap": min_viable_distance_all(rhm_rhm_no_overlap, bitwidths, matsizes),
-    #     "rhm_rhm_same_ub": min_viable_distance_all(rhm_rhm_same_ub, bitwidths, matsizes),
-    #     "rhm_rhm_same_hm": min_viable_distance_all(rhm_rhm_same_hm, bitwidths, matsizes),
-    #     "rhm_rhm_identical": min_viable_distance_all(rhm_rhm_identical, bitwidths, matsizes)
-    # }
-    pass
+    return {
+        "rhm_rhm_diff_hm_diff_ub": min_viable_distance_all(rhm_rhm_diff_hm_diff_ub, bitwidths, matsizes),
+        "rhm_rhm_diff_hm_same_ub": min_viable_distance_all(rhm_rhm_diff_hm_same_ub, bitwidths, matsizes),
+        "rhm_rhm_same_hm_diff_ub": min_viable_distance_all(rhm_rhm_same_hm_diff_ub, bitwidths, matsizes),
+        "rhm_rhm_same_hm_same_ub": min_viable_distance_all(rhm_rhm_same_hm_same_ub, bitwidths, matsizes)
+    }
 
 # from HM0 to UB0 and from HM1 to UB1 (no overlap in HM or UB)
 # setup reads the wrong matrices to slots 0 and 1 to start with. that way, the
@@ -125,8 +125,13 @@ def rhm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
 
 
 ### RHM-WHM TESTS ###
-def run_all_rhm_whm():
-    pass
+def run_all_rhm_whm(bitwidths, matsizes):
+    return {
+        "rhm_whm_diff_hm_diff_ub": min_viable_distance_all(rhm_whm_diff_hm_diff_ub, bitwidths, matsizes),
+        "rhm_whm_diff_hm_same_ub": min_viable_distance_all(rhm_whm_diff_hm_same_ub, bitwidths, matsizes),
+        "rhm_whm_same_hm_diff_ub": min_viable_distance_all(rhm_whm_same_hm_diff_ub, bitwidths, matsizes),
+        "rhm_whm_same_hm_same_ub": min_viable_distance_all(rhm_whm_same_hm_same_ub, bitwidths, matsizes)
+    }
 
 # from HM0 to UB0 and from UB1 to HM1 (no overlap in HM or UB)
 # setup preloads something into UB 1 for WHM to read from.
@@ -184,8 +189,10 @@ def rhm_whm_same_hm_same_ub(distance, bitwidth, matsize):
 
 
 ### RHM-RW TESTS ###
-def run_all_rhm_rw():
-    pass
+def run_all_rhm_rw(bitwidths, matsizes):
+    return {
+        "rhm_rw": min_viable_distance_all(rhm_rw, bitwidths, matsizes)
+    }
 
 # from HM0 to UB0 and reading from RW0
 # setup is not needed.
@@ -204,8 +211,13 @@ def rhm_rw(distance, bitwidth, matsize):
 
 
 ### RHM-MMC TESTS ###
-def run_all_rhm_mmc():
-    pass
+def run_all_rhm_mmc(bitwidths, matsizes):
+    return {
+        "rhm_mmc_same_ub_no_s": min_viable_distance_all(rhm_mmc_same_ub_no_s, bitwidths, matsizes),
+        "rhm_mmc_diff_ub_no_s": min_viable_distance_all(rhm_mmc_diff_ub_no_s, bitwidths, matsizes),
+        "rhm_mmc_same_ub_yes_s": min_viable_distance_all(rhm_mmc_same_ub_yes_s, bitwidths, matsizes),
+        "rhm_mmc_diff_ub_yes_s": min_viable_distance_all(rhm_mmc_diff_ub_yes_s, bitwidths, matsizes)
+    }
 
 # from HM0 to UB0 and multiplying UB0 with ACC0, no .S (same UB)
 # setup reads a weight into RW 0 for use in multiplication.
@@ -271,8 +283,11 @@ def rhm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
 
 
 ### RHM-ACT TESTS ###
-def run_all_rhm_act():
-    pass
+def run_all_rhm_act(bitwidths, matsizes):
+    return {
+        "rhm_act_same_ub": min_viable_distance_all(rhm_act_same_ub, bitwidths, matsizes),
+        "rhm_act_diff_ub": min_viable_distance_all(rhm_act_diff_ub, bitwidths, matsizes)
+    }
 
 # from HM0 to UB0 and accumulate from ACC0 to UB0 (same UB)
 # setup reads HM1 into UB1 and reads RW0 into the weight queue, and multiplies
@@ -304,8 +319,13 @@ def rhm_act_diff_ub(distance, bitwidth, matsize):
 
 
 ### WHM-RHM TESTS ###
-def run_all_whm_rhm():
-    pass
+def run_all_whm_rhm(bitwidths, matsizes):
+    return {
+        "whm_rhm_diff_hm_diff_ub": min_viable_distance_all(whm_rhm_diff_hm_diff_ub, bitwidths, matsizes),
+        "whm_rhm_diff_hm_same_ub": min_viable_distance_all(whm_rhm_diff_hm_same_ub, bitwidths, matsizes),
+        "whm_rhm_same_hm_diff_ub": min_viable_distance_all(whm_rhm_same_hm_diff_ub, bitwidths, matsizes),
+        "whm_rhm_same_hm_same_ub": min_viable_distance_all(whm_rhm_same_hm_same_ub, bitwidths, matsizes)
+    }
 
 # from UB0 to HM0 and from HM1 to UB1 (no overlap in HM or UB)
 # setup writes a matrix from HM2 to UB0
@@ -358,8 +378,13 @@ def whm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
 
 
 ### WHM-WHM TESTS ###
-def run_all_whm_whm():
-    pass
+def run_all_whm_whm(bitwidths, matsizes):
+    return {
+        "whm_whm_diff_hm_diff_ub": min_viable_distance_all(whm_whm_diff_hm_diff_ub, bitwidths, matsizes),
+        "whm_whm_same_hm_diff_ub": min_viable_distance_all(whm_whm_same_hm_diff_ub, bitwidths, matsizes),
+        "whm_whm_diff_hm_same_ub": min_viable_distance_all(whm_whm_diff_hm_same_ub, bitwidths, matsizes),
+        "whm_whm_same_hm_same_ub": min_viable_distance_all(whm_whm_same_hm_same_ub, bitwidths, matsizes)
+    }
 
 # from UB0 to HM0 and from UB1 to HM1 (no overlap in HM or UB)
 # setup writes matrices from HM2 to UB0 and from HM3 to UB1 to get different 
@@ -414,8 +439,10 @@ def whm_whm_same_hm_same_ub(distance, bitwidth, matsize):
 
 
 ### WHM-RW TESTS ###
-def run_all_whm_rw():
-    pass
+def run_all_whm_rw(bitwidths, matsizes):
+    return {
+        "whm_rw": min_viable_distance_all(whm_rw, bitwidths, matsizes)
+    }
 
 # from UB0 to HM0 and reading from RW0
 # setup writes a matrix from HM1 to UB0 to put a value in it and prepares for
@@ -434,8 +461,13 @@ def whm_rw(distance, bitwidth, matsize):
 
 
 ### WHM-MMC TESTS ###
-def run_all_whm_mmc():
-    pass
+def run_all_whm_mmc(bitwidths, matsizes):
+    return {
+        "whm_mmc_same_ub_no_s": min_viable_distance_all(whm_mmc_same_ub_no_s, bitwidths, matsizes),
+        "whm_mmc_diff_ub_no_s": min_viable_distance_all(whm_mmc_diff_ub_no_s, bitwidths, matsizes),
+        "whm_mmc_same_ub_yes_s": min_viable_distance_all(whm_mmc_same_ub_yes_s, bitwidths, matsizes),
+        "whm_mmc_diff_ub_yes_s": min_viable_distance_all(whm_mmc_diff_ub_yes_s, bitwidths, matsizes)
+    }
 
 # from UB0 to HM0 and multiplying UB0 into ACC0, no .S (same UB)
 # setup loads HM1 into UB0 so that it has a value, and loads RW0 and RW1 into
@@ -508,8 +540,11 @@ def whm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
 
 
 ### WHM-ACT TESTS ###
-def run_all_whm_act():
-    pass
+def run_all_whm_act(bitwidths, matsizes):
+    return {
+        "whm_act_same_ub": min_viable_distance_all(whm_act_same_ub, bitwidths, matsizes),
+        "whm_act_diff_ub": min_viable_distance_all(whm_act_diff_ub, bitwidths, matsizes)
+    }
 
 # from UB0 to HM0 and accumulate from ACC0 to UB0 (same UB)
 # setup loads HM1 into UB1 so that it has a value, loads RW0 into the weight
@@ -540,8 +575,10 @@ def whm_act_diff_ub(distance, bitwidth, matsize):
 
 
 ### RW-RHM TESTS ###
-def run_all_rw_rhm():
-    pass
+def run_all_rw_rhm(bitwidths, matsizes):
+    return {
+        "rw_rhm": min_viable_distance_all(rw_rhm, bitwidths, matsizes)
+    }
 
 # reading from RW0 and moving from HM0 to UB0
 # setup not needed.
@@ -562,8 +599,10 @@ def rw_rhm(distance, bitwidth, matsize):
 
 
 ### RW-WHM TESTS ###
-def run_all_rw_whm():
-    pass
+def run_all_rw_whm(bitwidths, matsizes):
+    return {
+        "rw_whm": min_viable_distance_all(rw_whm, bitwidths, matsizes)
+    }
 
 # reading from RW0 and moving from UB0 to HM0
 # setup loads a matrix from HM1 into UB0 so that it has a value.
@@ -583,8 +622,15 @@ def rw_whm(distance, bitwidth, matsize):
 
 
 ### RW-RW TESTS ###
-def run_all_rw_rw():
-    pass
+def run_all_rw_rw(bitwidths, matsizes):
+    return {
+        "rw_rw_same_weights_empty": min_viable_distance_all(rw_rw_same_weights_empty, bitwidths, matsizes),
+        "rw_rw_diff_weights_empty": min_viable_distance_all(rw_rw_diff_weights_empty, bitwidths, matsizes),
+        "rw_rw_same_weights_one_space": min_viable_distance_all(rw_rw_same_weights_one_space, bitwidths, matsizes),
+        "rw_rw_diff_weights_one_space": min_viable_distance_all(rw_rw_diff_weights_one_space, bitwidths, matsizes),
+        "rw_rw_same_weights_full": min_viable_distance_all(rw_rw_same_weights_full, bitwidths, matsizes),
+        "rw_rw_diff_weights_full": min_viable_distance_all(rw_rw_diff_weights_full, bitwidths, matsizes)
+    }
 
 # reading from RW0 and RW0, buffer starts empty (same weights)
 # setup not needed.
@@ -717,8 +763,15 @@ def rw_rw_diff_weights_full(distance, bitwidth, matsize):
 
 
 ### RW-MMC TESTS ###
-def run_all_rw_mmc():
-    pass
+def run_all_rw_mmc(bitwidths, matsizes):
+    return {
+        "rw_mmc_empty_no_s": min_viable_distance_all(rw_mmc_empty_no_s, bitwidths, matsizes),
+        "rw_mmc_empty_yes_s": min_viable_distance_all(rw_mmc_empty_yes_s, bitwidths, matsizes),
+        "rw_mmc_one_space_no_s": min_viable_distance_all(rw_mmc_one_space_no_s, bitwidths, matsizes),
+        "rw_mmc_one_space_yes_s": min_viable_distance_all(rw_mmc_one_space_yes_s, bitwidths, matsizes),
+        "rw_mmc_full_no_s": min_viable_distance_all(rw_mmc_full_no_s, bitwidths, matsizes),
+        "rw_mmc_full_yes_s": min_viable_distance_all(rw_mmc_full_yes_s, bitwidths, matsizes)
+    }
 
 # reading from RW0, buffer starts empty, multiplying UB0 into ACC0, no .S
 # setup reads HM0 into UB0.
@@ -850,8 +903,10 @@ def rw_mmc_full_yes_s(distance, bitwidth, matsize):
 
 
 ### RW-ACT TESTS ###
-def run_all_rw_act():
-    pass
+def run_all_rw_act(bitwidths, matsizes):
+    return {
+        "rw_act": min_viable_distance_all(rw_act, bitwidths, matsizes)
+    }
 
 # reading from RW0 and accumulate from ACC0 to UB0
 # setup reads HM1 into UB1 so that it has a value, loads RW0, and multiplies
@@ -872,8 +927,13 @@ def rw_act(distance, bitwidth, matsize):
 
 
 ### MMC-RHM TESTS ###
-def run_all_mmc_rhm():
-    pass
+def run_all_mmc_rhm(bitwidths, matsizes):
+    return {
+        "mmc_rhm_same_ub_no_s": min_viable_distance_all(mmc_rhm_same_ub_no_s, bitwidths, matsizes),
+        "mmc_rhm_same_ub_yes_s": min_viable_distance_all(mmc_rhm_same_ub_yes_s, bitwidths, matsizes),
+        "mmc_rhm_diff_ub_no_s": min_viable_distance_all(mmc_rhm_diff_ub_no_s, bitwidths, matsizes),
+        "mmc_rhm_diff_ub_yes_s": min_viable_distance_all(mmc_rhm_diff_ub_yes_s, bitwidths, matsizes)
+    }
 
 # multiplying UB0 into ACC0, no .S, moving from HM0 to UB0 (same UB)
 # setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
@@ -950,8 +1010,13 @@ def mmc_rhm_diff_ub_yes_s(distance, bitwidth, matsize):
 
 
 ### MMC-WHM TESTS ###
-def run_all_mmc_whm():
-    pass
+def run_all_mmc_whm(bitwidths, matsizes):
+    return {
+        "mmc_whm_same_ub_no_s": min_viable_distance_all(mmc_whm_same_ub_no_s, bitwidths, matsizes),
+        "mmc_whm_same_ub_yes_s": min_viable_distance_all(mmc_whm_same_ub_yes_s, bitwidths, matsizes),
+        "mmc_whm_diff_ub_no_s": min_viable_distance_all(mmc_whm_diff_ub_no_s, bitwidths, matsizes),
+        "mmc_whm_diff_ub_yes_s": min_viable_distance_all(mmc_whm_diff_ub_yes_s, bitwidths, matsizes)
+    }
 
 # multiplying UB0 into ACC0, no .S, moving from UB0 to HM0 (same UB)
 # setup reads HM1 into UB0 so that it has a different value, loads RW0 and RW1.
@@ -1024,8 +1089,15 @@ def mmc_whm_diff_ub_yes_s(distance, bitwidth, matsize):
 
 
 ### MMC-RW TESTS ###
-def run_all_mmc_rw():
-    pass
+def run_all_mmc_rw(bitwidths, matsizes):
+    return {
+        "mmc_rw_empty_no_s": min_viable_distance_all(mmc_rw_empty_no_s, bitwidths, matsizes),
+        "mmc_rw_empty_yes_s": min_viable_distance_all(mmc_rw_empty_yes_s, bitwidths, matsizes),
+        "mmc_rw_one_space_no_s": min_viable_distance_all(mmc_rw_one_space_no_s, bitwidths, matsizes),
+        "mmc_rw_one_space_yes_s": min_viable_distance_all(mmc_rw_one_space_yes_s, bitwidths, matsizes),
+        "mmc_rw_full_no_s": min_viable_distance_all(mmc_rw_full_no_s, bitwidths, matsizes),
+        "mmc_rw_full_yes_s": min_viable_distance_all(mmc_rw_full_yes_s, bitwidths, matsizes)
+    }
 
 # multiplying UB0 into ACC0, no .S, reading from RW0, buffer starts empty
 # setup reads HM0 into UB0. 
@@ -1162,8 +1234,25 @@ def mmc_rw_full_yes_s(distance, bitwidth, matsize):
 
 
 ### MMC-MMC TESTS ###
-def run_all_mmc_mmc():
-    pass
+def run_all_mmc_mmc(bitwidths, matsizes):
+    return {
+        "mmc_mmc_diff_ub_diff_acc_no_s_no_s": min_viable_distance_all(mmc_mmc_diff_ub_diff_acc_no_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_diff_ub_diff_acc_no_s_yes_s": min_viable_distance_all(mmc_mmc_diff_ub_diff_acc_no_s_yes_s, bitwidths, matsizes),
+        "mmc_mmc_diff_ub_diff_acc_yes_s_no_s": min_viable_distance_all(mmc_mmc_diff_ub_diff_acc_yes_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_diff_ub_diff_acc_yes_s_yes_s": min_viable_distance_all(mmc_mmc_diff_ub_diff_acc_yes_s_yes_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_diff_acc_no_s_no_s": min_viable_distance_all(mmc_mmc_same_ub_diff_acc_no_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_diff_acc_no_s_yes_s": min_viable_distance_all(mmc_mmc_same_ub_diff_acc_no_s_yes_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_diff_acc_yes_s_no_s": min_viable_distance_all(mmc_mmc_same_ub_diff_acc_yes_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_diff_acc_yes_s_yes_s": min_viable_distance_all(mmc_mmc_same_ub_diff_acc_yes_s_yes_s, bitwidths, matsizes),
+        "mmc_mmc_diff_ub_same_acc_no_s_no_s": min_viable_distance_all(mmc_mmc_diff_ub_same_acc_no_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_diff_ub_same_acc_no_s_yes_s": min_viable_distance_all(mmc_mmc_diff_ub_same_acc_no_s_yes_s, bitwidths, matsizes),
+        "mmc_mmc_diff_ub_same_acc_yes_s_no_s": min_viable_distance_all(mmc_mmc_diff_ub_same_acc_yes_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_diff_ub_same_acc_yes_s_yes_s": min_viable_distance_all(mmc_mmc_diff_ub_same_acc_yes_s_yes_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_same_acc_no_s_no_s": min_viable_distance_all(mmc_mmc_same_ub_same_acc_no_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_same_acc_no_s_yes_s": min_viable_distance_all(mmc_mmc_same_ub_same_acc_no_s_yes_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_same_acc_yes_s_no_s": min_viable_distance_all(mmc_mmc_same_ub_same_acc_yes_s_no_s, bitwidths, matsizes),
+        "mmc_mmc_same_ub_same_acc_yes_s_yes_s": min_viable_distance_all(mmc_mmc_same_ub_same_acc_yes_s_yes_s, bitwidths, matsizes),
+    }
 
 # multiplying UB0 into ACC0 no .S, multiplying UB1 into ACC1 no .S (different UB and ACC)
 # setup reads HM0 into UB0 and HM1 into UB1. it also loads RW0 and RW1 into the
@@ -1460,8 +1549,17 @@ def mmc_mmc_same_ub_same_acc_yes_s_yes_s(distance, bitwidth, matsize):
 
 
 ### MMC-ACT TESTS ###
-def run_all_mmc_act():
-    pass
+def run_all_mmc_act(bitwidths, matsizes):
+    return {
+        "mmc_act_diff_ub_diff_acc_no_s": min_viable_distance_all(mmc_act_diff_ub_diff_acc_no_s, bitwidths, matsizes),
+        "mmc_act_diff_ub_diff_acc_yes_s": min_viable_distance_all(mmc_act_diff_ub_diff_acc_yes_s, bitwidths, matsizes),
+        "mmc_act_same_ub_diff_acc_no_s": min_viable_distance_all(mmc_act_same_ub_diff_acc_no_s, bitwidths, matsizes),
+        "mmc_act_same_ub_diff_acc_yes_s": min_viable_distance_all(mmc_act_same_ub_diff_acc_yes_s, bitwidths, matsizes),
+        "mmc_act_diff_ub_same_acc_no_s": min_viable_distance_all(mmc_act_diff_ub_same_acc_no_s, bitwidths, matsizes),
+        "mmc_act_diff_ub_same_acc_yes_s": min_viable_distance_all(mmc_act_diff_ub_same_acc_yes_s, bitwidths, matsizes),
+        "mmc_act_same_ub_same_acc_no_s": min_viable_distance_all(mmc_act_same_ub_same_acc_no_s, bitwidths, matsizes),
+        "mmc_act_same_ub_same_acc_yes_s": min_viable_distance_all(mmc_act_same_ub_same_acc_yes_s, bitwidths, matsizes),
+    }
 
 # multiplying UB0 into ACC0 no .S, accumulate from ACC1 to UB1 (different UB and ACC)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue. then it
@@ -1618,8 +1716,11 @@ def mmc_act_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
 
 
 ### ACT-RHM TESTS ###
-def run_all_act_rhm():
-    pass
+def run_all_act_rhm(bitwidths, matsizes):
+    return {
+        "act_rhm_same_ub": min_viable_distance_all(act_rhm_same_ub, bitwidths, matsizes),
+        "act_rhm_diff_ub": min_viable_distance_all(act_rhm_diff_ub, bitwidths, matsizes),
+    }
 
 # accumulate from ACC0 to UB0, move from HM0 to UB0 (same UB)
 # setup reads HM1 into UB1, loads RW0, and multiplies UB1 with RW0 (no S) into 
@@ -1651,8 +1752,11 @@ def act_rhm_diff_ub(distance, bitwidth, matsize):
 
 
 ### ACT-WHM TESTS ###
-def run_all_act_whm():
-    pass
+def run_all_act_whm(bitwidths, matsizes):
+    return {
+        "act_whm_same_ub": min_viable_distance_all(act_whm_same_ub, bitwidths, matsizes),
+        "act_whm_diff_ub": min_viable_distance_all(act_whm_diff_ub, bitwidths, matsizes),
+    }
 
 # accumulate from ACC0 to UB0, move from UB0 to HM0 (same UB)
 # setup reads HM1 into UB1, loads RW0, and multiplies UB1 with RW0 (no S) into
@@ -1683,8 +1787,10 @@ def act_whm_diff_ub(distance, bitwidth, matsize):
 
 
 ### ACT-RW TESTS ###
-def run_all_act_rw():
-    pass
+def run_all_act_rw(bitwidths, matsizes):
+    return {
+        "act_rw": min_viable_distance_all(act_rw, bitwidths, matsizes),
+    }
 
 # accumulate from ACC0 to UB0, read from RW0
 # setup reads HM1 into UB1, loads RW0, and multiplies UB1 with RW0 (no S) into
@@ -1708,8 +1814,17 @@ def act_rw(distance, bitwidth, matsize):
 
 
 ### ACT-MMC TESTS ###
-def run_all_act_mmc():
-    pass
+def run_all_act_mmc(bitwidths, matsizes):
+    return {
+        "act_mmc_diff_ub_diff_acc_no_s": min_viable_distance_all(act_mmc_diff_ub_diff_acc_no_s, bitwidths, matsizes),
+        "act_mmc_diff_ub_diff_acc_yes_s": min_viable_distance_all(act_mmc_diff_ub_diff_acc_yes_s, bitwidths, matsizes),
+        "act_mmc_same_ub_diff_acc_no_s": min_viable_distance_all(act_mmc_same_ub_diff_acc_no_s, bitwidths, matsizes),
+        "act_mmc_same_ub_diff_acc_yes_s": min_viable_distance_all(act_mmc_same_ub_diff_acc_yes_s, bitwidths, matsizes),
+        "act_mmc_diff_ub_same_acc_no_s": min_viable_distance_all(act_mmc_diff_ub_same_acc_no_s, bitwidths, matsizes),
+        "act_mmc_diff_ub_same_acc_yes_s": min_viable_distance_all(act_mmc_diff_ub_same_acc_yes_s, bitwidths, matsizes),
+        "act_mmc_same_ub_same_acc_no_s": min_viable_distance_all(act_mmc_same_ub_same_acc_no_s, bitwidths, matsizes),
+        "act_mmc_same_ub_same_acc_yes_s": min_viable_distance_all(act_mmc_same_ub_same_acc_yes_s, bitwidths, matsizes),
+    }
 
 # accumulate from ACC0 to UB0, multiplying UB1 into ACC1 no .S (different ACC and UB)
 # setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and 
@@ -1864,8 +1979,13 @@ def act_mmc_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
 
 
 ### ACT-ACT TESTS ###
-def run_all_act_act():
-    pass
+def run_all_act_act(bitwidths, matsizes):
+    return {
+        "act_act_diff_ub_diff_acc": min_viable_distance_all(act_act_diff_ub_diff_acc, bitwidths, matsizes),
+        "act_act_same_ub_diff_acc": min_viable_distance_all(act_act_same_ub_diff_acc, bitwidths, matsizes),
+        "act_act_diff_ub_same_acc": min_viable_distance_all(act_act_diff_ub_same_acc, bitwidths, matsizes),
+        "act_act_same_ub_same_acc": min_viable_distance_all(act_act_same_ub_same_acc, bitwidths, matsizes),
+    }
 
 # accumulate from ACC0 to UB0, accumulate from ACC1 to UB1 (different UB and ACC)
 # setup reads HM0 into UB0, reads HM1 into UB1, loads RW0, multiplies UB0 with
@@ -1923,5 +2043,37 @@ def act_act_same_ub_same_acc(distance, bitwidth, matsize):
 
 
 
-def run_all_squish_tests():
-    pass
+def run_all_squish_tests(bitwidths, matsizes):
+    tests = {}
+
+    tests.update(run_all_rhm_rhm(bitwidths, matsizes))
+    tests.update(run_all_rhm_whm(bitwidths, matsizes))
+    tests.update(run_all_rhm_rw(bitwidths, matsizes))
+    tests.update(run_all_rhm_mmc(bitwidths, matsizes))
+    tests.update(run_all_rhm_act(bitwidths, matsizes))
+
+    tests.update(run_all_whm_rhm(bitwidths, matsizes))
+    tests.update(run_all_whm_whm(bitwidths, matsizes))
+    tests.update(run_all_whm_rw(bitwidths, matsizes))
+    tests.update(run_all_whm_mmc(bitwidths, matsizes))
+    tests.update(run_all_whm_act(bitwidths, matsizes))
+
+    tests.update(run_all_rw_rhm(bitwidths, matsizes))
+    tests.update(run_all_rw_whm(bitwidths, matsizes))
+    tests.update(run_all_rw_rw(bitwidths, matsizes))
+    tests.update(run_all_rw_mmc(bitwidths, matsizes))
+    tests.update(run_all_rw_act(bitwidths, matsizes))
+
+    tests.update(run_all_mmc_rhm(bitwidths, matsizes))
+    tests.update(run_all_mmc_whm(bitwidths, matsizes))
+    tests.update(run_all_mmc_rw(bitwidths, matsizes))
+    tests.update(run_all_mmc_mmc(bitwidths, matsizes))
+    tests.update(run_all_mmc_act(bitwidths, matsizes))
+
+    tests.update(run_all_act_rhm(bitwidths, matsizes))
+    tests.update(run_all_act_whm(bitwidths, matsizes))
+    tests.update(run_all_act_rw(bitwidths, matsizes))
+    tests.update(run_all_act_mmc(bitwidths, matsizes))
+    tests.update(run_all_act_act(bitwidths, matsizes))
+
+    return tests
