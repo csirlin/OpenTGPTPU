@@ -205,7 +205,8 @@ class Program:
 # run the squish test given the args
 def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int, 
                 name: str, setup: list, cleanup: list, reset: bool, 
-                absoluteaddrs: bool) -> Tuple[bool, Dict[int, int]]:
+                absoluteaddrs: bool, test_folder: str) \
+    -> Tuple[bool, Dict[int, int]]:
 
     config.MATSIZE = matsize
     config.DWIDTH = bitwidth
@@ -219,7 +220,7 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
         exit(1)
 
     # parse args into Program object
-    program_dir = f"{os.path.dirname(__file__)}/{name}"
+    program_dir = f"{os.path.dirname(__file__)}/{test_folder}/{name}"
     program = Program(instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir) 
 
     # make folder for the test (squish/name/) and add weights and inputs if they don't already exist
@@ -246,20 +247,24 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
 
     # run d=50 .out file (control) and get the resulting matrix and final trace
     print(f"Testing {name} for d = {distance}. b = {bitwidth}, m = {matsize}")
-    print(f"Control test")
-    ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl"
-    if reset or not os.path.exists(ctrl_output_filename) or program.name == "test":
+    print(f"Control")
+    ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}m"
+    if reset or not os.path.exists(ctrl_output_filename + ".pkl") or program.name == "test":
         runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=True), hostmem=hostmem_filename, weightsmem=weights_filename)
         (ctrl_hostmem, ctrl_sim_trace) = runtpu(runtpu_ctrl_args, name=ctrl_output_filename)
     else:
-        with open(ctrl_output_filename, "rb") as f:
+        with open(ctrl_output_filename + ".pkl", "rb") as f:
             (ctrl_hostmem, ctrl_sim_trace) = pickle.load(f)
 
     # run runtpu.py in standard mode and get result
-    print(f"Distance test")
-    test_output_filename = f'{program_dir}/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}.pkl'
-    runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=False), hostmem=hostmem_filename, weightsmem=weights_filename)
-    (test_hostmem, test_sim_trace) = runtpu(runtpu_test_args, name=test_output_filename)
+    print(f"Test")
+    test_output_filename = f'{program_dir}/test_{config.DWIDTH}b_{config.MATSIZE}m_{distance}d'
+    if reset or not os.path.exists(test_output_filename + ".pkl") or program.name == "test":
+        runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=False), hostmem=hostmem_filename, weightsmem=weights_filename)
+        (test_hostmem, test_sim_trace) = runtpu(runtpu_test_args, name=test_output_filename)
+    else:
+        with open(test_output_filename + ".pkl", "rb") as f:
+            (test_hostmem, test_sim_trace) = pickle.load(f)
 
     # compare results and output a verdict
     # comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle

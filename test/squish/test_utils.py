@@ -1,14 +1,15 @@
 # utilities for running squish tests
 from squishtest import squish_test
-
+TEST_FOLDER = "test"
+START_DISTANCE = 50
 
 
 # run a squish test with chosen bitwidth and matsize for different distances. 
 # start from a chosen large distance and reduce until the test doesn't match the
 # control, or a distance of 1 is reached successfully.
 # return the lowest distance that was successful.
-def min_viable_distance_fixed(function, bitwidth, matsize, start_distance=50):
-    distance = start_distance
+def min_viable_distance_fixed(function, bitwidth, matsize):
+    distance = START_DISTANCE
     while distance > 0:
         result, _ = function(distance, bitwidth, matsize)
         if not result:
@@ -58,8 +59,7 @@ def test_mmc_switch_behavior(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="test_mmc_switch_behavior",
-                       reset=True, absoluteaddrs=False)
-
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 ### RHM-RHM TESTS ###
@@ -83,7 +83,7 @@ def rhm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_diff_hm_diff_ub", 
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and from HM1 to UB0 (same destination in UB)
 # setup is not needed to test that data is overwritten correctly.
@@ -95,7 +95,7 @@ def rhm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_diff_hm_same_ub", 
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and from HM0 to UB1 (same origin in HM)
 # setup is not needed to test that data is written to two different places
@@ -108,7 +108,7 @@ def rhm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_same_hm_diff_ub", 
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and from HM0 to UB0 (same origin in HM and destination in UB)
 # setup is not needed to test that data is written to the same place twice.
@@ -120,7 +120,7 @@ def rhm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_same_hm_same_ub", 
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -144,7 +144,7 @@ def rhm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_diff_hm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and from UB0 to HM1 (same UB)
 # setup is not needed to test that the main instructions move data to UB and
@@ -157,7 +157,7 @@ def rhm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_diff_hm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and from UB1 to HM0 (same HM)
 # setup writes a differnt matrix (HM2) to UB 1 to ensure that it's written to 
@@ -170,7 +170,7 @@ def rhm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 1 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_same_hm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and from UB0 to HM0 (same UB and HM)
 # setup writes a different matrix (HM1) to UB 0 to ensure that it's later
@@ -184,7 +184,7 @@ def rhm_whm_same_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_same_hm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -206,7 +206,7 @@ def rhm_rw(distance, bitwidth, matsize):
                        cleanup=["MMC 0 0 1", "ACT 0 1 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rw",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -229,7 +229,7 @@ def rhm_mmc_same_ub_no_s(distance, bitwidth, matsize):
                        cleanup=["ACT 0 1 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_mmc_same_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and multiplying UB1 with ACC0, no .S (different UBs)
 # setup reads a weight into RW 0 for use in multiplication and reads a matrix
@@ -243,7 +243,7 @@ def rhm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
                        cleanup=["ACT 0 2 1", "WHM 2 2 1", "WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_mmc_diff_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and multiplying UB0 with ACC0, w/ .S (same UB)
 # setup reads a weight into RW 0 and RW 1 (to make sure it switches after MMC).
@@ -259,7 +259,7 @@ def rhm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
                                 "MMC 1 2 1", "WHM 1 3 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_mmc_same_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and multiplying UB1 with ACC0, w/ .S (different UBs)
 # setup reads a weight into RW 0 and RW 1 (to make sure it switches after MMC)
@@ -278,7 +278,7 @@ def rhm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
                                 "WHM 5 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_mmc_diff_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -301,7 +301,7 @@ def rhm_act_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_act_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from HM0 to UB0 and accumulate from ACC0 to UB1 (different UBs)
 # setup reads HM1 into UB1, reads RW0 into the weight queue, and multiplies
@@ -314,7 +314,7 @@ def rhm_act_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_act_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -337,7 +337,7 @@ def whm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_diff_hm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and from HM1 to UB0 (same UB)
 # setup writes a matrix from HM2 to UB0 so that it has content to start with
@@ -349,7 +349,7 @@ def whm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_diff_hm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and from HM0 to UB1 (same HM)
 # setup writes a matrix from HM1 to UB1 so that it has content to start with
@@ -361,7 +361,7 @@ def whm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_same_hm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and from HM0 to UB0 (same UB and HM)
 # setup writes a matrix from HM1 to UB0 so that it has content to start with
@@ -373,7 +373,7 @@ def whm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_same_hm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -397,7 +397,7 @@ def whm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_diff_hm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and from UB1 to HM0 (same destination in HM)
 # setup writes matrices from HM1 to UB0 and from HM2 to UB1 to get different
@@ -410,7 +410,7 @@ def whm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_same_hm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and from UB0 to HM1 (same origin in UB)
 # setup writes a matrix from HM2 to UB0 to gett different values in it.
@@ -422,7 +422,7 @@ def whm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_diff_hm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and from UB0 to HM0 (same origin in UB and destination in HM)
 # setup writes a matrix from HM1 to UB0 to get different values in it.
@@ -434,7 +434,7 @@ def whm_whm_same_hm_same_ub(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_same_hm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -456,7 +456,7 @@ def whm_rw(distance, bitwidth, matsize):
                        cleanup=["MMC 0 1 1", "ACT 0 2 1", "WHM 3 2 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rw",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -484,7 +484,7 @@ def whm_mmc_same_ub_no_s(distance, bitwidth, matsize):
                                 "MMC 1 2 1", "ACT 1 3 1", "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_mmc_same_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and multiplying UB1 into ACC0, no .S (different UBs)
 # setup loads HM1 into UB1 so that it has a value, and loads RW0 and RW1 into
@@ -501,7 +501,7 @@ def whm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
                                 "MMC 1 3 1", "ACT 1 4 1", "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_mmc_diff_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and multiplying UB0 into ACC0, w/ .S (same UB)
 # setup loads HM1 into UB0 so that it has a value, and loads RW0 and RW1 into
@@ -518,7 +518,7 @@ def whm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
                                 "MMC 1 2 1", "ACT 1 3 1", "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_mmc_same_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and multiplying UB1 into ACC0, w/ .S (different UBs)
 # setup loads HM1 into UB1 so that it has a value, and loads RW0 and RW1 into
@@ -535,7 +535,7 @@ def whm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
                                 "MMC 1 3 1", "ACT 1 4 1", "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_mmc_diff_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -557,7 +557,7 @@ def whm_act_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_act_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # from UB0 to HM0 and accumulate from ACC0 to UB1 (different UBs)
 # setup loads HM3 into UB0 so that it has a value, loads HM2 into UB2, loads
@@ -570,7 +570,7 @@ def whm_act_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_act_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -594,7 +594,7 @@ def rw_rhm(distance, bitwidth, matsize):
                                 "ACT 0 2 1", "WHM 3 2 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_rhm",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -617,7 +617,7 @@ def rw_whm(distance, bitwidth, matsize):
                                 "WHM 3 2 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_whm",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -648,7 +648,7 @@ def rw_rw_same_weights_empty(distance, bitwidth, matsize):
                                 "WHM 2 2 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_rw_same_weights_empty",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0 and RW1, buffer starts empty (different weights)
 # setup not needed.
@@ -666,7 +666,7 @@ def rw_rw_diff_weights_empty(distance, bitwidth, matsize):
                                 "WHM 2 2 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_rw_diff_weights_empty",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0 and RW0, buffer starts with one space (same weights)
 # setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
@@ -689,7 +689,7 @@ def rw_rw_same_weights_one_space(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_rw_same_weights_one_space",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0 and RW1, buffer starts with one space (different weights)
 # setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
@@ -712,7 +712,7 @@ def rw_rw_diff_weights_one_space(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_rw_diff_weights_one_space",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0 and RW0, buffer starts full (same weights)
 # setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's one 
@@ -735,7 +735,7 @@ def rw_rw_same_weights_full(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_rw_same_weights_full",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0 and RW1, buffer starts full (different weights)
 # setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's one 
@@ -758,7 +758,7 @@ def rw_rw_diff_weights_full(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_rw_diff_weights_full",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -789,7 +789,7 @@ def rw_mmc_empty_no_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_mmc_empty_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0, buffer starts empty, multiplying UB0 into ACC0, w/ .S
 # setup reads HM0 into UB0.
@@ -807,7 +807,7 @@ def rw_mmc_empty_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_mmc_empty_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0, buffer starts with one space, multiplying UB0 into ACC0, no .S
 # setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
@@ -831,7 +831,7 @@ def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
                                 "WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_mmc_one_space_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0, buffer starts with one space, multiplying UB0 into ACC0, w/ .S
 # setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
@@ -852,7 +852,7 @@ def rw_mmc_one_space_yes_s(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_mmc_one_space_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0, buffer starts full, multiplying UB0 into ACC0, no .S
 # setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's no
@@ -876,7 +876,7 @@ def rw_mmc_full_no_s(distance, bitwidth, matsize):
                                 "WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_mmc_full_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # reading from RW0, buffer starts full, multiplying UB0 into ACC0, w/ .S
 # setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's no
@@ -898,7 +898,7 @@ def rw_mmc_full_yes_s(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_mmc_full_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -922,7 +922,7 @@ def rw_act(distance, bitwidth, matsize):
                                 "ACT 1 3 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_act",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -950,7 +950,7 @@ def mmc_rhm_same_ub_no_s(distance, bitwidth, matsize):
                                 "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rhm_same_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, w/ .S, moving from HM0 to UB0 (same UB)
 # setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
@@ -967,7 +967,7 @@ def mmc_rhm_same_ub_yes_s(distance, bitwidth, matsize):
                                 "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rhm_same_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, no .S, moving from HM0 to UB1 (different UB)
 # setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
@@ -986,7 +986,7 @@ def mmc_rhm_diff_ub_no_s(distance, bitwidth, matsize):
                                 "WHM 2 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rhm_diff_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, w/ .S, moving from HM0 to UB1 (different UB)
 # setup reads HM1 into UB0 so that it has a value, loads RW0, and loads RW1.
@@ -1005,7 +1005,7 @@ def mmc_rhm_diff_ub_yes_s(distance, bitwidth, matsize):
                                 "WHM 2 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rhm_diff_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1033,7 +1033,7 @@ def mmc_whm_same_ub_no_s(distance, bitwidth, matsize):
                                 "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_whm_same_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, w/ .S, moving from UB0 to HM0 (same UB)
 # setup reads HM1 into UB0 so that it has a different value, loads RW0 and RW1.
@@ -1050,7 +1050,7 @@ def mmc_whm_same_ub_yes_s(distance, bitwidth, matsize):
                                 "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_whm_same_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, no .S, moving from UB0 to HM1 (different UB)
 # setup reads HM1 into UB0 and HM2 into UB1 and loads RW0 and RW1.
@@ -1067,7 +1067,7 @@ def mmc_whm_diff_ub_no_s(distance, bitwidth, matsize):
                                 "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_whm_diff_ub_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, w/ .S, moving from UB1 to HM0 (different UB)
 # setup reads HM1 into UB0 and HM2 into UB1 and loads RW0 and RW1.
@@ -1084,7 +1084,7 @@ def mmc_whm_diff_ub_yes_s(distance, bitwidth, matsize):
                                 "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_whm_diff_ub_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1115,7 +1115,7 @@ def mmc_rw_empty_no_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rw_empty_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, w/ .S, reading from RW0, buffer starts empty
 # setup reads HM0 into UB0. 
@@ -1133,7 +1133,7 @@ def mmc_rw_empty_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rw_empty_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, no .S, reading from RW0, buffer starts with one space
 # setup reads RW0, RW1, and RW2 into the FIFO queue so that there's one slot 
@@ -1157,7 +1157,7 @@ def mmc_rw_one_space_no_s(distance, bitwidth, matsize):
                                 "WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rw_one_space_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, w/ .S, reading from RW0, buffer starts with one space
 # setup reads RW0, RW1, and RW2 into the FIFO queue so that there's one slot 
@@ -1181,7 +1181,7 @@ def mmc_rw_one_space_yes_s(distance, bitwidth, matsize):
                                 "WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rw_one_space_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, no .S, reading from RW0, buffer starts full
 # setup reads RW0, RW1, RW2, and RW3 into the FIFO queue so that there's no 
@@ -1205,7 +1205,7 @@ def mmc_rw_full_no_s(distance, bitwidth, matsize):
                                 "WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rw_full_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0, w/ .S, reading from RW0, buffer starts full
 # setup reads RW0, RW1, RW2, and RW3 into the FIFO queue so that there's no 
@@ -1229,7 +1229,7 @@ def mmc_rw_full_yes_s(distance, bitwidth, matsize):
                                 "WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rw_full_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1273,7 +1273,7 @@ def mmc_mmc_diff_ub_diff_acc_no_s_no_s(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_diff_acc_no_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, multiplying UB1 into ACC1 w/ .S (different UB and ACC)
 # setup reads HM0 into UB0 and HM1 into UB1. it also loads RW0 and RW1 into the
@@ -1292,7 +1292,7 @@ def mmc_mmc_diff_ub_diff_acc_no_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_diff_acc_no_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB1 into ACC1 no .S (different UB and ACC)
 # setup reads HM0 into UB0 and HM1 into UB1. it also loads RW0 and RW1 into the
@@ -1311,7 +1311,7 @@ def mmc_mmc_diff_ub_diff_acc_yes_s_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_diff_acc_yes_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB1 into ACC1 w/ .S (different UB and ACC)
 # setup reads HM0 into UB0 and HM1 into UB1. it also loads RW0, RW1, and RW2 
@@ -1330,7 +1330,7 @@ def mmc_mmc_diff_ub_diff_acc_yes_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_diff_acc_yes_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, multiplying UB0 into ACC1 no .S (same UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue.
@@ -1350,7 +1350,7 @@ def mmc_mmc_same_ub_diff_acc_no_s_no_s(distance, bitwidth, matsize):
                                 "WHM 6 6 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_diff_acc_no_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, multiplying UB0 into ACC1 w/ .S (same UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue.
@@ -1368,7 +1368,7 @@ def mmc_mmc_same_ub_diff_acc_no_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 4 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_diff_acc_no_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB0 into ACC1 no .S (same UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue.
@@ -1386,7 +1386,7 @@ def mmc_mmc_same_ub_diff_acc_yes_s_no_s(distance, bitwidth, matsize):
                                 "WHM 4 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_diff_acc_yes_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB0 into ACC1 w/ .S (same UB)
 # setup reads HM0 into UB0 and loads RW0, RW1, and RW2 into the weight queue.
@@ -1404,7 +1404,7 @@ def mmc_mmc_same_ub_diff_acc_yes_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 4 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_diff_acc_yes_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, multiplying UB1 into ACC0 no .S (same ACC)
 # setup reads HM0 and HM1 into UB0 and UB1. it also loads RW0 and RW1.
@@ -1423,7 +1423,7 @@ def mmc_mmc_diff_ub_same_acc_no_s_no_s(distance, bitwidth, matsize):
                                 "WHM 6 6 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_same_acc_no_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, multiplying UB1 into ACC0 w/ .S (same ACC)
 # setup reads HM0 and HM1 into UB0 and UB1. it also loads RW0 and RW1.
@@ -1440,7 +1440,7 @@ def mmc_mmc_diff_ub_same_acc_no_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 4 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_same_acc_no_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB1 into ACC0 no .S (same ACC)
 # setup reads HM0 and HM1 into UB0 and UB1. it also loads RW0 and RW1.
@@ -1457,7 +1457,7 @@ def mmc_mmc_diff_ub_same_acc_yes_s_no_s(distance, bitwidth, matsize):
                                 "WHM 4 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_same_acc_yes_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB1 into ACC0 w/ .S (same ACC)
 # setup reads HM0 and HM1 into UB0 and UB1. it also loads RW0, RW1, and RW2.
@@ -1474,7 +1474,7 @@ def mmc_mmc_diff_ub_same_acc_yes_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 4 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_diff_ub_same_acc_yes_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, multiplying UB0 into ACC0 no .S (same ACC and UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1.
@@ -1493,7 +1493,7 @@ def mmc_mmc_same_ub_same_acc_no_s_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_same_acc_no_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, multiplying UB0 into ACC0 w/ .S (same ACC and UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1.
@@ -1510,7 +1510,7 @@ def mmc_mmc_same_ub_same_acc_no_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_same_acc_no_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB0 into ACC0 no .S (same ACC and UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1.
@@ -1527,7 +1527,7 @@ def mmc_mmc_same_ub_same_acc_yes_s_no_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_same_acc_yes_s_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, multiplying UB0 into ACC0 w/ .S (same ACC and UB)
 # setup reads HM0 into UB0 and loads RW0, RW1, and RW2.
@@ -1544,7 +1544,7 @@ def mmc_mmc_same_ub_same_acc_yes_s_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_mmc_same_ub_same_acc_yes_s_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1582,7 +1582,7 @@ def mmc_act_diff_ub_diff_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_diff_ub_diff_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, accumulate from ACC1 to UB1 (different UB and ACC)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue. then it
@@ -1602,7 +1602,7 @@ def mmc_act_diff_ub_diff_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_diff_ub_diff_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, accumulate from ACC1 to UB0 (same UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue. then it
@@ -1625,7 +1625,7 @@ def mmc_act_same_ub_diff_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 7 7 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_same_ub_diff_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, accumulate from ACC1 to UB0 (same UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue. then it
@@ -1645,7 +1645,7 @@ def mmc_act_same_ub_diff_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_same_ub_diff_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, accumulate from ACC0 to UB1 (same ACC)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue.
@@ -1663,7 +1663,7 @@ def mmc_act_diff_ub_same_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_diff_ub_same_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, accumulate from ACC0 to UB1 (same ACC)
 # setup reads HM0 into UB0 and loads RW0 and RW1 into the weight queue.
@@ -1678,7 +1678,7 @@ def mmc_act_diff_ub_same_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_diff_ub_same_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 no .S, accumulate from ACC0 to UB0 (same ACC and UB)
 # setup reads HM0 into UB0 and loads RW0 and RW1.
@@ -1696,7 +1696,7 @@ def mmc_act_same_ub_same_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_same_ub_same_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # multiplying UB0 into ACC0 w/ .S, accumulate from ACC0 to UB0 (same ACC and UB) 
 # setup reads HM0 into UB0 and loads RW0 and RW1.
@@ -1711,7 +1711,7 @@ def mmc_act_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_act_same_ub_same_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1733,7 +1733,7 @@ def act_rhm_same_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_rhm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, move from HM0 to UB1 (different UB)
 # setup reads HM2 into UB2, loads RW0, and multiplies UB2 with RW0 (no S) into 
@@ -1747,7 +1747,7 @@ def act_rhm_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 1 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_rhm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1769,7 +1769,7 @@ def act_whm_same_ub(distance, bitwidth, matsize):
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_whm_same_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, move from UB1 to HM0 (different UB)
 # setup reads HM1 into HM1, loads HM2 into HM2, loads RW0, and multiplies HM2
@@ -1782,7 +1782,7 @@ def act_whm_diff_ub(distance, bitwidth, matsize):
                        cleanup=["WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_whm_diff_ub",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1809,7 +1809,7 @@ def act_rw(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_rw",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1845,7 +1845,7 @@ def act_mmc_diff_ub_diff_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_diff_ub_diff_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, multiplying UB1 into ACC1 w/ .S (different ACC and UB)
 # setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and
@@ -1864,7 +1864,7 @@ def act_mmc_diff_ub_diff_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_diff_ub_diff_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, multiplying UB0 into ACC1 no .S (same UB)
 # setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0
@@ -1883,7 +1883,7 @@ def act_mmc_same_ub_diff_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_same_ub_diff_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, multiplying UB0 into ACC1 w/ .S (same UB)
 # setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0
@@ -1899,7 +1899,7 @@ def act_mmc_same_ub_diff_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_same_ub_diff_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, multiplying UB1 into ACC0 no .S (same ACC)
 # setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and 
@@ -1920,7 +1920,7 @@ def act_mmc_diff_ub_same_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_diff_ub_same_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, multiplying UB1 into ACC0 w/ .S (same ACC)
 # setup reads HM0 into UB0, reads HM1 into UB1, loads RW0 and RW1, and
@@ -1939,7 +1939,7 @@ def act_mmc_diff_ub_same_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_diff_ub_same_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, multiplying UB0 into ACC0 no .S (same ACC and UB)
 # setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0 
@@ -1958,7 +1958,7 @@ def act_mmc_same_ub_same_acc_no_s(distance, bitwidth, matsize):
                                 "WHM 5 5 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_same_ub_same_acc_no_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, multiplying UB0 into ACC0 w/ .S (same ACC and UB)
 # setup reads HM0 into UB0, loads RW0 and RW1, and multiplies UB0 with RW0
@@ -1974,7 +1974,7 @@ def act_mmc_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
                                 "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_mmc_same_ub_same_acc_yes_s",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
@@ -1999,7 +1999,7 @@ def act_act_diff_ub_diff_acc(distance, bitwidth, matsize):
                        cleanup=["WHM 0 0 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_diff_ub_diff_acc",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, accumulate from ACC1 to UB0 (same UB)
 # setup reads HM0 into UB0, reads HM1 into UB1, loads RW0, multiplies UB0 with
@@ -2013,7 +2013,7 @@ def act_act_same_ub_diff_acc(distance, bitwidth, matsize):
                        cleanup=["WHM 0 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_same_ub_diff_acc",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, accumulate from ACC0 to UB1 (same ACC)
 # setup reads HM0 into UB0, loads RW0, and multiples UB0 with RW0 (no S) into
@@ -2026,7 +2026,7 @@ def act_act_diff_ub_same_acc(distance, bitwidth, matsize):
                        cleanup=["WHM 0 0 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_diff_ub_same_acc",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 # accumulate from ACC0 to UB0, accumulate from ACC0 to UB0 (same UB and ACC)
 # setup reads HM0 into UB0, loads RW0, and multiples UB0 with RW0 (no S) into
@@ -2039,7 +2039,7 @@ def act_act_same_ub_same_acc(distance, bitwidth, matsize):
                        cleanup=["WHM 0 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_same_ub_same_acc",
-                       reset=True, absoluteaddrs=False)
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER)
 
 
 
