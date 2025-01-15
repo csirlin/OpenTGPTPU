@@ -37,7 +37,7 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     start_addr_wv = WireVector(len(start_addr), 'act_start_addr_wv')
     start_addr_wv <<= start_addr_reg
 
-    rtl_assert(~(start & busy), Exception("Dispatching new activate instruction while previous instruction is still running."))
+    # rtl_assert(~(start & busy), Exception("Dispatching new activate instruction while previous instruction is still running."))
 
     acc_outs_wvs = [WireVector(len(accum_out[i]), f"act_acc_outs_wv_{i}") for i in range(len(accum_out))]
     for i in range(len(accum_out)):

@@ -11,7 +11,7 @@ START_DISTANCE = 50
 def min_viable_distance_fixed(function, bitwidth, matsize):
     distance = START_DISTANCE
     while distance > 0:
-        result, _ = function(distance, bitwidth, matsize)
+        result = function(distance, bitwidth, matsize)
         if not result:
             break
         distance -= 1

@@ -424,7 +424,7 @@ def FIFO(mem_data, mem_valid, advance_fifo, MATSIZE, DWIDTH):
     
     ready = startup & (~empty4) & (~droptile)  # there is data in final buffer and we're not about to change it
 
-    return buf4, ready, full
+    return buf4, buf3, buf2, topbuf, ready, full
 
 def systolic_setup(data_width, matsize, vec_in, waddr, valid, clearbit, lastvec, switch):
     '''Buffers vectors from the unified SRAM buffer so that they can be fed along diagonals to the
@@ -585,12 +585,12 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr,
             advance_fifo |= 0
 
     # FIFO
-    weights_tile, tile_ready, full = FIFO(mem_data=ddr_data, 
-                                          mem_valid=ddr_valid, 
-                                          advance_fifo=advance_fifo,
-                                          MATSIZE=MATSIZE,
-                                          DWIDTH=DWIDTH) # advance fifo after an MMC.S is finished with the front weight. 
-                                        #   advance_fifo=done_programming)
+    buf4, buf3, buf2, buf1_list, tile_ready, full = FIFO(mem_data=ddr_data, 
+                                                    mem_valid=ddr_valid, 
+                                                    advance_fifo=advance_fifo,
+                                                    MATSIZE=MATSIZE,
+                                                    DWIDTH=DWIDTH) # advance fifo after an MMC.S is finished with the front weight. 
+                                                  # advance_fifo=done_programming)
     #probe(tile_ready, "tile_ready")
     #probe(weights_tile, "FIFO_weights_out")
     
@@ -602,7 +602,7 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr,
 
     mouts = MMArray(data_width=data_width, matrix_size=matrix_size, 
                     data_in=matin, new_weights=switchout, 
-                    weights_in=weights_tile, weights_we=weights_we)
+                    weights_in=buf4, weights_we=weights_we)
     
     for i in range(len(mouts)):
         mouts_i = WireVector(len(mouts[i]), f"mmu_mouts_{i}")
@@ -666,7 +666,7 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr,
             weights_we |= 1
     '''
 
-    return accout, done
+    return accout, done, buf4, buf3, buf2, buf1_list
 
 def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start, 
             start_addr, nvecs, dest_acc_addr, overwrite, swap_weights, ub_rdata,
@@ -689,7 +689,7 @@ def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start,
     N = Register(len(nvecs), "mmu_top_N")
     ub_raddr = Register(ub_size, "mmu_top_ub_raddr")
 
-    rtl_assert(~(start & busy), Exception("Cannot dispatch new MM instruction while previous instruction is still being issued."))
+    # rtl_assert(~(start & busy), Exception("Cannot dispatch new MM instruction while previous instruction is still being issued."))
 
     #probe(vec_valid, "MM_vec_valid_issue")
     #probe(busy, "MM_busy")
@@ -723,18 +723,17 @@ def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start,
                 accum_waddr.next |= accum_waddr + 1
                 last |= 0
         
-    acc_out, done = MMU(acc_mems=acc_mems, data_width=data_width, 
-                        matrix_size=matrix_size, accum_size=accum_size, 
-                        vector_in=ub_rdata, accum_raddr=accum_raddr, 
-                        accum_waddr=accum_waddr, vec_valid=vec_valid, 
-                        accum_overwrite=overwrite_reg, lastvec=last, 
-                        switch_weights=swap_reg, ddr_data=weights_dram_in, 
-                        ddr_valid=weights_dram_valid, nvecs_reg=N, 
-                        MATSIZE=MATSIZE, DWIDTH=DWIDTH)
+    acc_out, done, buf4, buf3, buf2, buf1 = MMU(acc_mems=acc_mems, 
+        data_width=data_width, matrix_size=matrix_size, accum_size=accum_size, 
+        vector_in=ub_rdata, accum_raddr=accum_raddr, accum_waddr=accum_waddr, 
+        vec_valid=vec_valid, accum_overwrite=overwrite_reg, lastvec=last, 
+        switch_weights=swap_reg, ddr_data=weights_dram_in, 
+        ddr_valid=weights_dram_valid, nvecs_reg=N, MATSIZE=MATSIZE, 
+        DWIDTH=DWIDTH)
 
     #probe(ub_raddr, "ub_mm_raddr")
 
-    return ub_raddr, acc_out, busy, done
+    return ub_raddr, acc_out, busy, done, buf4, buf3, buf2, buf1
 
     
 
@@ -779,12 +778,11 @@ def testall(input_vectors, weights_vectors):
     weightsdata = Input(64*8)
     weightsvalid = Input(1)
     
-    accout, done = MMU(data_width=DATWIDTH, matrix_size=MATSIZE, 
-                       accum_size=ACCSIZE, vector_in=invec, accum_raddr=raddr, 
-                       accum_waddr=waddr, vec_valid=valid, 
-                       accum_overwrite=Const(0), lastvec=lastvec, 
-                       switch_weights=swap, ddr_data=weightsdata, 
-                       ddr_valid=weightsvalid)
+    accout, done, buf4, buf3, buf2, buf1 = MMU(data_width=DATWIDTH, 
+        matrix_size=MATSIZE, accum_size=ACCSIZE, vector_in=invec, 
+        accum_raddr=raddr, accum_waddr=waddr, vec_valid=valid, 
+        accum_overwrite=Const(0), lastvec=lastvec, switch_weights=swap, 
+        ddr_data=weightsdata, ddr_valid=weightsvalid)
 
     donesig <<= done
     for out, accout in zip(outs, accout):

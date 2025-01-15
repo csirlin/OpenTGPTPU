@@ -154,9 +154,9 @@ class Program:
     def get_filepath(self, binary: bool, control: bool) -> str:
         filepath = self.program_dir
         if control:
-            filepath += "/control"
+            filepath += f"/control_{self.matsize}m"
         else:
-            filepath += f"/{self.name}"
+            filepath += f"/{self.name}_{self.matsize}m_{self.distance}d"
         if binary:
             return f"{filepath}.out"
         else:
@@ -235,36 +235,52 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
 
     # assemble into .out file for d=50 (control)
     if reset or not os.path.exists(program.get_filepath(binary=True, control=True)) or program.name == "test":
-        assemble(f"{program_dir}/control.a", 0)
+        assemble(program.get_filepath(binary=False, control=True), 0)
 
-    # generate .a file (test)
+    # generate .a file for the apropriate distance (test)
     if reset or not os.path.exists(program.get_filepath(binary=False, control=False)) or program.name == "test":
         program.generate_dot_a(control=False)    
 
     # assemble into .out file (test)
     if reset or not os.path.exists(program.get_filepath(binary=True, control=False)) or program.name == "test":
-        assemble(f"{program_dir}/{program.name}.a", 0)
+        assemble(program.get_filepath(binary=False, control=False), 0)
 
     # run d=50 .out file (control) and get the resulting matrix and final trace
-    print(f"Testing {name} for d = {distance}. b = {bitwidth}, m = {matsize}")
+    print(f"Running {name} for d = {distance}. b = {bitwidth}, m = {matsize}")
     print(f"Control")
-    ctrl_output_filename = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}m"
-    if reset or not os.path.exists(ctrl_output_filename + ".pkl") or program.name == "test":
+    ctrl_output_folderpath = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}m"
+    if reset or not os.path.exists(ctrl_output_folderpath) or program.name == "test":
         runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=True), hostmem=hostmem_filename, weightsmem=weights_filename)
-        (ctrl_hostmem, ctrl_sim_trace) = runtpu(runtpu_ctrl_args, name=ctrl_output_filename)
+        # ctrl_hostmem, ctrl_ubuffer, ctrl_acc_mems, ctrl_wbufs \
+        ctrl_hostmem \
+            = runtpu(runtpu_ctrl_args, output_folder_path=ctrl_output_folderpath)
     else:
-        with open(ctrl_output_filename + ".pkl", "rb") as f:
-            (ctrl_hostmem, ctrl_sim_trace) = pickle.load(f)
+        with open(os.path.join(ctrl_output_folderpath, "hostmem.pkl"), "rb") as f:
+            ctrl_hostmem = pickle.load(f)
+        # with open(os.path.join(ctrl_output_folderpath, "ubuffer.pkl"), "rb") as f:
+        #     ctrl_ubuffer = pickle.load(f)
+        # with open(os.path.join(ctrl_output_folderpath, "accmems.pkl"), "rb") as f:
+        #     ctrl_acc_mems = pickle.load(f)
+        # with open(os.path.join(ctrl_output_folderpath, "wqueue.pkl"), "rb") as f:
+        #     ctrl_wbufs = pickle.load(f)
 
     # run runtpu.py in standard mode and get result
     print(f"Test")
-    test_output_filename = f'{program_dir}/test_{config.DWIDTH}b_{config.MATSIZE}m_{distance}d'
-    if reset or not os.path.exists(test_output_filename + ".pkl") or program.name == "test":
+    test_output_folderpath = f'{program_dir}/test_{config.DWIDTH}b_{config.MATSIZE}m_{distance}d'
+    if reset or not os.path.exists(test_output_folderpath) or program.name == "test":
         runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, control=False), hostmem=hostmem_filename, weightsmem=weights_filename)
-        (test_hostmem, test_sim_trace) = runtpu(runtpu_test_args, name=test_output_filename)
+        # test_hostmem, test_ubuffer, test_acc_mems, test_wbufs \
+        test_hostmem \
+            = runtpu(runtpu_test_args, output_folder_path=test_output_folderpath)
     else:
-        with open(test_output_filename + ".pkl", "rb") as f:
-            (test_hostmem, test_sim_trace) = pickle.load(f)
+        with open(os.path.join(test_output_folderpath, "hostmem.pkl"), "rb") as f:
+            test_hostmem = pickle.load(f)
+        # with open(os.path.join(test_output_folderpath, "ubuffer.pkl"), "rb") as f:
+        #     test_ubuffer = pickle.load(f)
+        # with open(os.path.join(test_output_folderpath, "accmems.pkl"), "rb") as f:
+        #     test_acc_mems = pickle.load(f)
+        # with open(os.path.join(test_output_folderpath, "wqueue.pkl"), "rb") as f:
+        #     test_wbufs = pickle.load(f)
 
     # compare results and output a verdict
     # comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
@@ -274,12 +290,41 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
     # print("Test host memory:")
     # print_mem(test_hostmem)
 
-    if ctrl_hostmem == test_hostmem:
-        print(f"Test {name} matches control")
-        return True, test_hostmem
-    else:
-        print(f"Test failed! {name} does not match control")
-        return False, test_hostmem
+    passed = True
+
+    if ctrl_hostmem != test_hostmem:
+        print("Test failed (hostmem)")
+        print("Control host memory:")
+        print_mem(ctrl_hostmem)
+        print("Test host memory:")
+        print_mem(test_hostmem)
+        passed = False
+
+    # if ctrl_ubuffer != test_ubuffer:
+    #     print("Test failed (ubuffer)")
+    #     print("Control ubuffer:")
+    #     print(ctrl_ubuffer)
+    #     print("Test ubuffer:")
+    #     print(test_ubuffer)
+    #     passed = False
+
+    # if ctrl_acc_mems != test_acc_mems:
+    #     print("Test failed (accmems)")
+    #     print("Control accmems:")
+    #     print(ctrl_acc_mems)
+    #     print("Test accmems:")
+    #     print(test_acc_mems)
+    #     passed = False
+
+    # if ctrl_wbufs != test_wbufs:
+    #     print("Test failed (wbufs)")
+    #     print("Control wbufs:")
+    #     print(ctrl_wbufs)
+    #     print("Test wbufs:")
+    #     print(test_wbufs)
+    #     passed = False
+
+    return passed
 
 
 # invoke squish test from command line

@@ -73,7 +73,7 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     #  Matrix Multiply Unit
     ############################################################
 
-    ub_mm_raddr_sig, acc_out, mm_busy, mm_done = MMU_top(
+    ub_mm_raddr_sig, acc_out, mm_busy, mm_done, buf4, buf3, buf2, buf1 = MMU_top(
         acc_mems=acc_mems, data_width=DWIDTH, matrix_size=MATSIZE, 
         accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, 
         start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, 
@@ -187,7 +187,8 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     
     return IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, \
         halt, hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, \
-        hostmem_wdata, weights_dram_read, weights_dram_raddr, acc_mems
+        hostmem_wdata, weights_dram_read, weights_dram_raddr, acc_mems, buf4, \
+        buf3, buf2, buf1
 
 
 def run_synth():

@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 import pickle
 from pyrtl import *
 import argparse
@@ -66,7 +67,7 @@ def print_weight_mem(mem, bits=8, size=8):
         print(a, list(reversed(vec)))
 
 
-def runtpu(args, name='test'):
+def runtpu(args, output_folder_path='test', output_trace=False):
     # Read the program and build an instruction list
     with open(args.prog, 'rb') as f:
         ins = [x for x in f.read()]  # create byte list from input
@@ -141,7 +142,7 @@ def runtpu(args, name='test'):
     reset_working_block()
     IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, halt, \
         hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, hostmem_wdata, \
-        weights_dram_read, weights_dram_raddr, acc_mems \
+        weights_dram_read, weights_dram_raddr, acc_mems, buf4, buf3, buf2, buf1 \
         = tpu(config.MATSIZE, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
         config.WEIGHT_DRAM_ADDR_SIZE, config.ACC_ADDR_SIZE, config.DWIDTH, 
         config.INSTRUCTION_WIDTH, config.IMEM_ADDR_SIZE)
@@ -246,10 +247,25 @@ def runtpu(args, name='test'):
     # print("Final Host memory:")
     # print_mem(hostmem)
 
-    with open(f'{name}.pkl', 'wb') as file:
-        pickle.dump((hostmem, sim_trace), file)
+    os.makedirs(output_folder_path, exist_ok=True)
 
-    return hostmem, sim_trace
+    if output_trace:
+        with open(f'{output_folder_path}/trace.pkl', 'wb') as file:
+            pickle.dump(sim_trace, file)
+
+    with open(f'{output_folder_path}/hostmem.pkl', 'wb') as file:
+        pickle.dump(hostmem, file)
+
+    # with open(f'{output_folder_path}/ubuffer.pkl', 'wb') as file:
+    #     pickle.dump(UBuffer, file)
+
+    # with open(f'{output_folder_path}/accmems.pkl', 'wb') as file:
+    #     pickle.dump(acc_mems, file)
+
+    # with open(f'{output_folder_path}/wqueue.pkl', 'wb') as file:
+    #     pickle.dump((buf4, buf3, buf2, buf1), file)
+
+    return hostmem #, UBuffer, acc_mems, (buf4, buf3, buf2, buf1)
 
     # sim_trace.render_trace()
     # with open("trace.vcd", 'w') as f:
@@ -270,4 +286,4 @@ if __name__ == '__main__':
     parser.add_argument("weightsmem", metavar="WeightsMemoryArray", help="A file containing a numpy array containing the contents of the weights memroy. Each row represents one tile (the first row corresponds to the top row of the weights matrix).")
     args = parser.parse_args()
 
-    runtpu(args, name=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}x{config.MATSIZE}')
+    runtpu(args, name=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}m')
