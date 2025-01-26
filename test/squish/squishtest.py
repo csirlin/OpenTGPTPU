@@ -62,7 +62,7 @@ class Instruction:
     opflag: Optional[Opflag] = None
     arg1: Optional[int] = None
     arg2: Optional[int] = None
-    arg3: Optional[int] = None
+    arg3: Optional[float] = None
 
     def __init__(self, instr: str) -> 'Instruction':
         # split the instruction into operation and arguments
@@ -87,7 +87,7 @@ class Instruction:
 
         # assign args
         for i in range(1, len(split)):
-            setattr(self, f"arg{i}", int(split[i]))
+            setattr(self, f"arg{i}", split[i])
 
     # turn the Instruction object into a string
     # if absolute addresses is true, then UB and HM addresses are taken literally
@@ -103,9 +103,9 @@ class Instruction:
 
         if self.operation in [Operation.RHM, Operation.WHM, Operation.MMC, Operation.ACT]:
             if absolute_addresses:
-                instruction_str += f" {self.arg1}, {self.arg2}, {self.arg3}"
+                instruction_str += f" {int(self.arg1)}, {int(self.arg2)}, {int(float(self.arg3))}"
             else:
-                instruction_str += f" {self.arg1 * matsize}, {self.arg2 * matsize}, {self.arg3 * matsize}"
+                instruction_str += f" {int(self.arg1) * matsize}, {int(self.arg2) * matsize}, {int(float(self.arg3) * matsize)}"
         elif self.operation in [Operation.RW]:
             instruction_str += f" {self.arg1}"
         

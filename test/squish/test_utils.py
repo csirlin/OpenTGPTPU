@@ -2,6 +2,8 @@
 from squishtest import squish_test
 TEST_FOLDER = "test"
 START_DISTANCE = 50
+L1 = 1
+L2 = 1
 
 
 # run a squish test with chosen bitwidth and matsize for different distances. 
@@ -79,7 +81,7 @@ def run_all_rhm_rhm(bitwidths, matsizes):
 #     way, the test confirms that the right data was actually written to the UB.
 def rhm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1", "RHM 3 1 1"],
-                       instrs=["RHM 0 0 1", "RHM 1 1 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"RHM 1 1 {L2}"],
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_diff_hm_diff_ub", 
@@ -91,7 +93,7 @@ def rhm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
 # cleanup writes the content of UB 0 back to a new slot in the HM (slot 2).
 def rhm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
-                       instrs=["RHM 0 0 1", "RHM 1 0 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"RHM 1 0 {L2}"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_diff_hm_same_ub", 
@@ -104,7 +106,7 @@ def rhm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
 # cleanup writes the content of UB 0 and UB 1 back to new slots in the HM.
 def rhm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
-                       instrs=["RHM 0 0 1", "RHM 0 1 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"RHM 0 1 {L2}"],
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_same_hm_diff_ub", 
@@ -116,7 +118,7 @@ def rhm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
 # cleanup writes the content of UB 0 back to a new slot in the HM (slot 2).
 def rhm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
-                       instrs=["RHM 0 0 1", "RHM 0 0 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"RHM 0 0 {L2}"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rhm_same_hm_same_ub", 
@@ -140,7 +142,7 @@ def run_all_rhm_whm(bitwidths, matsizes):
 #     HM1.
 def rhm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 1 1"],
-                       instrs=["RHM 0 0 1", "WHM 1 1 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"WHM 1 1 {L2}"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_diff_hm_diff_ub",
@@ -153,7 +155,7 @@ def rhm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
 # cleanup is not needed, since at this point HM1 should already be written to
 def rhm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=[],
-                       instrs=["RHM 0 0 1", "WHM 1 0 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"WHM 1 0 {L2}"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_diff_hm_same_ub",
@@ -166,7 +168,7 @@ def rhm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
 # cleanup writes UB 0 back to HM 1 to ensure that the correct data was written.
 def rhm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 1 1"],
-                       instrs=["RHM 0 0 1", "WHM 0 1 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"WHM 0 1 {L2}"],
                        cleanup=["WHM 1 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_same_hm_diff_ub",
@@ -180,7 +182,7 @@ def rhm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
 #     data was written to UB 0.
 def rhm_whm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
-                       instrs=["RHM 0 0 1", "WHM 0 0 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"WHM 0 0 {L2}"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_whm_same_hm_same_ub",
@@ -202,7 +204,7 @@ def run_all_rhm_rw(bitwidths, matsizes):
 #     product to UB1, and then writes UB1 back to HM 1.
 def rhm_rw(distance, bitwidth, matsize):
     return squish_test(setup=[],
-                       instrs=["RHM 0 0 1", "RW 0"],
+                       instrs=[f"RHM 0 0 {L1}", f"RW 0"],
                        cleanup=["MMC 0 0 1", "ACT 0 1 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_rw",
@@ -225,7 +227,7 @@ def run_all_rhm_mmc(bitwidths, matsizes):
 # cleanup writes the result of the multiplication back to UB1 and then HM1.
 def rhm_mmc_same_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0"],
-                       instrs=["RHM 0 0 1", "MMC 0 0 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_mmc_same_ub_no_s",
@@ -239,7 +241,7 @@ def rhm_mmc_same_ub_no_s(distance, bitwidth, matsize):
 #     writes the matrix from UB0 to HM3.
 def rhm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RHM 1 1 1"],
-                       instrs=["RHM 0 0 1", "MMC 0 1 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"MMC 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1", "WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_mmc_diff_ub_no_s",
@@ -254,7 +256,7 @@ def rhm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
 #     UB3, and then writes UB3 back to HM3.
 def rhm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1"],
-                       instrs=["RHM 0 0 1", "MMC.S 0 0 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", "RHM 2 2 1", 
                                 "MMC 1 2 1", "WHM 1 3 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -272,7 +274,7 @@ def rhm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
 #     originally written into UB0 into HM5 to make sure it got written.
 def rhm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1", "RHM 1 1 1"],
-                       instrs=["RHM 0 0 1", "MMC.S 0 1 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"MMC.S 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1", "RHM 3 3 1", 
                                 "MMC 1 3 1", "WHM 1 4 1", "WHM 4 4 1",
                                 "WHM 5 0 1"],
@@ -297,7 +299,7 @@ def run_all_rhm_act(bitwidths, matsizes):
 # cleanup writes the overwritten UB0 into HM2.
 def rhm_act_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
-                       instrs=["RHM 0 0 1", "ACT 0 0 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"ACT 0 0 {L2}"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_act_same_ub",
@@ -310,7 +312,7 @@ def rhm_act_same_ub(distance, bitwidth, matsize):
 # cleanup writes UB0 into HM2 and writes the accumulated UB1 into HM3.
 def rhm_act_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
-                       instrs=["RHM 0 0 1", "ACT 0 1 1"],
+                       instrs=[f"RHM 0 0 {L1}", f"ACT 0 1 {L2}"],
                        cleanup=["WHM 2 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rhm_act_diff_ub",
@@ -333,7 +335,7 @@ def run_all_whm_rhm(bitwidths, matsizes):
 # cleanup writes UB1 to HM3
 def whm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1"],
-                       instrs=["WHM 0 0 1", "RHM 1 1 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"RHM 1 1 {L2}"],
                        cleanup=["WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_diff_hm_diff_ub",
@@ -345,7 +347,7 @@ def whm_rhm_diff_hm_diff_ub(distance, bitwidth, matsize):
 # cleanup writes UB0 to HM3 so we can see the overwritten data
 def whm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1"],
-                       instrs=["WHM 0 0 1", "RHM 1 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"RHM 1 0 {L2}"],
                        cleanup=["WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_diff_hm_same_ub",
@@ -357,7 +359,7 @@ def whm_rhm_diff_hm_same_ub(distance, bitwidth, matsize):
 # cleanup writes UB1 to HM2 so we can see the overwritten data
 def whm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
-                       instrs=["WHM 0 0 1", "RHM 0 1 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"RHM 0 1 {L2}"],
                        cleanup=["WHM 2 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_same_hm_diff_ub",
@@ -369,7 +371,7 @@ def whm_rhm_same_hm_diff_ub(distance, bitwidth, matsize):
 # cleanup writes UB0 to HM2 so we can see the overwritten data
 def whm_rhm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
-                       instrs=["WHM 0 0 1", "RHM 0 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"RHM 0 0 {L2}"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rhm_same_hm_same_ub",
@@ -393,7 +395,7 @@ def run_all_whm_whm(bitwidths, matsizes):
 # cleanup is not needed
 def whm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1", "RHM 3 1 1"],
-                       instrs=["WHM 0 0 1", "WHM 1 1 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"WHM 1 1 {L2}"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_diff_hm_diff_ub",
@@ -406,7 +408,7 @@ def whm_whm_diff_hm_diff_ub(distance, bitwidth, matsize):
 # cleanup is not needed
 def whm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1"],
-                       instrs=["WHM 0 0 1", "WHM 0 1 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"WHM 0 1 {L2}"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_same_hm_diff_ub",
@@ -418,7 +420,7 @@ def whm_whm_same_hm_diff_ub(distance, bitwidth, matsize):
 # cleanup is not needed
 def whm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 0 1"],
-                       instrs=["WHM 0 0 1", "WHM 1 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"WHM 1 0 {L2}"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_diff_hm_same_ub",
@@ -430,7 +432,7 @@ def whm_whm_diff_hm_same_ub(distance, bitwidth, matsize):
 # cleanup is not needed
 def whm_whm_same_hm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
-                       instrs=["WHM 0 0 1", "WHM 0 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"WHM 0 0 {L2}"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_whm_same_hm_same_ub",
@@ -452,7 +454,7 @@ def run_all_whm_rw(bitwidths, matsizes):
 #     to ACC0, writes ACC0 to UB2, and then writes UB2 to HM3.
 def whm_rw(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1"],
-                       instrs=["WHM 0 0 1", "RW 0"],
+                       instrs=[f"WHM 0 0 {L1}", "RW 0"],
                        cleanup=["MMC 0 1 1", "ACT 0 2 1", "WHM 3 2 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_rw",
@@ -479,7 +481,7 @@ def run_all_whm_mmc(bitwidths, matsizes):
 #     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
 def whm_mmc_same_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["WHM 0 0 1", "MMC 0 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 2 1 1", "RHM 3 2 1", 
                                 "MMC 1 2 1", "ACT 1 3 1", "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -496,7 +498,7 @@ def whm_mmc_same_ub_no_s(distance, bitwidth, matsize):
 #     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
 def whm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["WHM 0 0 1", "MMC 0 1 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"MMC 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", "RHM 4 3 1", 
                                 "MMC 1 3 1", "ACT 1 4 1", "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -513,7 +515,7 @@ def whm_mmc_diff_ub_no_s(distance, bitwidth, matsize):
 #     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
 def whm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["WHM 0 0 1", "MMC.S 0 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 2 1 1", "RHM 3 2 1", 
                                 "MMC 1 2 1", "ACT 1 3 1", "WHM 4 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -530,7 +532,7 @@ def whm_mmc_same_ub_yes_s(distance, bitwidth, matsize):
 #     into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
 def whm_mmc_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["WHM 0 0 1", "MMC.S 0 1 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"MMC.S 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", "RHM 4 3 1", 
                                 "MMC 1 3 1", "ACT 1 4 1", "WHM 5 4 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -553,7 +555,7 @@ def run_all_whm_act(bitwidths, matsizes):
 # cleanup writes the accumulated UB0 to HM2.
 def whm_act_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
-                       instrs=["WHM 0 0 1", "ACT 0 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"ACT 0 0 {L2}"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_act_same_ub",
@@ -566,7 +568,7 @@ def whm_act_same_ub(distance, bitwidth, matsize):
 # cleanup writes the accumulated UB1 to HM1.
 def whm_act_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 3 0 1", "RHM 2 2 1", "RW 0", "MMC 0 2 1"],
-                       instrs=["WHM 0 0 1", "ACT 0 1 1"],
+                       instrs=[f"WHM 0 0 {L1}", f"ACT 0 1 {L2}"],
                        cleanup=["WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_act_diff_ub",
@@ -589,7 +591,7 @@ def run_all_rw_rhm(bitwidths, matsizes):
 #     UB2, and then writing UB2 to HM3.
 def rw_rhm(distance, bitwidth, matsize):
     return squish_test(setup=[],
-                       instrs=["RW 0", "RHM 0 0 1"],
+                       instrs=["RW 0", f"RHM 0 0 {L2}"],
                        cleanup=["WHM 1 0 1", "RHM 2 1 1", "MMC 0 1 1", 
                                 "ACT 0 2 1", "WHM 3 2 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -612,7 +614,7 @@ def run_all_rw_whm(bitwidths, matsizes):
 #     into ACC0, writing ACC0 to UB2, and then writing UB2 to HM3.
 def rw_whm(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1"],
-                       instrs=["RW 0", "WHM 0 0 1"],
+                       instrs=["RW 0", f"WHM 0 0 {L2}"],
                        cleanup=["RHM 2 1 1", "MMC 0 1 1", "ACT 0 2 1", 
                                 "WHM 3 2 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -783,7 +785,7 @@ def run_all_rw_mmc(bitwidths, matsizes):
 #     UB3 to HM3.
 def rw_mmc_empty_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1"],
-                       instrs=["RW 0", "MMC 0 0 1"],
+                       instrs=["RW 0", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "RW 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -801,7 +803,7 @@ def rw_mmc_empty_no_s(distance, bitwidth, matsize):
 #     UB3 to HM3.
 def rw_mmc_empty_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1"],
-                       instrs=["RW 0", "MMC.S 0 0 1"],
+                       instrs=["RW 0", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "RW 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -819,7 +821,7 @@ def rw_mmc_empty_yes_s(distance, bitwidth, matsize):
 #     instrs.
 def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2"],
-                       instrs=["RW 3", "MMC 0 0 1"],
+                       instrs=["RW 3", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -842,7 +844,7 @@ def rw_mmc_one_space_no_s(distance, bitwidth, matsize):
 #     will check that the weight matrix should be RW1, RW2, RW3 after instrs.
 def rw_mmc_one_space_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2"],
-                       instrs=["RW 3", "MMC.S 0 0 1"],
+                       instrs=["RW 3", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -864,7 +866,7 @@ def rw_mmc_one_space_yes_s(distance, bitwidth, matsize):
 #     after the instrs under test finish.
 def rw_mmc_full_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2", "RW 3"],
-                       instrs=["RW 4", "MMC 0 0 1"],
+                       instrs=["RW 4", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -888,7 +890,7 @@ def rw_mmc_full_no_s(distance, bitwidth, matsize):
 #     after the instrs under test finish.
 def rw_mmc_full_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2", "RW 3"],
-                       instrs=["RW 4", "MMC 0 0 1"],
+                       instrs=["RW 4", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -917,7 +919,7 @@ def run_all_rw_act(bitwidths, matsizes):
 #     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM3.
 def rw_act(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC.S 0 1 1"],
-                       instrs=["RW 1", "ACT 0 0 1"],
+                       instrs=["RW 1", f"ACT 0 0 {L2}"],
                        cleanup=["WHM 0 0 1", "RHM 2 2 1", "MMC 1 2 1", 
                                 "ACT 1 3 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
@@ -944,7 +946,7 @@ def run_all_mmc_rhm(bitwidths, matsizes):
 #     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
 def mmc_rhm_same_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "RHM 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"RHM 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 2 1 1", 
                                 "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 4 3 1"],
@@ -961,7 +963,7 @@ def mmc_rhm_same_ub_no_s(distance, bitwidth, matsize):
 #     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
 def mmc_rhm_same_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "RHM 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"RHM 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 2 1 1", 
                                 "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 4 3 1"],
@@ -979,7 +981,7 @@ def mmc_rhm_same_ub_yes_s(distance, bitwidth, matsize):
 #     have to write the result of the RHM into UB1 back to the HM (HM2).
 def mmc_rhm_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "RHM 0 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"RHM 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
                                 "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
                                 "WHM 5 4 1",
@@ -998,7 +1000,7 @@ def mmc_rhm_diff_ub_no_s(distance, bitwidth, matsize):
 #     have to write the result of the RHM into UB1 back to the HM (HM2).
 def mmc_rhm_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "RHM 0 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"RHM 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
                                 "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
                                 "WHM 5 4 1",
@@ -1027,7 +1029,7 @@ def run_all_mmc_whm(bitwidths, matsizes):
 #     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
 def mmc_whm_same_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "WHM 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"WHM 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 2 1 1", 
                                 "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 4 3 1"],
@@ -1044,7 +1046,7 @@ def mmc_whm_same_ub_no_s(distance, bitwidth, matsize):
 #     into ACC1, writing ACC1 to UB3, and then writing UB3 to HM4.
 def mmc_whm_same_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "WHM 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"WHM 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 2 1 1", 
                                 "RHM 3 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 4 3 1"],
@@ -1061,7 +1063,7 @@ def mmc_whm_same_ub_yes_s(distance, bitwidth, matsize):
 #    into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
 def mmc_whm_diff_ub_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "WHM 0 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"WHM 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
                                 "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
                                 "WHM 5 4 1"],
@@ -1078,7 +1080,7 @@ def mmc_whm_diff_ub_no_s(distance, bitwidth, matsize):
 #    into ACC1, writing ACC1 to UB4, and then writing UB4 to HM5.
 def mmc_whm_diff_ub_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 0 1", "RHM 2 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "WHM 0 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"WHM 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 3 2 1", 
                                 "RHM 4 3 1", "MMC 1 3 1", "ACT 1 4 1", 
                                 "WHM 5 4 1"],
@@ -1109,7 +1111,7 @@ def run_all_mmc_rw(bitwidths, matsizes):
 #     UB2 with RW0 into ACC1, writing ACC1 to UB3, and then writing UB3 to HM3.
 def mmc_rw_empty_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1"],
-                       instrs=["MMC 0 0 1", "RW 0"],
+                       instrs=[f"MMC 0 0 {L1}", "RW 0"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1127,7 +1129,7 @@ def mmc_rw_empty_no_s(distance, bitwidth, matsize):
 #     UB2 with RW0 into ACC1, writing ACC1 to UB3, and then writing UB3 to HM3.
 def mmc_rw_empty_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1"],
-                       instrs=["MMC.S 0 0 1", "RW 0"],
+                       instrs=[f"MMC.S 0 0 {L1}", "RW 0"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1145,7 +1147,7 @@ def mmc_rw_empty_yes_s(distance, bitwidth, matsize):
 #     RW1, RW2, and RW3).
 def mmc_rw_one_space_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1", "RW 2", "RHM 0 0 1"],
-                       instrs=["MMC 0 0 1", "RW 3"],
+                       instrs=[f"MMC 0 0 {L1}", "RW 3"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1169,7 +1171,7 @@ def mmc_rw_one_space_no_s(distance, bitwidth, matsize):
 #     RW2, and RW3).
 def mmc_rw_one_space_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1", "RW 2", "RHM 0 0 1"],
-                       instrs=["MMC.S 0 0 1", "RW 3"],
+                       instrs=[f"MMC.S 0 0 {L1}", "RW 3"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1193,7 +1195,7 @@ def mmc_rw_one_space_yes_s(distance, bitwidth, matsize):
 #     RW1, RW2, and RW3 - or is the last one RW4? I'm not sure what it does or should do in this position. does it refuse to input after it's full, or does it just replace the 4th slot?)
 def mmc_rw_full_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3", "RHM 0 0 1"],
-                       instrs=["MMC 0 0 1", "RW 4"],
+                       instrs=[f"MMC 0 0 {L1}", "RW 4"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1217,7 +1219,7 @@ def mmc_rw_full_no_s(distance, bitwidth, matsize):
 #     RW2, RW3, and RW4).
 def mmc_rw_full_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3", "RHM 0 0 1"],
-                       instrs=["MMC 0 0 1", "RW 4"],
+                       instrs=[f"MMC.S 0 0 {L1}", "RW 4"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", 
                                 "RHM 2 2 1", "MMC 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1264,7 +1266,7 @@ def run_all_mmc_mmc(bitwidths, matsizes):
 #     that RW0 is still in the FIFO queue and RW1 is still next.
 def mmc_mmc_diff_ub_diff_acc_no_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC 1 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC 1 1 {L2}"],
                        cleanup=["ACT 0 2 1", "ACT 1 3 1",
                                 "WHM 2 2 1", "WHM 3 3 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
@@ -1285,7 +1287,7 @@ def mmc_mmc_diff_ub_diff_acc_no_s_no_s(distance, bitwidth, matsize):
 #     that RW1 is now at the front of the weight queue. 
 def mmc_mmc_diff_ub_diff_acc_no_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC.S 1 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC.S 1 1 {L2}"],
                        cleanup=["ACT 0 2 1", "ACT 1 3 1",
                                 "WHM 2 2 1", "WHM 3 3 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
@@ -1304,7 +1306,7 @@ def mmc_mmc_diff_ub_diff_acc_no_s_yes_s(distance, bitwidth, matsize):
 #     that RW1 is now at the front of the weight queue.
 def mmc_mmc_diff_ub_diff_acc_yes_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "MMC 1 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC 1 1 {L2}"],
                        cleanup=["ACT 0 2 1", "ACT 1 3 1",
                                 "WHM 2 2 1", "WHM 3 3 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
@@ -1323,7 +1325,7 @@ def mmc_mmc_diff_ub_diff_acc_yes_s_no_s(distance, bitwidth, matsize):
 #     that RW2 is now at the front of the weight queue.
 def mmc_mmc_diff_ub_diff_acc_yes_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", "RW 2"],
-                       instrs=["MMC.S 0 0 1", "MMC.S 1 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC.S 1 1 {L2}"],
                        cleanup=["ACT 0 2 1", "ACT 1 3 1",
                                 "WHM 2 2 1", "WHM 3 3 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
@@ -1341,7 +1343,7 @@ def mmc_mmc_diff_ub_diff_acc_yes_s_yes_s(distance, bitwidth, matsize):
 #     that RW0 is still the front of the queue and RW1 still follows.
 def mmc_mmc_same_ub_diff_acc_no_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC 1 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC 1 0 {L2}"],
                        cleanup=["ACT 0 1 1", "ACT 1 2 1",
                                 "WHM 1 1 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 2 3 1", "ACT 2 4 1", 
@@ -1361,7 +1363,7 @@ def mmc_mmc_same_ub_diff_acc_no_s_no_s(distance, bitwidth, matsize):
 #     that RW1 is now at the front of the weight queue.
 def mmc_mmc_same_ub_diff_acc_no_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC.S 1 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC.S 1 0 {L2}"],
                        cleanup=["ACT 0 1 1", "ACT 1 2 1",
                                 "WHM 1 1 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 2 3 1", "ACT 2 4 1", 
@@ -1379,7 +1381,7 @@ def mmc_mmc_same_ub_diff_acc_no_s_yes_s(distance, bitwidth, matsize):
 #     that RW1 is now at the front of the weight queue.
 def mmc_mmc_same_ub_diff_acc_yes_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "MMC 1 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC 1 0 {L2}"],
                        cleanup=["ACT 0 1 1", "ACT 1 2 1",
                                 "WHM 1 1 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 2 3 1", "ACT 2 4 1", 
@@ -1397,7 +1399,7 @@ def mmc_mmc_same_ub_diff_acc_yes_s_no_s(distance, bitwidth, matsize):
 #     that RW2 is now at the front of the weight queue.
 def mmc_mmc_same_ub_diff_acc_yes_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2"],
-                       instrs=["MMC.S 0 0 1", "MMC.S 1 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC.S 1 0 {L2}"],
                        cleanup=["ACT 0 1 1", "ACT 1 2 1",
                                 "WHM 1 1 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 2 3 1", "ACT 2 4 1", 
@@ -1415,7 +1417,7 @@ def mmc_mmc_same_ub_diff_acc_yes_s_yes_s(distance, bitwidth, matsize):
 #    queue.
 def mmc_mmc_diff_ub_same_acc_no_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC 0 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 1 3 1", "ACT 1 4 1", 
                                 "WHM 4 4 1",
@@ -1434,7 +1436,7 @@ def mmc_mmc_diff_ub_same_acc_no_s_no_s(distance, bitwidth, matsize):
 #     queue.
 def mmc_mmc_diff_ub_same_acc_no_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC.S 0 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC.S 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 1 3 1", "ACT 1 4 1", 
                                 "WHM 4 4 1"],
@@ -1451,7 +1453,7 @@ def mmc_mmc_diff_ub_same_acc_no_s_yes_s(distance, bitwidth, matsize):
 #     queue.
 def mmc_mmc_diff_ub_same_acc_yes_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "MMC 0 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 1 3 1", "ACT 1 4 1", 
                                 "WHM 4 4 1"],
@@ -1468,7 +1470,7 @@ def mmc_mmc_diff_ub_same_acc_yes_s_no_s(distance, bitwidth, matsize):
 #     queue.
 def mmc_mmc_diff_ub_same_acc_yes_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", "RW 2"],
-                       instrs=["MMC.S 0 0 1", "MMC.S 0 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC.S 0 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1",
                                 "RHM 3 3 1", "MMC.S 1 3 1", "ACT 1 4 1", 
                                 "WHM 4 4 1"],
@@ -1485,7 +1487,7 @@ def mmc_mmc_diff_ub_same_acc_yes_s_yes_s(distance, bitwidth, matsize):
 #     queue and still followed by RW 1.
 def mmc_mmc_same_ub_same_acc_no_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1504,7 +1506,7 @@ def mmc_mmc_same_ub_same_acc_no_s_no_s(distance, bitwidth, matsize):
 #     queue.
 def mmc_mmc_same_ub_same_acc_no_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "MMC.S 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1521,7 +1523,7 @@ def mmc_mmc_same_ub_same_acc_no_s_yes_s(distance, bitwidth, matsize):
 #     queue.
 def mmc_mmc_same_ub_same_acc_yes_s_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "MMC 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1538,7 +1540,7 @@ def mmc_mmc_same_ub_same_acc_yes_s_no_s(distance, bitwidth, matsize):
 #     queue.
 def mmc_mmc_same_ub_same_acc_yes_s_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "RW 2"],
-                       instrs=["MMC.S 0 0 1", "MMC.S 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1574,7 +1576,7 @@ def run_all_mmc_act(bitwidths, matsizes):
 def mmc_act_diff_ub_diff_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 3 3 1", "RW 0", "RW 1", 
                               "MMC 1 3 1"],
-                       instrs=["MMC 0 0 1", "ACT 1 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"ACT 1 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1", "WHM 1 1 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
                                 "WHM 5 5 1",
@@ -1596,7 +1598,7 @@ def mmc_act_diff_ub_diff_acc_no_s(distance, bitwidth, matsize):
 def mmc_act_diff_ub_diff_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 3 3 1", "RW 0", "RW 1", 
                               "MMC 1 3 1"],
-                       instrs=["MMC.S 0 0 1", "ACT 1 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"ACT 1 1 {L2}"],
                        cleanup=["ACT 0 2 1", "WHM 2 2 1", "WHM 1 1 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
                                 "WHM 5 5 1"],
@@ -1617,7 +1619,7 @@ def mmc_act_diff_ub_diff_acc_yes_s(distance, bitwidth, matsize):
 def mmc_act_same_ub_diff_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 2 2 1", "RW 0", "RW 1", 
                               "MMC 1 2 1"],
-                       instrs=["MMC 0 0 1", "ACT 1 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"ACT 1 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", "WHM 3 0 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
                                 "WHM 5 5 1",
@@ -1639,7 +1641,7 @@ def mmc_act_same_ub_diff_acc_no_s(distance, bitwidth, matsize):
 def mmc_act_same_ub_diff_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 2 2 1", "RW 0", "RW 1", 
                               "MMC 1 2 1"],
-                       instrs=["MMC.S 0 0 1", "ACT 1 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"ACT 1 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1", "WHM 3 0 1",
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
                                 "WHM 5 5 1"],
@@ -1655,7 +1657,7 @@ def mmc_act_same_ub_diff_acc_yes_s(distance, bitwidth, matsize):
 #     and RW1 is still next.
 def mmc_act_diff_ub_same_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "ACT 0 1 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"ACT 0 1 {L2}"],
                        cleanup=["WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1672,7 +1674,7 @@ def mmc_act_diff_ub_same_acc_no_s(distance, bitwidth, matsize):
 #     one more matmul to confirm that RW1 is now at the front of the queue.
 def mmc_act_diff_ub_same_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "ACT 0 1 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"ACT 0 1 {L2}"],
                        cleanup=["WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1688,7 +1690,7 @@ def mmc_act_diff_ub_same_acc_yes_s(distance, bitwidth, matsize):
 #     and RW1 is still next.
 def mmc_act_same_ub_same_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC 0 0 1", "ACT 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", f"ACT 0 0 {L2}"],
                        cleanup=["WHM 1 0 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1705,7 +1707,7 @@ def mmc_act_same_ub_same_acc_no_s(distance, bitwidth, matsize):
 #     one more matmul to confirm that RW1 is now at the front of the queue.
 def mmc_act_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1"],
-                       instrs=["MMC.S 0 0 1", "ACT 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", f"ACT 0 0 {L2}"],
                        cleanup=["WHM 1 0 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1729,7 +1731,7 @@ def run_all_act_rhm(bitwidths, matsizes):
 # cleanup writes the result of the accumulation from UB0 to HM2.
 def act_rhm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
-                       instrs=["ACT 0 0 1", "RHM 0 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"RHM 0 0 {L2}"],
                        cleanup=["WHM 2 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_rhm_same_ub",
@@ -1743,7 +1745,7 @@ def act_rhm_same_ub(distance, bitwidth, matsize):
 #     and writes the result of the RHM into UB1 from UB1 to HM3 to test instr2.
 def act_rhm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 2 2 1", "RW 0", "MMC 0 2 1"],
-                       instrs=["ACT 0 0 1", "RHM 0 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"RHM 0 1 {L2}"],
                        cleanup=["WHM 1 0 1", "WHM 3 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_rhm_diff_ub",
@@ -1765,7 +1767,7 @@ def run_all_act_whm(bitwidths, matsizes):
 # cleanup is not needed because the instrs under test already write to HM.
 def act_whm_same_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
-                       instrs=["ACT 0 0 1", "WHM 0 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"WHM 0 0 {L2}"],
                        cleanup=[],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_whm_same_ub",
@@ -1778,7 +1780,7 @@ def act_whm_same_ub(distance, bitwidth, matsize):
 # cleanup writes from UB0 to HM3 to test instr1.
 def act_whm_diff_ub(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RHM 2 2 1", "RW 0", "MMC 0 2 1"],
-                       instrs=["ACT 0 0 1", "WHM 0 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"WHM 0 1 {L2}"],
                        cleanup=["WHM 3 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_whm_diff_ub",
@@ -1801,7 +1803,7 @@ def run_all_act_rw(bitwidths, matsizes):
 #     the queue and RW1 (instr2) is next.
 def act_rw(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
-                       instrs=["ACT 0 0 1", "RW 1"],
+                       instrs=[f"ACT 0 0 {L1}", "RW 1"],
                        cleanup=["WHM 0 0 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1837,7 +1839,7 @@ def run_all_act_mmc(bitwidths, matsizes):
 def act_mmc_diff_ub_diff_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
                               "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC 1 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC 1 1 {L2}"],
                        cleanup=["ACT 1 1 1", "WHM 0 0 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
                                 "WHM 3 3 1",
@@ -1858,7 +1860,7 @@ def act_mmc_diff_ub_diff_acc_no_s(distance, bitwidth, matsize):
 def act_mmc_diff_ub_diff_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
                               "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC.S 1 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC.S 1 1 {L2}"],
                        cleanup=["ACT 1 1 1", "WHM 0 0 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
                                 "WHM 3 3 1"],
@@ -1875,7 +1877,7 @@ def act_mmc_diff_ub_diff_acc_yes_s(distance, bitwidth, matsize):
 #     RW1 is next.
 def act_mmc_same_ub_diff_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC 1 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC 1 0 {L2}"],
                        cleanup=["ACT 1 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
                                 "WHM 3 3 1",
@@ -1893,7 +1895,7 @@ def act_mmc_same_ub_diff_acc_no_s(distance, bitwidth, matsize):
 #     more matmul to confirm that RW1 is now at the front of the queue.
 def act_mmc_same_ub_diff_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC.S 1 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC.S 1 0 {L2}"],
                        cleanup=["ACT 1 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 2 2 1", "ACT 2 3 1", 
                                 "WHM 3 3 1"],
@@ -1912,7 +1914,7 @@ def act_mmc_same_ub_diff_acc_yes_s(distance, bitwidth, matsize):
 def act_mmc_diff_ub_same_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
                               "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC 0 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC 0 1 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 0 0 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1933,7 +1935,7 @@ def act_mmc_diff_ub_same_acc_no_s(distance, bitwidth, matsize):
 def act_mmc_diff_ub_same_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "RW 1", 
                               "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC.S 0 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC.S 0 1 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 0 0 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1950,7 +1952,7 @@ def act_mmc_diff_ub_same_acc_yes_s(distance, bitwidth, matsize):
 #     queue and RW1 is next.
 def act_mmc_same_ub_same_acc_no_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC 0 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1",
@@ -1968,7 +1970,7 @@ def act_mmc_same_ub_same_acc_no_s(distance, bitwidth, matsize):
 #     does one more matmul to confirm that RW1 is now at the front of the queue.
 def act_mmc_same_ub_same_acc_yes_s(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "RW 1", "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "MMC.S 0 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"MMC.S 0 0 {L2}"],
                        cleanup=["ACT 0 1 1", "WHM 1 1 1",
                                 "RHM 2 2 1", "MMC.S 1 2 1", "ACT 1 3 1", 
                                 "WHM 3 3 1"],
@@ -1995,7 +1997,7 @@ def run_all_act_act(bitwidths, matsizes):
 def act_act_diff_ub_diff_acc(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "MMC 0 0 1",
                               "MMC 1 1 1"],
-                       instrs=["ACT 0 0 1", "ACT 1 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"ACT 1 1 {L2}"],
                        cleanup=["WHM 0 0 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_diff_ub_diff_acc",
@@ -2009,7 +2011,7 @@ def act_act_diff_ub_diff_acc(distance, bitwidth, matsize):
 def act_act_same_ub_diff_acc(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RHM 1 1 1", "RW 0", "MMC 0 0 1",
                               "MMC 1 1 1"],
-                       instrs=["ACT 0 0 1", "ACT 1 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"ACT 1 0 {L2}"],
                        cleanup=["WHM 0 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_same_ub_diff_acc",
@@ -2022,7 +2024,7 @@ def act_act_same_ub_diff_acc(distance, bitwidth, matsize):
 # cleanup writes UB0 to HM0 and UB1 to HM1.
 def act_act_diff_ub_same_acc(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "ACT 0 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"ACT 0 1 {L2}"],
                        cleanup=["WHM 0 0 1", "WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_diff_ub_same_acc",
@@ -2035,7 +2037,7 @@ def act_act_diff_ub_same_acc(distance, bitwidth, matsize):
 # cleanup writes UB0 to HM0.
 def act_act_same_ub_same_acc(distance, bitwidth, matsize):
     return squish_test(setup=["RHM 0 0 1", "RW 0", "MMC 0 0 1"],
-                       instrs=["ACT 0 0 1", "ACT 0 0 1"],
+                       instrs=[f"ACT 0 0 {L1}", f"ACT 0 0 {L2}"],
                        cleanup=["WHM 0 0 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="act_act_same_ub_same_acc",
