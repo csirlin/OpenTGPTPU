@@ -2,7 +2,7 @@
 parameters for:
 - instruction under test 1
 - instruction under test 2
-- distance between instructions under test (1-50)
+- distance between instructions under test
 - bitwidth
 - matsize
 - test name
@@ -124,13 +124,15 @@ class Program:
     reset: bool
     program_dir: str
     absolute_addresses: bool
+    ctrl_distance: int
 
     # parse instrs, setup, and cleanup into Instruction objects
     # load the rest of the args into the Program object
-    def __init__(self, instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir: str) -> 'Program':
+    def __init__(self, instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir: str, ctrl_distance: int) -> 'Program':
         self.instrs = []
         self.setup = []
         self.cleanup = []
+        self.ctrl_distance = ctrl_distance
 
         for i in range(len(instrs)):
             self.instrs.append(Instruction(instrs[i]))
@@ -170,14 +172,15 @@ class Program:
 
         with open(filepath, "w") as f:
 
-            # all generated files should start with 50 NOPs (PCs 0-49)
-            for _ in range(50):
+            # all generated files should start with ctrl_distance NOPs
+            # (PC 0 through PC ctrl_distance - 1)
+            for _ in range(self.ctrl_distance):
                 f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
             
-            # after that, every 50th instruction is a setup instruction
+            # after that, every ctrl_distance instructions is a setup instr
             for i in range(len(self.setup)):
                 f.write(f"{self.setup[i].to_string(self.matsize, self.absolute_addresses)}\n")
-                for _ in range(49):
+                for _ in range(self.ctrl_distance - 1):
                     f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
 
             # then the instructions under test, self.distance instructions apart
@@ -188,14 +191,15 @@ class Program:
                 f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
             f.write(f"{self.instrs[1].to_string(self.matsize, self.absolute_addresses)}\n")
 
-            # pad with NOPs so that the first cleanup instruction is 100 lines after the first instruction under test 
-            for _ in range(99-self.distance):
+            # pad with NOPs so that the first cleanup instruction is 
+            # 2*ctrl_distance lines after the first instruction under test 
+            for _ in range(2*self.ctrl_distance - self.distance - 1):
                 f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
 
-            # after that, every 50th instruction is a cleanup instruction
+            # after that, every ctrl_distance instructions is a cleanup instr
             for i in range(len(self.cleanup)):
                 f.write(f"{self.cleanup[i].to_string(self.matsize, self.absolute_addresses)}\n")
-                for _ in range(49):
+                for _ in range(self.ctrl_distance - 1):
                     f.write(f"{nop.to_string(self.matsize, self.absolute_addresses)}\n")
 
             # finally, HLT
@@ -205,7 +209,7 @@ class Program:
 # run the squish test given the args
 def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int, 
                 name: str, setup: list, cleanup: list, reset: bool, 
-                absoluteaddrs: bool, test_folder: str) \
+                absoluteaddrs: bool, test_folder: str, ctrl_distance: int) \
     -> Tuple[bool, Dict[int, int]]:
 
     config.MATSIZE = matsize
@@ -215,13 +219,13 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
         print("Please provide two instructions to test.")
         exit(1)
 
-    if distance < 1 or distance > 50:
-        print("Distance must be between 1 and 50.")
+    if distance < 1 or distance > ctrl_distance:
+        print(f"Distance must be between 1 and {ctrl_distance}.")
         exit(1)
 
     # parse args into Program object
     program_dir = f"{os.path.dirname(__file__)}/{test_folder}/{name}"
-    program = Program(instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir) 
+    program = Program(instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir, ctrl_distance) 
 
     # make folder for the test (squish/name/) and add weights and inputs if they don't already exist
     weights_filename = make_weights(program_dir, program.matsize, program.bitwidth, 8)
@@ -229,11 +233,11 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
 
 
     # if -r is set, or the following don't exist, or the test name is default (test):
-    # generate .a file for d=50 (control)
+    # generate .a file for d=ctrl_distance (control)
     if reset or not os.path.exists(program.get_filepath(binary=False, control=True)) or program.name == "test":
         program.generate_dot_a(control=True)
 
-    # assemble into .out file for d=50 (control)
+    # assemble into .out file for d=ctrl_distance (control)
     if reset or not os.path.exists(program.get_filepath(binary=True, control=True)) or program.name == "test":
         assemble(program.get_filepath(binary=False, control=True), 0)
 
@@ -245,7 +249,8 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
     if reset or not os.path.exists(program.get_filepath(binary=True, control=False)) or program.name == "test":
         assemble(program.get_filepath(binary=False, control=False), 0)
 
-    # run d=50 .out file (control) and get the resulting matrix and final trace
+    # run d=ctrl_distance .out file (control) and get the resulting matrix and 
+    # final trace
     print(f"Running {name} for d = {distance}. b = {bitwidth}, m = {matsize}")
     print(f"Control")
     ctrl_output_folderpath = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}m"
@@ -339,6 +344,8 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--cleanup", type=str, action="append", help="Cleanup instructions.")
     parser.add_argument("-r", "--reset", action="store_true", help="Rebuild test folder from the beginning.")
     parser.add_argument("-a", "--absoluteaddrs", action="store_true", help="Use absolute addresses.")
+    parser.add_argument("-t", "--test_folder", type=str, default="default_test", help="Folder to store the test(s).")
+    parser.add_argument("--ctrl_distance", type=int, default=50, help="Distance between instructions in the control.")
     args = parser.parse_args()
 
     instrs: list = args.instrs
@@ -350,6 +357,9 @@ if __name__ == "__main__":
     cleanup: list = args.cleanup if args.cleanup else []
     reset: bool = args.reset
     absoluteaddrs: bool = args.absoluteaddrs
+    test_folder: str = args.test_folder
+    ctrl_distance: int = args.ctrl_distance
 
     squish_test(instrs, distance, bitwidth, matsize, name, 
-                setup, cleanup, reset, absoluteaddrs)
+                setup, cleanup, reset, absoluteaddrs, test_folder, 
+                ctrl_distance)
