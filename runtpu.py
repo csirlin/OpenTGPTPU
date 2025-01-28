@@ -286,4 +286,5 @@ if __name__ == '__main__':
     parser.add_argument("weightsmem", metavar="WeightsMemoryArray", help="A file containing a numpy array containing the contents of the weights memroy. Each row represents one tile (the first row corresponds to the top row of the weights matrix).")
     args = parser.parse_args()
 
-    runtpu(args, name=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}m')
+    hostmem = runtpu(args, output_folder_path=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}m')
+    print_mem(hostmem)
