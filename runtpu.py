@@ -46,10 +46,10 @@ def make_vec_2(value, bits=8, size=8):
         value = value >> bits
     return list(vec)
 
-def print_mem(mem):
+def print_mem(mem, bits=config.DWIDTH, size=config.MATSIZE):
     ks = sorted(mem.keys())
     for a in ks:
-        print(a, make_vec_2(mem[a], config.DWIDTH, config.MATSIZE))
+        print(a, make_vec_2(mem[a], bits, size))
 
 def print_weight_mem(mem, bits=8, size=8):
     ks = sorted(mem.keys())
@@ -197,6 +197,8 @@ def runtpu(args, output_folder_path='test', output_trace=False):
             wdata = sim.inspect(hostmem_wdata)
             hostmem[waddr] = wdata
 
+        # print(f"cycle {cycle}: hostmem[0] = {hostmem[0]}")
+
         # Read weights memory signal
         if sim.inspect(weights_dram_read):
             # print("Reading weights memory")
@@ -284,7 +286,12 @@ if __name__ == '__main__':
     parser.add_argument("prog", metavar="program.bin", help="A valid binary program for OpenTPU.")
     parser.add_argument("hostmem", metavar="HostMemoryArray", help="A file containing a numpy array containing the initial contents of host memory. Each row represents one vector.")
     parser.add_argument("weightsmem", metavar="WeightsMemoryArray", help="A file containing a numpy array containing the contents of the weights memroy. Each row represents one tile (the first row corresponds to the top row of the weights matrix).")
+    parser.add_argument("-b", "--bitwidth", type=int, default=32, help="The bitwidth of the data.")
+    parser.add_argument("-m", "--matsize", type=int, default=8, help="The size of the matrix.")
     args = parser.parse_args()
 
-    hostmem = runtpu(args, output_folder_path=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}m')
-    print_mem(hostmem)
+    config.MATSIZE = args.matsize
+    config.DWIDTH = args.bitwidth
+
+    hostmem = runtpu(args, output_folder_path=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}m', output_trace=True)
+    print_mem(hostmem, bits=config.DWIDTH, size=config.MATSIZE)
