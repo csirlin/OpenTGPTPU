@@ -4,8 +4,8 @@ import pyrtl
 
 
 # load pyrtl trace from pickle file
-with open('../test/squish/test_mmc_switch_behavior/2024-12-11_23:20:20_32b_8x8.pkl.pkl', 'rb') as file:
-	(hostmem, sim_trace) = pickle.load(file)
+with open('../rw_mmc_empty_no_s_4m_10d/trace.pkl', 'rb') as file:
+	sim_trace = pickle.load(file)
 
 # get all the non-const wire names
 wires = set()
