@@ -3,5 +3,6 @@ pyenv/*
 *.npy
 *.pkl
 *.out
+test/squish/**/*.a
 traces/*
 **/.DS_Store
