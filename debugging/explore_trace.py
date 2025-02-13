@@ -4,7 +4,7 @@ import pyrtl
 
 
 # load pyrtl trace from pickle file
-with open('../rw_mmc_empty_no_s_4m_10d/trace.pkl', 'rb') as file:
+with open('../f0/trace.pkl', 'rb') as file:
 	sim_trace = pickle.load(file)
 
 # get all the non-const wire names
@@ -35,17 +35,21 @@ def print_wire_1(wire_name, file=stdout):
 
 
 # print the values of all wires that match a given prefix for each cycle
-def print_wire_prefix(wire_prefix, file=stdout):
+def print_wire_prefix(wire_prefixes, file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
+
+	if type(wire_prefixes) != list:
+		wire_prefixes = [wire_prefixes]
 
 	# filter out wires that don't have the prefix
 	filtered_objs = []
 	filtered_wire_names = []
 	for wn in wire_names:
-		if wn.find(wire_prefix) == 0:
-			filtered_wire_names.append(wn)
-			filtered_objs.append(objs[wire_names.index(wn)])
+		for wire_prefix in wire_prefixes:
+			if wn.find(wire_prefix) == 0:
+				filtered_wire_names.append(wn)
+				filtered_objs.append(objs[wire_names.index(wn)])
 
 	# print the values of the filtered wires for each cycle 
 	for i in range(len(filtered_objs[0])):

@@ -139,18 +139,22 @@ def print_wire_2(wire_name, file=stdout):
 
 
 # compare wires that share a prefix between traces for every cycle
-def print_wire_2_prefix(wire_name, file=stdout):
+def print_wire_2_prefix(wire_prefixes, file=stdout):
 	if file != stdout:
 		file = open(file, 'w')
+
+	if type(wire_prefixes) != list:
+		wire_prefixes = [wire_prefixes]
 	
 	filtered_objs1 = []
 	filtered_objs2 = []
 	filtered_wire_names = []
 	for wn in wire_names:
-		if wn.find(wire_name) == 0:
-			filtered_wire_names.append(wn)
-			filtered_objs1.append(t1_objs[wire_names.index(wn)])
-			filtered_objs2.append(t2_objs[wire_names.index(wn)])
+		for wire_prefix in wire_prefixes:
+			if wn.find(wire_prefix) == 0:
+				filtered_wire_names.append(wn)
+				filtered_objs1.append(t1_objs[wire_names.index(wn)])
+				filtered_objs2.append(t2_objs[wire_names.index(wn)])
 	
 	# for every value in the wire in each trace, print their values and if they're the same or not
 	for i in range(len(filtered_objs1[0])):
