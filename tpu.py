@@ -37,11 +37,6 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     IMem = MemBlock(bitwidth=INSTRUCTION_WIDTH, addrwidth=IMEM_ADDR_SIZE)
     pc = Register(IMEM_ADDR_SIZE, "tpu_pc")
     # probe(pc, 'pc')
-    pc.incr = WireVector(1, "tpu_pc.incr")
-    # with conditional_assignment:
-    #     with pc.incr:
-    #         pc.next |= pc + 1 #incr_amt
-    pc.incr <<= 1  # right now, increment the PC every cycle
     instr = IMem[pc]
     # probe(instr, "instr")
     pc_out = Output(len(pc), "tpu_pc_out")
@@ -62,11 +57,18 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     #  Decoder
     ############################################################
 
-    dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, \
+    mmc_busy = Register(1, "tpu_mmc_busy") 
+    act_busy = Register(1, "tpu_act_busy")
+    rhm_busy = Register(1, "tpu_rhm_busy")
+    whm_busy = Register(1, "tpu_whm_busy")
+    rw_busy = Register(1, "tpu_rw_busy")
+
+    dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, dispatch_nop, \
         ub_start_addr, ub_dec_addr, ub_dest_addr, rhm_dec_addr, whm_dec_addr, \
         rhm_length, whm_length, mmc_length, act_length, act_type, accum_raddr, \
         accum_waddr, accum_overwrite, switch_weights, weights_raddr, \
-        weights_read, rhm_switch, rhm_conv, whm_switch = decode(instr)
+        weights_read, rhm_switch, rhm_conv, whm_switch = decode(instr, mmc_busy, act_busy, rhm_busy, whm_busy, rw_busy, pc)
+
 
     halt <<= dispatch_halt
 
@@ -74,7 +76,7 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     #  Matrix Multiply Unit
     ############################################################
 
-    ub_mm_raddr_sig, acc_out, mm_busy, mm_done, buf4, buf3, buf2, buf1 = MMU_top(
+    ub_mm_raddr_sig, acc_out, mm_done, buf4, buf3, buf2, buf1 = MMU_top(
         acc_mems=acc_mems, data_width=DWIDTH, matrix_size=MATSIZE, 
         accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, 
         start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, 
@@ -84,14 +86,27 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
 
     ub_mm_raddr <<= ub_mm_raddr_sig
 
+    # prevent new instructions from being dispatched while mmc unit is running
+    mmc_N = Register(len(mmc_length), "tpu_mmc_N")
+    mmc_cycles = Const(2*MATSIZE + 2) + mmc_length
+    with conditional_assignment:
+        with dispatch_mm:
+            mmc_busy.next |= 1
+            mmc_N.next |= mmc_cycles
+        with mmc_busy:
+            mmc_N.next |= mmc_N - 1
+            with mmc_N == 1:
+                mmc_busy.next |= 0
+
     ############################################################
     #  Activate Unit
     ############################################################
 
-    accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy = act_top(
-        start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, 
-        nvecs=act_length, func=act_type, accum_out=acc_out, 
-        pc=pc, acc_mems=acc_mems, DWIDTH=DWIDTH)
+    accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, pc_incr_wv, \
+        act_first_cycle, act_pc_absolute_update = act_top(start=dispatch_act, 
+        start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, 
+        func=act_type, accum_out=acc_out, pc=pc, acc_mems=acc_mems, 
+        DWIDTH=DWIDTH, busy=act_busy)
 
     accum_act_raddr <<= accum_raddr_sig
 
@@ -104,6 +119,24 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     # probe(ub_act_waddr, "ub_act_waddr")
     # probe(act_out, "act_out")
     # probe(accum_raddr_sig, "accum_raddr")
+
+    ############################################################
+    #  Update PC
+    ############################################################
+
+    with conditional_assignment:
+        with dispatch_mm | dispatch_rhm | dispatch_whm | weights_read | dispatch_nop:
+            pc.next |= pc + 1
+        with dispatch_act: # ACT increments PC only when branch is decided
+            pass
+        # pc_incr_wv is the branch amount. this shouldn't conflict with any 
+        # dispatches because nothing should be ready for dispatch if 
+        # act_first_cycle is true...
+        with act_first_cycle: 
+            with act_pc_absolute_update:
+                pc.next |= pc_incr_wv
+            with otherwise:
+                pc.next |= pc + pc_incr_wv
 
     ############################################################
     #  Read/Write Host Memory
@@ -190,7 +223,6 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     # probe(rhm_length, "rhm_length")
     rhm_N = Register(len(rhm_length), "tpu_rhm_N")
     rhm_addr = Register(len(rhm_dec_addr), "tpu_rhm_addr")
-    rhm_busy = Register(1, "tpu_rhm_busy")
     rhm_ub_waddr = Register(len(ub_dec_addr), "tpu_rhm_ub_waddr")
     rhm_src = Register(2, "tpu_rhm_src")
     rhm_pc_payload = WireVector(DWIDTH*MATSIZE, name="tpu_rhm_pc_payload")
@@ -258,6 +290,18 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
 
     weights_dram_raddr <<= weights_raddr
     weights_dram_read <<= weights_read
+
+    # prevent new instructions from being dispatched while fifo queue is working
+    rw_N = Register(len(weights_raddr), "tpu_rw_N")
+    rw_cycles = Const(math.ceil(MATSIZE*MATSIZE/64)+3) 
+    with conditional_assignment:
+        with weights_read: # basically dispatch_rw
+            rw_N.next |= rw_cycles # stay busy for full duration
+            rw_busy.next |= 1
+        with rw_busy:
+            rw_N.next |= rw_N - 1
+            with rw_N == 1:
+                rw_busy.next |= 0
 
     # probe(weights_raddr, "weights_raddr")
     # probe(weights_read, "weights_read")
