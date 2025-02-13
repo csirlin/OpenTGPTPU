@@ -2,7 +2,9 @@ from pyrtl import *
 import config
 import isa
 
-def decode(instruction):
+ACCSIZE = config.ACC_ADDR_SIZE
+
+def decode(instruction, mm_busy, act_busy, rhm_busy, whm_busy, rw_busy, pc):
     """
     :param instruction: instruction + optional operands + flags
     """
@@ -35,6 +37,7 @@ def decode(instruction):
     dispatch_rhm = WireVector(1, "dec_dispatch_rhm")
     dispatch_whm = WireVector(1, "dec_dispatch_whm")
     dispatch_halt = WireVector(1, "dec_dispatch_halt")
+    dispatch_nop = WireVector(1, "dec_dispatch_nop")
 
     # parse instruction
     op = instruction[ isa.OP_START*8 : isa.OP_END*8 ]
@@ -54,8 +57,11 @@ def decode(instruction):
     #probe(ubaddr, "ubaddr")
 
     with conditional_assignment:
-        with op == isa.OPCODE2BIN['NOP'][0]:
+        # dont dispatch an instruction if any unit is busy
+        with mm_busy | act_busy | rhm_busy | whm_busy | rw_busy:
             pass
+        with op == isa.OPCODE2BIN['NOP'][0]:
+            dispatch_nop |= 1
         with op == isa.OPCODE2BIN['WHM'][0]:
             dispatch_whm |= 1
             ub_raddr |= memaddr # memaddr and ubaddr are switched to match the simulator
@@ -98,7 +104,7 @@ def decode(instruction):
         #    print("otherwise")
 
     return dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, \
-           dispatch_halt, ub_addr, ub_raddr, ub_waddr, rhm_addr, whm_addr, \
-           rhm_length, whm_length, mmc_length, act_length, act_type, \
+           dispatch_halt, dispatch_nop, ub_addr, ub_raddr, ub_waddr, rhm_addr, \
+           whm_addr, rhm_length, whm_length, mmc_length, act_length, act_type, \
            accum_raddr, accum_waddr, accum_overwrite, switch_weights, \
            weights_raddr, weights_read, rhm_switch, rhm_conv, whm_switch

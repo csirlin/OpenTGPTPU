@@ -264,7 +264,7 @@ def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index):
                 acc_mem[waddr] |= acc_mem_no_overwrite
 
     # Read
-    data_out = WireVector(32, f"accum_data_out_{index}")
+    data_out = WireVector(32, f"accum_data_out_{index}") # should be bitwidth, not 32, right?
     data_out <<= acc_mem[raddr]
 
     # Pipeline registers
@@ -684,7 +684,7 @@ def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start,
     last = WireVector(1, "mmu_top_last")
     swap_reg = Register(1, "mmu_top_swap_reg")
 
-    busy = Register(1, "busy_matrix")
+    busy = Register(1, "mmu_busy_matrix") # only for reading rows from UB. MMC is busier for much longer.
     N = Register(len(nvecs), "mmu_top_N")
     ub_raddr = Register(ub_size, "mmu_top_ub_raddr")
 
@@ -732,7 +732,7 @@ def MMU_top(acc_mems, data_width, matrix_size, accum_size, ub_size, start,
 
     #probe(ub_raddr, "ub_mm_raddr")
 
-    return ub_raddr, acc_out, busy, done, buf4, buf3, buf2, buf1
+    return ub_raddr, acc_out, done, buf4, buf3, buf2, buf1
 
     
 
