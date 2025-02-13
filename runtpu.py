@@ -142,7 +142,7 @@ def runtpu(args, output_folder_path='test', output_trace=False):
     reset_working_block()
     IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, halt, \
         hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, hostmem_wdata, \
-        weights_dram_read, weights_dram_raddr, acc_mems, buf4, buf3, buf2, buf1 \
+        weights_dram_read, weights_dram_raddr, acc_mems, buf4, buf3, buf2, buf1, pc \
         = tpu(config.MATSIZE, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
         config.WEIGHT_DRAM_ADDR_SIZE, config.ACC_ADDR_SIZE, config.DWIDTH, 
         config.INSTRUCTION_WIDTH, config.IMEM_ADDR_SIZE)

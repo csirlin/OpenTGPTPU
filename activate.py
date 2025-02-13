@@ -19,13 +19,12 @@ def sigmoid_vector(vec):
     return concat_list([ sigmoid(x) for x in vec ])
 
 
-def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, DWIDTH):
+def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, DWIDTH, busy):
 
     # func: 0 - nothing
     #       1 - ReLU
     #       2 - sigmoid
 
-    busy = Register(1, "act_busy")
     accum_addr = Register(len(start_addr), "act_accum_addr")
     ub_waddr = Register(len(dest_addr), "act_ub_waddr")
     N = Register(len(nvecs), "act_N")
@@ -45,8 +44,6 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
 
     start_addr_reg.next <<= select(start, start_addr, start_addr_reg)
 
-    pc_incr = WireVector(len(pc), "act_pc_incr") # keep
-
     # general condition to take action:
     cond = WireVector(1, "act_cond") # new
     cond <<= busy & (N_wv == 1) # new
@@ -56,7 +53,6 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
         accum_out[i].name = f'act_accum_out_{i}'
 
     first_cycle = Register(1, "act_first_cycle") # true for the first busy activation cycle, false otherwise
-    pc_incr_reg = Register(len(pc), "act_pc_incr_reg") # hold the pc jump obtained in this cycle for future cycles
     pc_incr_wv = WireVector(len(pc), "act_pc_incr_wv")
     
     # first busy cycle: store the jump value in pc_incr_reg if there is one
@@ -66,9 +62,9 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             # branch
             with accum_out[-1] == 1: 
                 with accum_out[-2] == 1:
-                    pc_incr_wv |= accum_out[0]
+                    pc_incr_wv |= accum_out[0] + 1
                 with accum_out[-2] == 0:
-                    pc_incr_wv |= accum_out[1]
+                    pc_incr_wv |= accum_out[1] + 1
                 for i in range(len(accum_mod)):
                     accum_mod[i] |= accum_out[i]
 
@@ -102,31 +98,11 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
                     accum_mod[i] |= accum_out[i]
                 pc_incr_wv |= 1
 
-            # set pc_incr_reg for the rest of the ACT instruction
-            pc_incr_reg.next |= pc_incr_wv
-
-        # pc_incr_reg holds it's value until the next ACT instruction
-        with otherwise:
-            pc_incr_reg.next |= pc_incr_reg
-            # might need this for later as part of the first cycle fix
-            # for i in range(len(accum_mod)):
-            #    accum_mod[i] |= accum_out[i]
-
-    # jump to the right PC after the last busy cycle
     with conditional_assignment:
-        with N == 1:
-            # if ACT length is 1, first_cycle is the only cycle, and 
-            # pc_incr_reg doesn't hold anything yet
-            with first_cycle: 
-                pc_incr |= pc_incr_wv
-            # otherwise, pc_incr_wv is blank, and the value is in
-            # pc_incr_reg
-            with otherwise:
-                pc_incr |= pc_incr_reg
+        with start:
+            first_cycle.next |= 1
         with otherwise:
-            pc_incr |= 1
-
-    pc.next <<= select(cond, (pc + pc_incr)[0:len(pc)], pc + 1)
+            first_cycle.next |= 0
 
     with conditional_assignment:
         with start:  # new instruction being dispatched
@@ -135,7 +111,6 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             N.next |= nvecs
             act_func.next |= func
             busy.next |= 1
-            first_cycle.next |= 1
             
         with busy:  # Do activate on another vector this cycle
             accum_addr.next |= accum_addr + 1
@@ -144,13 +119,6 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             with N == 1:  # this was the last vector
                 busy.next |= 0
 
-        # this only updates first_cycle if start and busy are 0, so first cycle
-        # is held to 1 for the duration of the activation. I think this is 
-        # wrong but it appears to work and I don't feel like re-running all the
-        # tests to ensure it works after I fix it. but a note for the future.
-        with first_cycle:
-            first_cycle.next |= 0
-
     # old: accum_out. new: accum_mod
     invals = concat_list([ x[:DWIDTH] for x in accum_mod ]) 
     act_out = mux(act_func, invals, relu_vector(accum_mod, 24), 
@@ -158,4 +126,4 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     act_out.name = 'act_out'
     ub_we = busy
             
-    return accum_addr, ub_waddr, act_out, ub_we, busy
+    return accum_addr, ub_waddr, act_out, ub_we, pc_incr_wv, first_cycle
