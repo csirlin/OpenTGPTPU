@@ -102,11 +102,9 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
                     accum_mod[i] |= accum_out[i]
                 pc_incr_wv |= 1
 
-    # if pc_absolute_update = 1, select pc_incr (absolute addr for unconditional jump)
-    # else, pc + pc_incr
-    #     if we're in the last busy cycle (N==1 or branch==1) then pc_incr 
-    #     will hold the relative branch amount (if a branch) or 1 (no branch)
-    #     if we're not in the last busy cycle it also holds 1 (default incr)
+        with otherwise:
+            for i in range(len(accum_mod)):
+                accum_mod[i] |= accum_out[i]
 
     with conditional_assignment:
         with start:
@@ -138,6 +136,11 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     # write enable from ACC to UB. enable when busy to write back each
     # row, unless it's a branch/jump ACT, in which case we don't want to write
     ub_we = select(branch, 0, busy) 
-            
+    
+    # if pc_absolute_update = 1, select pc_incr (absolute addr for unconditional jump)
+    # else, pc + pc_incr
+    #     if we're in the last busy cycle (N==1 or branch==1) then pc_incr 
+    #     will hold the relative branch amount (if a branch) or 1 (no branch)
+    #     if we're not in the last busy cycle it also holds 1 (default incr)
     return accum_addr, ub_waddr, act_out, ub_we, pc_incr_wv, first_cycle, \
            pc_absolute_update
