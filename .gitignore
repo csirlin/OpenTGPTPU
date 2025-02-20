@@ -6,3 +6,4 @@ pyenv/*
 test/squish/**/*.a
 traces/*
 **/.DS_Store
+*.pyc
