@@ -95,6 +95,10 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
                     accum_mod[i] |= accum_out[i]
                 pc_incr_wv |= 1
 
+        with otherwise:
+            for i in range(len(accum_mod)):
+                accum_mod[i] |= accum_out[i]
+
     with conditional_assignment:
         with start:
             first_cycle.next |= 1
