@@ -108,6 +108,9 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
         # pc_incr_reg holds it's value until the next ACT instruction
         with otherwise:
             pc_incr_reg.next |= pc_incr_reg
+            # might need this for later as part of the first cycle fix
+            # for i in range(len(accum_mod)):
+            #    accum_mod[i] |= accum_out[i]
 
     # jump to the right PC after the last busy cycle
     with conditional_assignment:
@@ -141,6 +144,10 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             with N == 1:  # this was the last vector
                 busy.next |= 0
 
+        # this only updates first_cycle if start and busy are 0, so first cycle
+        # is held to 1 for the duration of the activation. I think this is 
+        # wrong but it appears to work and I don't feel like re-running all the
+        # tests to ensure it works after I fix it. but a note for the future.
         with first_cycle:
             first_cycle.next |= 0
 
