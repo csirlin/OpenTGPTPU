@@ -1,0 +1,19 @@
+Tests that finish with every amount of space in the fifo queue to see how
+runtpu's wqueue_to_np() function handles different queue sizes
+
+Designed for 16x16 matrices with 32-bit values.
+Use test/squish/generate.py to make weights and hostmem:
+generate.make_hostmem('../test_fifo_size/', matsize=16, bitwidth=32, num_tiles=8)
+generate.make_weights('../test_fifo_size/', matsize=16, bitwidth=32, num_weights=8)
+
+Currently:
+empty_to_0: fifo_empty2-4 start as 0 so runtpu shows 3 empty queue spots
+empty_to_1: perfect match
+empty_to_2: perfect match
+empty_to_3: perfect match
+empty_to_4: perfect match
+full_to_3: perfect match
+full_to_2: perfect match
+full_to_1: perfect match
+full_to_0: perfect match
+=> So the only issue is on startup, or with any dynamic memory lengthening procedures...

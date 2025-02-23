@@ -1,0 +1,1 @@
+mkdir -p test/test_fifo_size/$1/ && python $2.py test/test_fifo_size/$1.out test/test_fifo_size/hostmem_32b_16m.npy test/test_fifo_size/weights_32b_16m.npy -m 16 -b 32 -f "test/test_fifo_size/$1" > test/test_fifo_size/$1/$2.txt
