@@ -1,0 +1,10 @@
+Determine what happens in sim.py and runtpu.py when a weight is pushed to a full queue. 
+Designed for 4x4 matrices with 32-bit values.
+Use test/squish/generate.py to make weights and hostmem:
+generate.make_hostmem('../test_rw_full/', matsize=4, bitwidth=32, num_tiles=8)
+generate.make_weights('../test_rw_full/', matsize=4, bitwidth=32, num_weights=8)
+
+sim.py gets
+
+
+runtpu.py gets
