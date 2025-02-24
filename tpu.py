@@ -5,7 +5,6 @@ from pyrtl.analysis import area_estimation, TimingAnalysis
 
 def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE, 
         ACC_ADDR_SIZE, DWIDTH, INSTRUCTION_WIDTH, IMEM_ADDR_SIZE):
-    # from config import *
     from decoder import decode
     from matrix import MMU_top
     from activate import act_top

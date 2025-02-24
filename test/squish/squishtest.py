@@ -4,13 +4,14 @@ import pickle
 import sys
 import os
 
+import numpy as np
+
 # add base folder (OPENTGPTPU) to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from dataclasses import dataclass
 from enum import Enum
 import argparse
-import config
 from generate import make_hostmem, make_weights
 from assembler import assemble
 from runtpu import runtpu, print_mem
@@ -220,9 +221,6 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
                 absoluteaddrs: bool, test_folder: str, ctrl_distance: int,
                 use_nops: bool = True) -> Tuple[bool, Dict[int, int]]:
 
-    config.MATSIZE = matsize
-    config.DWIDTH = bitwidth
-
     if len(instrs) != 2:
         print("Please provide two instructions to test.")
         exit(1)
@@ -266,46 +264,46 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
     # final trace
     print(f"Running {name} for d = {distance}. b = {bitwidth}, m = {matsize}")
     print(f"Control")
-    ctrl_output_folderpath = f"{program_dir}/ctrl_{config.DWIDTH}b_{config.MATSIZE}m"
+    ctrl_output_folderpath = f"{program_dir}/ctrl_{bitwidth}b_{matsize}m"
     if reset or not os.path.exists(ctrl_output_folderpath) or program.name == "test":
-        runtpu_ctrl_args = argparse.Namespace(prog=program.get_filepath(binary=True, ptype=ProgramType.Control), 
-                                              hostmem=hostmem_filename, 
-                                              weightsmem=weights_filename)
-        # ctrl_hostmem, ctrl_ubuffer, ctrl_acc_mems, ctrl_wbufs \
-        ctrl_hostmem \
-            = runtpu(runtpu_ctrl_args, output_folder_path=ctrl_output_folderpath)
+        ctrl_hostmem, ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, ctrl_accmems \
+            = runtpu(program.get_filepath(binary=True, ptype=ProgramType.Control),
+                     hostmem_filename, weights_filename, bitwidth, matsize, 
+                     ctrl_output_folderpath, output_trace=False)
     else:
-        with open(os.path.join(ctrl_output_folderpath, "hostmem.pkl"), "rb") as f:
-            ctrl_hostmem = pickle.load(f)
-        # with open(os.path.join(ctrl_output_folderpath, "ubuffer.pkl"), "rb") as f:
-        #     ctrl_ubuffer = pickle.load(f)
-        # with open(os.path.join(ctrl_output_folderpath, "accmems.pkl"), "rb") as f:
-        #     ctrl_acc_mems = pickle.load(f)
-        # with open(os.path.join(ctrl_output_folderpath, "wqueue.pkl"), "rb") as f:
-        #     ctrl_wbufs = pickle.load(f)
+        with open(os.path.join(ctrl_output_folderpath, "runtpu_hostmem.npy"), "rb") as f:
+            ctrl_hostmem = np.load(f)
+        with open(os.path.join(ctrl_output_folderpath, "runtpu_weightsmem.npy"), "rb") as f:
+            ctrl_weightsmem = np.load(f)
+        with open(os.path.join(ctrl_output_folderpath, "runtpu_ubuffer.npy"), "rb") as f:
+            ctrl_ubuffer = np.load(f)
+        with open(os.path.join(ctrl_output_folderpath, "runtpu_wqueue.npy"), "rb") as f:
+            ctrl_wqueue = np.load(f)
+        with open(os.path.join(ctrl_output_folderpath, "runtpu_accmems.npy"), "rb") as f:
+            ctrl_accmems = np.load(f)
 
     # run runtpu.py in standard mode and get result
     print(f"Test")
     if test_type == ProgramType.NoNop:
-        test_output_folderpath = f'{program_dir}/nonop_{config.DWIDTH}b_{config.MATSIZE}m'
+        test_output_folderpath = f'{program_dir}/nonop_{bitwidth}b_{matsize}m'
     else:
-        test_output_folderpath = f'{program_dir}/test_{config.DWIDTH}b_{config.MATSIZE}m_{distance}d'
+        test_output_folderpath = f'{program_dir}/test_{bitwidth}b_{matsize}m_{distance}d'
     if reset or not os.path.exists(test_output_folderpath) or program.name == "test":
-        runtpu_test_args = argparse.Namespace(prog=program.get_filepath(binary=True, ptype=test_type), 
-                                              hostmem=hostmem_filename, 
-                                              weightsmem=weights_filename)
-        # test_hostmem, test_ubuffer, test_acc_mems, test_wbufs \
-        test_hostmem \
-            = runtpu(runtpu_test_args, output_folder_path=test_output_folderpath)
+        test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems \
+            = runtpu(program.get_filepath(binary=True, ptype=test_type),
+                     hostmem_filename, weights_filename, bitwidth, matsize, 
+                     test_output_folderpath, output_trace=False)
     else:
-        with open(os.path.join(test_output_folderpath, "hostmem.pkl"), "rb") as f:
-            test_hostmem = pickle.load(f)
-        # with open(os.path.join(test_output_folderpath, "ubuffer.pkl"), "rb") as f:
-        #     test_ubuffer = pickle.load(f)
-        # with open(os.path.join(test_output_folderpath, "accmems.pkl"), "rb") as f:
-        #     test_acc_mems = pickle.load(f)
-        # with open(os.path.join(test_output_folderpath, "wqueue.pkl"), "rb") as f:
-        #     test_wbufs = pickle.load(f)
+        with open(os.path.join(test_output_folderpath, "runtpu_hostmem.npy"), "rb") as f:
+            test_hostmem = np.load(f)
+        with open(os.path.join(test_output_folderpath, "runtpu_weightsmem.npy"), "rb") as f:
+            test_weightsmem = np.load(f)
+        with open(os.path.join(test_output_folderpath, "runtpu_ubuffer.npy"), "rb") as f:
+            test_ubuffer = np.load(f)
+        with open(os.path.join(test_output_folderpath, "runtpu_wqueue.npy"), "rb") as f:
+            test_wqueue = np.load(f)
+        with open(os.path.join(test_output_folderpath, "runtpu_accmems.npy"), "rb") as f:
+            test_accmems = np.load(f)
 
     # compare results and output a verdict
     # comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
@@ -317,37 +315,45 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
 
     passed = True
 
-    if ctrl_hostmem != test_hostmem:
+    if not np.array_equal(ctrl_hostmem, test_hostmem):
         print("Test failed (hostmem)")
         print("Control host memory:")
-        print_mem(ctrl_hostmem)
+        print(ctrl_hostmem)
         print("Test host memory:")
-        print_mem(test_hostmem)
+        print(test_hostmem)
         passed = False
 
-    # if ctrl_ubuffer != test_ubuffer:
-    #     print("Test failed (ubuffer)")
-    #     print("Control ubuffer:")
-    #     print(ctrl_ubuffer)
-    #     print("Test ubuffer:")
-    #     print(test_ubuffer)
-    #     passed = False
+    if not np.array_equal(ctrl_weightsmem, test_weightsmem):
+        print("Test failed (weightsmem)")
+        print("Control weight memory:")
+        print(ctrl_weightsmem)
+        print("Test weight memory:")
+        print(test_weightsmem)
+        passed = False
 
-    # if ctrl_acc_mems != test_acc_mems:
-    #     print("Test failed (accmems)")
-    #     print("Control accmems:")
-    #     print(ctrl_acc_mems)
-    #     print("Test accmems:")
-    #     print(test_acc_mems)
-    #     passed = False
+    if not np.array_equal(ctrl_ubuffer, test_ubuffer):
+        print("Test failed (ubuffer)")
+        print("Control ubuffer:")
+        print(ctrl_ubuffer)
+        print("Test ubuffer:")
+        print(test_ubuffer)
+        passed = False
 
-    # if ctrl_wbufs != test_wbufs:
-    #     print("Test failed (wbufs)")
-    #     print("Control wbufs:")
-    #     print(ctrl_wbufs)
-    #     print("Test wbufs:")
-    #     print(test_wbufs)
-    #     passed = False
+    if not np.array_equal(ctrl_accmems, test_accmems):
+        print("Test failed (accmems)")
+        print("Control accmems:")
+        print(ctrl_accmems)
+        print("Test accmems:")
+        print(test_accmems)
+        passed = False
+
+    if not np.array_equal(ctrl_wqueue, test_wqueue):
+        print("Test failed (wqueue)")
+        print("Control wqueue:")
+        print(ctrl_wqueue)
+        print("Test wqueue:")
+        print(test_wqueue)
+        passed = False
 
     return passed
 

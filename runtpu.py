@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 import os
 import pickle
 from pyrtl import *
@@ -11,65 +12,168 @@ from tpu import tpu
 import config
 
 
-def concat_vec(vec, bits=8):
+# turns a vector of values into a single integer
+# if bitwidth=8, then [a, b, c, d] -> (256^3)*d + (256^2)*c + (256)*b + a
+def concat_vec(vec, bitwidth):
     t = 0
-    mask = int('1'*bits, 2)
+    mask = int('1'*bitwidth, 2)
     for x in reversed(vec):
-        t = (t<<bits) | (int(x) & mask)
+        t = (t<<bitwidth) | (int(x) & mask)
     # print(vec, t)
     return t
 
-def concat_tile(tile, bits=8):
+# turns a 2d array (tile) of values into a single integer
+# if bitwidth=8, then [[a, b], [c, d]] -> (256^3)*a + (256^2)*b + (256)*c + d
+def concat_tile(tile, bitwidth):
     val = 0
     size = len(tile)
-    mask = int('1'*bits, 2)
+    mask = int('1'*bitwidth, 2)
     for row in tile:
         for x in row:
-            val = (val<<bits) | (int(x) & mask)
+            val = (val<<bitwidth) | (int(x) & mask)
         #print_weight_mem({0:val})
     #return val & (size*size*bits)  # if negative, truncate bits to correct size
     return val
 
-def make_vec(value, bits=8):
+# turns a number into an appropriately lengthed vector of values in the 
+# specified bitwidth
+# if bitwidth=8, then (256^3)*1 + (256^2)*2 + (256)*3 + 4) -> [1, 2, 3, 4]
+def make_vec(value, bitwidth):
     vec = []
-    mask = int('1'*bits, 2)
+    mask = int('1'*bitwidth, 2)
     while value > 0:
         vec.append(value & mask)
-        value = value >> bits
+        value = value >> bitwidth
     return list(reversed(vec))
 
-def make_vec_2(value, bits=8, size=8):
+# like make_vec, but the number of values will always be matsize
+def make_vec_2(value, bitwidth, matsize):
     vec = []
-    mask = int('1'*bits, 2)
-    for i in range(size):
+    mask = int('1'*bitwidth, 2)
+    for i in range(matsize):
         vec.append(value & mask)
-        value = value >> bits
+        value = value >> bitwidth
     return list(vec)
 
-def print_mem(mem, bits=config.DWIDTH, size=config.MATSIZE):
+# make a matsize*matsize tile of bitwidth-sized values from a single value
+# LSB is top-left corner, and it fills in normally from there.
+def make_tile(value, bitwidth, matsize):
+    tile = [[0] * matsize for _ in range(matsize)]
+    mask = int('1'*bitwidth, 2)
+    for i in range(matsize-1, -1, -1):
+        for j in range(matsize-1, -1, -1):
+            tile[i][j] = value & mask
+            value = value >> bitwidth
+    return tile
+
+def print_mem(mem, bitwidth, matsize):
     ks = sorted(mem.keys())
     for a in ks:
-        print(a, make_vec_2(mem[a], bits, size))
+        print(a, make_vec_2(mem[a], bitwidth, matsize))
 
-def print_weight_mem(mem, bits=8, size=8):
+def print_weight_mem(mem, bitwidth, matsize):
     ks = sorted(mem.keys())
-    mask = int('1'*(size*bits), 2)
+    mask = int('1'*(matsize*bitwidth), 2)
     vecs = []
     for a in ks:
         vec = []
         tile = mem[a]
         while tile > 0:
-            vec.append(make_vec(tile & mask, config.DWIDTH))
-            tile = tile >> (bits*size) ###hmmm
+            vec.append(make_vec(tile & mask, bitwidth))
+            tile = tile >> (bitwidth*matsize) ###hmmm
         if vec != []:
             vecs.append(vec)
     for a, vec in enumerate(vecs):
         print(a, list(reversed(vec)))
 
+def reverse_value(value, bitwidth):
+    rev_val = 0
+    mask = int('1'*bitwidth, 2)
+    while value > 0:
+        rev_val = (rev_val << bitwidth) | (value & mask)
+        value = value >> bitwidth
+    return rev_val
 
-def runtpu(args, output_folder_path='test', output_trace=False):
+# convert hostmem to 2d numpy array
+def hostmem_to_np(hostmem, bitwidth, matsize):
+    keys = sorted(hostmem.keys())
+    hostmem_np = np.zeros((keys[-1]+1, matsize))
+    for k in keys:
+        hostmem_np[k] = make_vec_2(hostmem[k], bitwidth, matsize)
+    return hostmem_np.astype(int)
+
+# convert weightsmem to 2d numpy array
+def weightsmem_to_np(weightsmem, bitwidth, matsize):
+    keys = sorted(weightsmem.keys())
+    weightsmem_np = np.zeros((keys[-1]+1, matsize, matsize))
+    for k in keys:
+        weightsmem_np[k] = make_tile(weightsmem[k], bitwidth, matsize)
+    return weightsmem_np.astype(int)
+
+# convert UBuffer to a 2d numpy array. convert the same number of rows as the 
+# number of rows in the host memory
+def ubuffer_to_np(sim, ubuffer, bitwidth, matsize, row_count):
+    ubuffer_dict = sim.inspect_mem(ubuffer)
+    keys = [k for k in sorted(ubuffer_dict.keys())]
+    if len(keys) > 0:
+        row_count = max(row_count, keys[-1]+1)
+
+    ubuffer_np = np.zeros((row_count, matsize))
+    for k in keys:
+        vec = make_vec_2(ubuffer_dict[k], bitwidth, matsize)
+        ubuffer_np[k] = vec
+    return ubuffer_np.astype(int)
+
+# convert weight queue to a 3d numpy array. each get converted to a 2d array of 
+# size matsize x matsize. weight 0 is the front, weight 3 is the back.
+def wqueue_to_np(sim, buf4, buf3, buf2, buf1, bitwidth, matsize):
+    wqueue_np = np.zeros((4, matsize, matsize))
+    for i, buf in enumerate([buf4, buf3, buf2]):
+        buf_tile = make_tile(sim.inspect(buf), bitwidth, matsize)
+        wqueue_np[i] = buf_tile
+
+    buf1_val = 0
+    for i in range(math.ceil(matsize*matsize/64)-1, -1, -1):
+        print("buf1 = ", buf1[i])
+        buf1_val = (buf1_val << 64*bitwidth) | sim.inspect(buf1[i])
+    buf1_tile = make_tile(buf1_val, bitwidth, matsize)
+    wqueue_np[3] = buf1_tile
+
+    full_slots = 0
+    if sim.inspect('fifo_empty4') == 0: 
+        full_slots += 1
+    if sim.inspect('fifo_empty3') == 0:
+        full_slots += 1
+    if sim.inspect('fifo_empty2') == 0:
+        full_slots += 1
+    if sim.inspect('fifo_full') == 1:
+        full_slots += 1
+
+    return wqueue_np[:full_slots].astype(int)
+    
+# convert accumulator memory to a 2d numpy array. convert the same number of
+# rows as the number of rows in the host memory
+def accmem_to_np(sim, acc_mems, matsize, row_count):
+    acc_mems_vals = [sim.inspect_mem(acc_mem) for acc_mem in acc_mems]
+
+    keys = set()
+    for i in range(len(acc_mems_vals)):
+        keys = keys.union(set(acc_mems_vals[i].keys()))
+    keys = sorted(list(keys))
+    if len(keys) > 0:
+        row_count = max(row_count, keys[-1]+1)
+
+    accmem_np = np.zeros((row_count, matsize))
+    for k in keys:
+        for i in range(matsize):
+            accmem_np[k][i] = acc_mems_vals[i][k]
+    return accmem_np.astype(int)
+
+
+def runtpu(prog: str, hostmem_filename: str, weightsmem_filename: str, 
+           bitwidth: int, matsize: int, output_folder: str, output_trace: bool):
     # Read the program and build an instruction list
-    with open(args.prog, 'rb') as f:
+    with open(prog, 'rb') as f:
         ins = [x for x in f.read()]  # create byte list from input
 
     instrs = []
@@ -85,7 +189,7 @@ def runtpu(args, output_folder_path='test', output_trace=False):
     #print(list(map(hex, instrs)))
 
     # Read the dram files and build memory images
-    hostarray = np.load(args.hostmem)
+    hostarray = np.load(hostmem_filename)
     # print("Host array:")
     # print(hostarray)
     host_shape = hostarray.shape
@@ -99,24 +203,24 @@ def runtpu(args, output_folder_path='test', output_trace=False):
         flat_host = hostarray
     # print("Flat host array:")
     # print(flat_host)
-    hostmem = { a : concat_vec(vec, config.DWIDTH) for a,vec in enumerate(flat_host) }
+    hostmem = { a : concat_vec(vec, bitwidth) for a,vec in enumerate(flat_host) }
     # print("Host memory start:")
     # print(hostmem)
     # print_mem(hostmem)
 
-    weightsarray = np.load(args.weightsmem)
+    weightsarray = np.load(weightsmem_filename)
     # print("Weightsarray")
     # print(weightsarray)
     # print(weightsarray.shape)
     size = weightsarray.shape[-1]
     weight_shape = weightsarray.shape
     if len(weight_shape) == 3:
-        weightsmem = { a : concat_tile(tile, config.DWIDTH) for a,tile in enumerate(weightsarray) }
+        weightsmem = { a : concat_tile(tile, bitwidth) for a,tile in enumerate(weightsarray) }
     if len(weight_shape) == 2:
         weightsmem = np.zeros(())
-    #weightsmem = { a : concat_vec(vec, DWIDTH) for a,vec in enumerate(weightsarray) }
+    #weightsmem = { a : concat_vec(vec, bitwidth) for a,vec in enumerate(weightsarray) }
     # print("Weight memory:")
-    # print_weight_mem(weightsmem, size=size, bits=config.DWIDTH)
+    # print_weight_mem(weightsmem, size=size, bits=bitwidth)
     # print(weightsmem)
 
     '''
@@ -127,24 +231,24 @@ def runtpu(args, output_folder_path='test', output_trace=False):
 
     For host mem, each vector goes at one address. First vector at address 0.
     '''
-    tilesize = config.MATSIZE * config.MATSIZE  # number of weights in a tile
+    tilesize = matsize * matsize  # number of weights in a tile
     nchunks = max(tilesize / 64, 1)  # Number of DRAM transfers needed from Weight DRAM for one tile
     # print(f"nchunks = {nchunks}")
-    chunkmask = pow(2,64*config.DWIDTH)-1
+    chunkmask = pow(2,64*bitwidth)-1
 
     def getchunkfromtile(tile, chunkn):
         #print("Get chunk: ", chunkn, nchunks, chunkmask, tile)
         #print((tile >> ((nchunks - chunkn - 1)*64*8)) & chunkmask)
         if chunkn >= nchunks:
             raise Exception("Reading more weights than are present in one tile?")
-        return (tile >> int(((nchunks - chunkn - 1))*64*config.DWIDTH)) & chunkmask
+        return (tile >> int(((nchunks - chunkn - 1))*64*bitwidth)) & chunkmask
 
     reset_working_block()
     IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, halt, \
         hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, hostmem_wdata, \
         weights_dram_read, weights_dram_raddr, acc_mems, buf4, buf3, buf2, buf1 \
-        = tpu(config.MATSIZE, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
-        config.WEIGHT_DRAM_ADDR_SIZE, config.ACC_ADDR_SIZE, config.DWIDTH, 
+        = tpu(matsize, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
+        config.WEIGHT_DRAM_ADDR_SIZE, config.ACC_ADDR_SIZE, bitwidth, 
         config.INSTRUCTION_WIDTH, config.IMEM_ADDR_SIZE)
 
 
@@ -219,7 +323,7 @@ def runtpu(args, output_folder_path='test', output_trace=False):
         # print(f"UBuffer@{cycle}:")
         ub = sim.inspect_mem(UBuffer)
         # for k in sorted(ub.keys()):
-        #     print(f"\t{k}: {make_vec_2(ub[k], config.DWIDTH, config.MATSIZE)}")
+        #     print(f"\t{k}: {make_vec_2(ub[k], bitwidth, matsize)}")
 
         # print(f"AccMems@{cycle}:")
         max_addrs = 0
@@ -246,38 +350,25 @@ def runtpu(args, output_folder_path='test', output_trace=False):
 
     # print("\n\n")
     print("Simulation terminated at cycle {}".format(cycle))
-    # print("Final Host memory:")
-    # print_mem(hostmem)
 
-    os.makedirs(output_folder_path, exist_ok=True)
+    os.makedirs(output_folder, exist_ok=True)
 
     if output_trace:
-        with open(f'{output_folder_path}/trace.pkl', 'wb') as file:
+        with open(f'{output_folder}/trace.pkl', 'wb') as file:
             pickle.dump(sim_trace, file)
 
-    with open(f'{output_folder_path}/hostmem.pkl', 'wb') as file:
-        pickle.dump(hostmem, file)
+    hostmem_np = hostmem_to_np(hostmem, bitwidth, matsize)
+    weightsmem_np = weightsmem_to_np(weightsmem, bitwidth, matsize)
+    ubuffer_np = ubuffer_to_np(sim, UBuffer, bitwidth, matsize, len(hostmem))
+    wqueue_np = wqueue_to_np(sim, buf4, buf3, buf2, buf1, bitwidth, matsize)
+    accmems_np = accmem_to_np(sim, acc_mems, matsize, len(hostmem))
 
-    # with open(f'{output_folder_path}/ubuffer.pkl', 'wb') as file:
-    #     pickle.dump(UBuffer, file)
-
-    # with open(f'{output_folder_path}/accmems.pkl', 'wb') as file:
-    #     pickle.dump(acc_mems, file)
-
-    # with open(f'{output_folder_path}/wqueue.pkl', 'wb') as file:
-    #     pickle.dump((buf4, buf3, buf2, buf1), file)
-
-    return hostmem #, UBuffer, acc_mems, (buf4, buf3, buf2, buf1)
-
-    # sim_trace.render_trace()
-    # with open("trace.vcd", 'w') as f:
-    #     sim_trace.print_vcd(f)
-    # with open("trace.txt", 'w') as f:
-    #     sim_trace.print_trace(f, compact=True)
-
-    # print('ubuffer', sim.inspect_mem(UBuffer))
-    # for (i, mem) in enumerate(acc_mems):
-    #     print(f'acc_mem[{i}]', sim.inspect_mem(mem))
+    np.save(f'{output_folder}/runtpu_hostmem.npy', hostmem_np)
+    np.save(f'{output_folder}/runtpu_weightsmem.npy', weightsmem_np)
+    np.save(f'{output_folder}/runtpu_ubuffer.npy', ubuffer_np)
+    np.save(f'{output_folder}/runtpu_wqueue.npy', wqueue_np)
+    np.save(f'{output_folder}/runtpu_accmems.npy', accmems_np)
+    return hostmem_np, weightsmem_np, ubuffer_np, wqueue_np, accmems_np
 
 
 if __name__ == '__main__':
@@ -288,10 +379,19 @@ if __name__ == '__main__':
     parser.add_argument("weightsmem", metavar="WeightsMemoryArray", help="A file containing a numpy array containing the contents of the weights memroy. Each row represents one tile (the first row corresponds to the top row of the weights matrix).")
     parser.add_argument("-b", "--bitwidth", type=int, default=32, help="The bitwidth of the data.")
     parser.add_argument("-m", "--matsize", type=int, default=8, help="The size of the matrix.")
+    parser.add_argument("-f", "--folder", type=str, default=None, help="The output folder path.")
     args = parser.parse_args()
 
-    config.MATSIZE = args.matsize
-    config.DWIDTH = args.bitwidth
+    if not args.folder:
+        args.folder = f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{args.bitwidth}b_{args.matsize}m'
 
-    hostmem = runtpu(args, output_folder_path=f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{config.DWIDTH}b_{config.MATSIZE}m', output_trace=True)
-    print_mem(hostmem, bits=config.DWIDTH, size=config.MATSIZE)
+    hm, wm, ub, fq, acc = runtpu(args.prog, args.hostmem, args.weightsmem, 
+                                 args.bitwidth, args.matsize, args.folder, 
+                                 output_trace=True)
+
+    np.set_printoptions(threshold=np.inf, linewidth=300)
+    print("Host memory:\n", hm)
+    print("Weight memory:\n", wm)
+    print("UBuffer:\n", ub)
+    print("FIFO Queue:\n", fq)
+    print("Accumulators:\n", acc)

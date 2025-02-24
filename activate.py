@@ -1,8 +1,5 @@
 from functools import reduce
-
-#import pyrtl
 from pyrtl import *
-# from config import *
 
 def relu_vector(vec, offset):
     assert offset <= 24

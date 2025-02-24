@@ -6,39 +6,50 @@ from collections import deque
 from math import exp
 
 import isa
-from config import MATSIZE as WIDTH
 
-args = None
-# width of the tile
-#WIDTH = 16
-
+NUMPY_DTYPES = {
+    8: np.int8,
+    16: np.int16,
+    32: np.int32,
+    64: np.int64
+}
 
 class TPUSim(object):
-    def __init__(self, program_filename, dram_filename, hostmem_filename):
-        # TODO: switch b/w 32-bit float vs int
-        self.program = open(program_filename, 'rb')
-        self.weight_memory = np.load(dram_filename)
+    def __init__(self, prog: str, hostmem_filename: str, 
+                 weightsmem_filename: str, bitwidth: int, matsize: int, 
+                 output_folder: str):
+        self.program = open(prog, 'rb')
+        self.weight_memory = np.load(weightsmem_filename)
         self.host_memory = np.load(hostmem_filename)
-        # if not args.raw:
-        #     assert self.weight_memory.dtype == np.int8, 'DRAM weight mem is not 8-bit ints'
-        #     assert self.host_memory.dtype == np.int8, 'Hostmem not 8-bit ints'
-        self.unified_buffer = (np.zeros((96000, WIDTH), dtype=np.float32) if args.raw else
-            np.zeros((96000, WIDTH), dtype=np.int32)) # update to match the bitwidth specified in config.py
-        self.accumulator = (np.zeros((4000, WIDTH), dtype=np.float32) if args.raw else
-            np.zeros((4000, WIDTH), dtype=np.int32))
+
+        self.unified_buffer = np.zeros(self.host_memory.shape, dtype=NUMPY_DTYPES[bitwidth])
+        self.accumulator = np.zeros(self.host_memory.shape, dtype=NUMPY_DTYPES[bitwidth])
         self.weight_fifo = deque()
-        
+
+        self.bitwidth = bitwidth
+        self.matsize = matsize
+        self.output_folder = output_folder
+
         self.pc = 0
+
+    def print_mems(self):
+        np.set_printoptions(threshold=np.inf, linewidth=300)
+        print("Host memory:\n", self.host_memory)
+        print("Weight memory:\n", self.weight_memory)
+        print("UBuffer:\n", self.unified_buffer)
+        print("FIFO Queue:\n", np.array(self.weight_fifo)) # can't believe this just works :O
+        print("Accumulators:\n", self.accumulator)
+
+    def get_mems(self):
+        return self.host_memory, self.weight_memory, self.unified_buffer, self.weight_fifo, self.accumulator
 
     def run(self):
         # load program and execute instructions
         instructions = self.decode()
         opcodes, operands = instructions[0], instructions[1]
-        # print(f"Instructions:")
-        # if (len(instructions[0]) != len(instructions[1])):
-        #     raise ValueError("Mismatched instruction and operand lengths.")
-        # for i in range(len(instructions[0])):
-        #     print(f"{i}: {opcodes[i]}, {operands[i]}")
+
+        if (len(instructions[0]) != len(instructions[1])):
+            raise ValueError("Mismatched instruction and operand lengths.")
         
         # use self.pc to select next instruction, starting from 0, and finishing when halt is reached
         while True:
@@ -62,11 +73,12 @@ class TPUSim(object):
             print()
 
         # all done, exit
-        savepath = 'sim32.npy' if args.raw else 'sim8.npy'
-        np.save(savepath, self.host_memory)
-        print(f'Final host memory:')
-        print(self.host_memory)
         self.program.close()
+        np.save(f'{self.output_folder}/sim_hostmem.npy', self.host_memory)
+        np.save(f'{self.output_folder}/sim_weightsmem.npy', self.weight_memory)
+        np.save(f'{self.output_folder}/sim_ubuffer.npy', self.unified_buffer)
+        np.save(f'{self.output_folder}/sim_wqueue.npy', np.array(self.weight_fifo))
+        np.save(f'{self.output_folder}/sim_accmems.npy', self.accumulator)
 
         print("""\nALL DONE!
         (•_•)
@@ -113,12 +125,7 @@ class TPUSim(object):
         print(f'Before activation:\n{result}')
         result = vfunc(result)
         print(f'After activation:\n{result}')
-
-        # downsample/normalize if needed
-        # if not args.raw:
-        #     result = [v & 0x000000FF for v in result]
         
-        # new scheme #
         # branching/comparison logic
         if result[0][-1] == 1:
             if result[0][-2] == 1:
@@ -126,6 +133,7 @@ class TPUSim(object):
             else:
                 self.pc += 1 + result[0][1].astype(np.int8)
             return # don't to the UB write when there's a branch
+        
         # equality check
         elif result[0][-1] == 2:
             result[0][-1] == 0
@@ -135,8 +143,9 @@ class TPUSim(object):
                 result[0][0] = 0
             result[0][1] = 0
             self.pc += 1
+        
+        # less than check
         elif result[0][-1] == 3:
-            # breakpoint()
             result[0][-1] == 0
             if result[0][0] < result[0][1]:
                 result[0][0] = 1
@@ -144,48 +153,40 @@ class TPUSim(object):
                 result[0][0] = 0
             result[0][1] = 0
             self.pc += 1 
+
+        # normal activation
         else:
-            self.pc += 1
-        # end new scheme #
+            self.pc += 1      
 
-        # # orig scheme #
-        # branch if equal weight matrix holds e and p. if result[0][0] == 0 and e == 1, pc += p. else pc += 1
-        # print(f"result[0] = {result[0]}")
-        # print(f"result[0][-3] = {result[0][-3]}")
-        # print(f"branch_eq_vect: enabled = {result[0][-2]}, branch pc diff = {256*result[0][-4] + result[0][-3]}")
-        # if (0 > result[0][-2] > 1):
-        #     raise ValueError(f"Branch boolean must be 0 or 1. Instead it's {result[0][-2]}.)")
-        # if (result[0][-2] == 1 and result[0][0] == 0):
-        #     self.pc += (256*result[0][-4] + result[0][-3] + 1).astype(np.int16)
-        # else:
-        #     self.pc += 1
-        # # end orig scheme #        
-
+        # extend the unified buffer if needed
+        if (self.unified_buffer.shape[0] < dest + length):
+            self.unified_buffer.resize((dest + length, self.matsize))
         self.unified_buffer[dest:dest+length] = result
-        # #
 
     def memops(self, opcode, src_addr, dest_addr, length, flag):
-        # print('Memory xfer! from: {} to: {}: length: {} (FLAGS? {})'.format(
-        #     src_addr, dest_addr, length, flag
-        # ))
-
         if opcode == 'RHM':
             print(f'RHM: read host memory [{src_addr}:{src_addr + length}], write to unified buffer [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
             print(self.host_memory[src_addr:src_addr + length])
+
+            # extend the unified buffer if needed
+            if (self.unified_buffer.shape[0] < dest_addr + length):
+                self.unified_buffer.resize((dest_addr + length, self.matsize))
             self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[src_addr:src_addr + length]
+
         elif opcode == 'WHM':
             print(f'WHM: read unified buffer [{src_addr}:{src_addr + length}], write to host memory [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
             print(self.unified_buffer[src_addr:src_addr + length])
             
             # extend the host memory if needed
             if (self.host_memory.shape[0] < dest_addr + length):
-                self.host_memory.resize((dest_addr + length, WIDTH))
-            
+                self.host_memory.resize((dest_addr + length, self.matsize))
             self.host_memory[dest_addr:dest_addr + length] = self.unified_buffer[src_addr:src_addr + length]
+
         elif opcode == 'RW':
             print(f'RW {src_addr}: read weight matrix {src_addr} into weight FIFO')
             print(self.weight_memory[src_addr])
             self.weight_fifo.append(self.weight_memory[src_addr])
+
         else:
             raise Exception('WAT (╯°□°）╯︵ ┻━┻')
         
@@ -195,18 +196,22 @@ class TPUSim(object):
         print(f'MMC: multiply UB[{ub_addr}:{ub_addr + size}] with a weight, store in ACC[{accum_addr}:{accum_addr + size}]')
 
         inp = self.unified_buffer[ub_addr: ub_addr + size]
-        # print('MMC input shape: {}'.format(inp.shape))
         weight_mat = self.weight_fifo[0]
-        if isa.SWITCH_MASK & flags:  # shouldn't this only happen when using .S?
+        
+        if isa.SWITCH_MASK & flags:
             self.weight_fifo.popleft()
-        if not args.raw:
-            inp = inp.astype(np.int32)
-            weight_mat = weight_mat.astype(np.int32)
+
         print('MMC matrix: \n{}'.format(inp))
         print('MMC weight: \n{}'.format(weight_mat))
+
         out = np.matmul(inp, weight_mat)
-        # print('MMC output shape: {}'.format(out.shape))
+
         print('MMC output: \n{}'.format(out))
+
+        # extend the accumulator if needed
+        if (self.accumulator.shape[0] < accum_addr + size):
+            self.accumulator.resize((accum_addr + size, self.matsize))
+
         overwrite = isa.OVERWRITE_MASK & flags
         if overwrite:
             print(f'Overwriting ACC[{accum_addr}:{accum_addr + size}]')
@@ -215,6 +220,7 @@ class TPUSim(object):
             print(f'Accumulating with ACC[{accum_addr}:{accum_addr + size}]')
             print(f'{self.accumulator[accum_addr: accum_addr + size]}')
             self.accumulator[accum_addr:accum_addr + size] += out
+        
         print(f'After MMC + ACC: \n{self.accumulator[accum_addr: accum_addr + size]}')
 
         self.pc += 1
@@ -223,22 +229,21 @@ def parse_args():
     global args
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('program', action='store',
-                        help='Path to assembly program file.')
-    parser.add_argument('host_file', action='store',
-                        help='Path to host file.')
-    parser.add_argument('dram_file', action='store',
-                        help='Path to dram file.')
-    parser.add_argument('--raw', action='store_true', default=False,
-                        help='Gen sim32.npy instead of sim8.npy.')
+    parser.add_argument('prog', action='store', help='Path to assembly program file.')
+    parser.add_argument('hostmem', action='store', help='Path to host file.')
+    parser.add_argument('weightsmem', action='store', help='Path to dram file.')
+    parser.add_argument('-b', "--bitwidth", type=int, default=32, help="The bitwidth of the data.")
+    parser.add_argument('-m', "--matsize", type=int, default=8, help="The size of the matrix.")
+    parser.add_argument('-f', "--folder", type=str, default=None, help="The output folder path.")
     args = parser.parse_args()
 
 if __name__ == '__main__':
-    np.set_printoptions(linewidth=150)
     if len(sys.argv) < 4:
         print('Usage:', sys.argv[0], 'PROGRAM_BINARY DRAM_FILE HOST_FILE')
         sys.exit(0)
-    
     parse_args()
-    tpusim = TPUSim(args.program, args.dram_file, args.host_file)
+
+    tpusim = TPUSim(args.prog, args.hostmem, args.weightsmem, args.bitwidth,
+                    args.matsize, args.folder)
     tpusim.run()
+    tpusim.print_mems()

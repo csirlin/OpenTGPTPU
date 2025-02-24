@@ -2,7 +2,6 @@ from functools import reduce
 from pyrtl import *
 from pyrtl import rtllib
 from pyrtl.rtllib import multipliers
-# from config import *
 
 #set_debug_mode()
 globali = 0  # To give unique numbers to each MAC

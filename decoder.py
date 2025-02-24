@@ -2,17 +2,13 @@ from pyrtl import *
 import config
 import isa
 
-DATASIZE = config.DWIDTH
-MATSIZE = config.MATSIZE
-ACCSIZE = config.ACC_ADDR_SIZE
-
 def decode(instruction):
     """
     :param instruction: instruction + optional operands + flags
     """
 
-    accum_raddr = WireVector(ACCSIZE, "dec_accum_raddr")
-    accum_waddr = WireVector(ACCSIZE, "dec_accum_waddr")
+    accum_raddr = WireVector(config.ACC_ADDR_SIZE, "dec_accum_raddr")
+    accum_waddr = WireVector(config.ACC_ADDR_SIZE, "dec_accum_waddr")
     accum_overwrite = WireVector(1, "dec_accum_overwrite")
     switch_weights = WireVector(1, "dec_switch_weights")
     weights_raddr = WireVector(config.WEIGHT_DRAM_ADDR_SIZE, "dec_weights_raddr")  # read address for weights DRAM
