@@ -84,7 +84,9 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
 
     ub_mm_raddr <<= ub_mm_raddr_sig
 
-    # prevent new instructions from being dispatched while mmc unit is running
+    # prevent new instructions from being dispatched while MMC instr is running.
+    # max MMC duration is 2*matsize + MMC length + 3.
+    # mmc_cycles should start at that minus 1.
     mmc_N = Register(len(mmc_length), "tpu_mmc_N")
     mmc_cycles = Const(2*MATSIZE + 2) + mmc_length
     with conditional_assignment:
@@ -154,6 +156,9 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     hostmem_waddr <<= whm_addr
     hostmem_wdata <<= ubuffer_out
 
+    # prevent new instructions from being dispatched while WHM instr is running.
+    # max WHM duration is WHM length + 1.
+    # whm_N should start at that minus 1.
     with conditional_assignment:
         with dispatch_whm:
             whm_N.next |= whm_length
@@ -170,6 +175,9 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
 
 
     # Read Host Memory control logic
+    # prevent new instructions from being dispatched while RHM instr is running.
+    # max RHM duration is RHM length + 1.
+    # rhm_N should start at that minus 1.
     # probe(rhm_length, "rhm_length")
     rhm_N = Register(len(rhm_length), "tpu_rhm_N")
     rhm_addr = Register(len(rhm_dec_addr), "tpu_rhm_addr")
@@ -203,9 +211,11 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     weights_dram_raddr <<= weights_raddr
     weights_dram_read <<= weights_read
 
-    # prevent new instructions from being dispatched while fifo queue is working
+    # prevent new instructions from being dispatched while RW instr is running.
+    # max RW duration is max(1, ceil(matsize^2/64)) + 3.
+    # rw_N should start at that minus 1.
     rw_N = Register(len(weights_raddr), "tpu_rw_N")
-    rw_cycles = Const(math.ceil(MATSIZE*MATSIZE/64)+3) 
+    rw_cycles = Const(math.ceil(MATSIZE*MATSIZE/64)+2) 
     with conditional_assignment:
         with weights_read: # basically dispatch_rw
             rw_N.next |= rw_cycles # stay busy for full duration
