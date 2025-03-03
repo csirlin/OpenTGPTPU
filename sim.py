@@ -7,7 +7,14 @@ from math import exp
 
 import isa
 
-NUMPY_DTYPES = {
+SIGNED_DTYPES = {
+    8: np.uint8,
+    16: np.uint16,
+    32: np.uint32,
+    64: np.uint64
+}
+
+UNSIGNED_DTYPES = {
     8: np.int8,
     16: np.int16,
     32: np.int32,
@@ -19,11 +26,11 @@ class TPUSim(object):
                  weightsmem_filename: str, bitwidth: int, matsize: int, 
                  output_folder: str):
         self.program = open(prog, 'rb')
-        self.weight_memory = np.load(weightsmem_filename)
-        self.host_memory = np.load(hostmem_filename)
+        self.weight_memory = np.load(weightsmem_filename).astype(SIGNED_DTYPES[bitwidth])
+        self.host_memory = np.load(hostmem_filename).astype(SIGNED_DTYPES[bitwidth])
 
-        self.unified_buffer = np.zeros(self.host_memory.shape, dtype=NUMPY_DTYPES[bitwidth])
-        self.accumulator = np.zeros(self.host_memory.shape, dtype=NUMPY_DTYPES[bitwidth])
+        self.unified_buffer = np.zeros(self.host_memory.shape, dtype=SIGNED_DTYPES[bitwidth])
+        self.accumulator = np.zeros(self.host_memory.shape, dtype=SIGNED_DTYPES[bitwidth])
         self.weight_fifo = deque()
 
         self.bitwidth = bitwidth
@@ -129,9 +136,9 @@ class TPUSim(object):
         # branching/comparison logic
         if result[0][-1] == 1:
             if result[0][-2] == 1:
-                self.pc += 1 + result[0][0].astype(np.int8)
+                self.pc += 1 + result[0][0].astype(SIGNED_DTYPES[self.bitwidth])
             else:
-                self.pc += 1 + result[0][1].astype(np.int8)
+                self.pc += 1 + result[0][1].astype(SIGNED_DTYPES[self.bitwidth])
             return # don't to the UB write when there's a branch
         
         # equality check
