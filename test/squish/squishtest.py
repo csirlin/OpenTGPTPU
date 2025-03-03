@@ -14,7 +14,8 @@ from enum import Enum
 import argparse
 from generate import make_hostmem, make_weights
 from assembler import assemble
-from runtpu import runtpu, print_mem
+from runtpu import runtpu
+from sim import TPUSim
 
 
 class Operation(Enum):
@@ -48,9 +49,9 @@ class Opflag(Enum):
 
 
 class ProgramType(Enum):
-    Test = "test"
-    Control = "control"
-    NoNop = "nonop"
+    Control = "control"   # control test using sim.py
+    Distance = "distance" # distance squishtest using original runtpu.py design
+    NoNop = "nonop"       # no-nop test using hazard-detecting runtpu.py design
 
 
 @dataclass
@@ -156,12 +157,9 @@ class Program:
     def get_filepath(self, binary: bool, ptype: ProgramType) -> str:
         filepath = self.program_dir
 
-        if ptype == ProgramType.Control:
-            filepath += f"/control_{self.matsize}m"
-        elif ptype == ProgramType.NoNop:
-            filepath += f"/nonop_{self.matsize}m"
-        elif ptype == ProgramType.Test:
-            filepath += f"/test_{self.matsize}m_{self.distance}d"
+        filepath += f"/{ptype.value}_{self.matsize}m"
+        if ptype == ProgramType.Distance:
+            filepath += f"_{self.distance}d"
 
         if binary:
             return f"{filepath}.out"
@@ -176,38 +174,43 @@ class Program:
 
         with open(filepath, "w") as f:
 
-            # all generated files should start with ctrl_distance NOPs
+            # start with self.ctrl_distance NOPs if it's a distance test
             # (PC 0 through PC ctrl_distance - 1)
-            if ptype != ProgramType.NoNop:
+            if ptype == ProgramType.Distance:
                 for _ in range(self.ctrl_distance):
                     f.write(f"{nop.to_string()}\n")
             
-            # after that, every ctrl_distance instructions is a setup instr
+            # then write all the setup instructions. if it's a distance test, 
+            # pad with NOPs so that they are all self.ctrl_distance cycles apart
             for i in range(len(self.setup)):
                 f.write(f"{self.setup[i].to_string()}\n")
-                if ptype != ProgramType.NoNop:
+                if ptype == ProgramType.Distance:
                     for _ in range(self.ctrl_distance - 1):
                         f.write(f"{nop.to_string()}\n")
 
-            # then the instructions under test, self.distance instructions apart
+            # then write all the instructions under test. if it's a distance 
+            # test, pad with NOPs so that they are self.distance instructions 
+            # apart
             if len(self.instrs) != 2:
                 raise ValueError("Please provide exactly two instructions to test.")
             f.write(f"{self.instrs[0].to_string()}\n")
-            if ptype != ProgramType.NoNop:
+            if ptype == ProgramType.Distance:
                 for _ in range(self.distance - 1):
                     f.write(f"{nop.to_string()}\n")
             f.write(f"{self.instrs[1].to_string()}\n")
 
-            # pad with NOPs so that the first cleanup instruction is 
-            # 2*ctrl_distance lines after the first instruction under test 
-            if ptype != ProgramType.NoNop:
+            # if it's a distance test, pad with NOPs so that the first cleanup 
+            # instruction is 2*ctrl_distance lines after the first instruction 
+            # under test 
+            if ptype == ProgramType.Distance:
                 for _ in range(2*self.ctrl_distance - self.distance - 1):
                     f.write(f"{nop.to_string()}\n")
 
-            # after that, every ctrl_distance instructions is a cleanup instr
+            # then write all the cleanup instructions. if it's a distance test, 
+            # pad with NOPs so that they are all self.ctrl_distance cycles apart
             for i in range(len(self.cleanup)):
                 f.write(f"{self.cleanup[i].to_string()}\n")
-                if ptype != ProgramType.NoNop:
+                if ptype == ProgramType.Distance:
                     for _ in range(self.ctrl_distance - 1):
                         f.write(f"{nop.to_string()}\n")
 
@@ -237,11 +240,11 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
     # make folder for the test (squish/name/) and add weights and inputs if they
     # don't already exist
     weights_filename = make_weights(program_dir, program.matsize, 
-                                    program.bitwidth, num_weights=8)
+                                    program.bitwidth, num_weights=12)
     hostmem_filename = make_hostmem(program_dir, program.matsize, 
-                                    program.bitwidth, num_tiles=8)
+                                    program.bitwidth, num_tiles=12)
 
-    test_type = ProgramType.Test if use_nops else ProgramType.NoNop
+    test_type = ProgramType.Distance if use_nops else ProgramType.NoNop
 
     # if -r is set, or the following don't exist, or the test name is default (test):
     # generate .a file for d=ctrl_distance (control)
@@ -260,34 +263,37 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
     if reset or not os.path.exists(program.get_filepath(binary=True, ptype=test_type)) or program.name == "test":
         assemble(program.get_filepath(binary=False, ptype=test_type), 0)
 
-    # run d=ctrl_distance .out file (control) and get the resulting matrix and 
-    # final trace
-    print(f"Running {name} for d = {distance}. b = {bitwidth}, m = {matsize}")
+    # run control and get the resulting memories
+    print(f"Running {name} for b = {bitwidth}, m = {matsize}")
     print(f"Control")
-    ctrl_output_folderpath = f"{program_dir}/ctrl_{bitwidth}b_{matsize}m"
+    
+    ctrl_output_folderpath = f"{program_dir}/{ProgramType.Control.value}_{bitwidth}b_{matsize}m"
     if reset or not os.path.exists(ctrl_output_folderpath) or program.name == "test":
+        sim = TPUSim(program.get_filepath(binary=True, ptype=ProgramType.Control),
+                 hostmem_filename, weights_filename, bitwidth, matsize, 
+                 ctrl_output_folderpath)
+        sim.run()
         ctrl_hostmem, ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, ctrl_accmems \
-            = runtpu(program.get_filepath(binary=True, ptype=ProgramType.Control),
-                     hostmem_filename, weights_filename, bitwidth, matsize, 
-                     ctrl_output_folderpath, output_trace=False)
+            = sim.get_mems()
     else:
-        with open(os.path.join(ctrl_output_folderpath, "runtpu_hostmem.npy"), "rb") as f:
+        with open(os.path.join(ctrl_output_folderpath, "sim_hostmem.npy"), "rb") as f:
             ctrl_hostmem = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "runtpu_weightsmem.npy"), "rb") as f:
+        with open(os.path.join(ctrl_output_folderpath, "sim_weightsmem.npy"), "rb") as f:
             ctrl_weightsmem = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "runtpu_ubuffer.npy"), "rb") as f:
+        with open(os.path.join(ctrl_output_folderpath, "sim_ubuffer.npy"), "rb") as f:
             ctrl_ubuffer = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "runtpu_wqueue.npy"), "rb") as f:
+        with open(os.path.join(ctrl_output_folderpath, "sim_wqueue.npy"), "rb") as f:
             ctrl_wqueue = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "runtpu_accmems.npy"), "rb") as f:
+        with open(os.path.join(ctrl_output_folderpath, "sim_accmems.npy"), "rb") as f:
             ctrl_accmems = np.load(f)
 
     # run runtpu.py in standard mode and get result
-    print(f"Test")
     if test_type == ProgramType.NoNop:
-        test_output_folderpath = f'{program_dir}/nonop_{bitwidth}b_{matsize}m'
+        print("NoNop Test")
+        test_output_folderpath = f'{program_dir}/{ProgramType.NoNop.value}_{bitwidth}b_{matsize}m'
     else:
-        test_output_folderpath = f'{program_dir}/test_{bitwidth}b_{matsize}m_{distance}d'
+        print(f"Distance Test (squish distance = {distance}, normal distance = {ctrl_distance})")
+        test_output_folderpath = f'{program_dir}/{ProgramType.Distance.value}_{bitwidth}b_{matsize}m_{distance}d'
     if reset or not os.path.exists(test_output_folderpath) or program.name == "test":
         test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems \
             = runtpu(program.get_filepath(binary=True, ptype=test_type),
@@ -305,13 +311,9 @@ def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int,
         with open(os.path.join(test_output_folderpath, "runtpu_accmems.npy"), "rb") as f:
             test_accmems = np.load(f)
 
-    # compare results and output a verdict
-    # comparison may include a diff (between control and test) of host memory as ndarray and trace at last cycle
-    # let's just do a comparison of the host memory for now
-    # print("Control host memory:")
-    # print_mem(ctrl_hostmem)
-    # print("Test host memory:")
-    # print_mem(test_hostmem)
+    # compare results of all memories (hostmem, weightsmem, ubuffer, accmems, 
+    # fifo queue) and output a verdict
+    # in future comparison may include the full trace at last cycle
 
     passed = True
 
@@ -370,8 +372,11 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--cleanup", type=str, action="append", help="Cleanup instructions.")
     parser.add_argument("-r", "--reset", action="store_true", help="Rebuild test folder from the beginning.")
     parser.add_argument("-a", "--absoluteaddrs", action="store_true", help="Use absolute addresses.")
-    parser.add_argument("-t", "--test_folder", type=str, default="default_test", help="Folder to store the test(s).")
+    parser.add_argument("-f", "--test_folder", type=str, default="default_test", help="Folder to store the test(s).")
     parser.add_argument("--ctrl_distance", type=int, default=50, help="Distance between instructions in the control.")
+    parser.add_argument("--nops", type=bool, default=True, help="Set to false for a No-Nop test (meant for hazard-detecting"
+                                                              + "version of runtpu). Set to true for a Distance test (meant"
+                                                              + "for the original version of runtpu)")
     args = parser.parse_args()
 
     instrs: list = args.instrs
@@ -385,7 +390,8 @@ if __name__ == "__main__":
     absoluteaddrs: bool = args.absoluteaddrs
     test_folder: str = args.test_folder
     ctrl_distance: int = args.ctrl_distance
+    use_nops: bool = args.use_nops
 
     squish_test(instrs, distance, bitwidth, matsize, name, 
                 setup, cleanup, reset, absoluteaddrs, test_folder, 
-                ctrl_distance)
+                ctrl_distance, use_nops)

@@ -7,17 +7,20 @@ L2 = 1
 
 
 # run a squish test with chosen bitwidth and matsize for different distances. 
-# start from a chosen large distance and reduce until the test doesn't match the
+# work from a chosen large distance and reduce until the test doesn't match the
 # control, or a distance of 1 is reached successfully.
 # return the lowest distance that was successful.
 def min_viable_distance_fixed(function, bitwidth, matsize):
-    distance = START_DISTANCE
-    while distance > 0:
-        result = function(distance, bitwidth, matsize, True)
-        if not result:
-            break
-        distance -= 1
-    return distance + 1
+    left = 1
+    right = START_DISTANCE
+    while right - left > 0:
+        mid = (left + right)//2
+        result = function(mid, bitwidth, matsize, True)
+        if result:
+            right = mid
+        else:
+            left = mid+1
+    return right
     
 # find the mimimum viable distance for a variety of bitwidths and matsizes.
 # return a nested dictionary that holds the minimum viable distance for each
@@ -676,10 +679,10 @@ def test_all_rw_rw(test_function, bitwidths, matsizes):
     return {
         "rw_rw_same_weights_empty": test_function(rw_rw_same_weights_empty, bitwidths, matsizes),
         "rw_rw_diff_weights_empty": test_function(rw_rw_diff_weights_empty, bitwidths, matsizes),
-        "rw_rw_same_weights_one_space": test_function(rw_rw_same_weights_one_space, bitwidths, matsizes),
-        "rw_rw_diff_weights_one_space": test_function(rw_rw_diff_weights_one_space, bitwidths, matsizes),
-        "rw_rw_same_weights_full": test_function(rw_rw_same_weights_full, bitwidths, matsizes),
-        "rw_rw_diff_weights_full": test_function(rw_rw_diff_weights_full, bitwidths, matsizes)
+        # "rw_rw_same_weights_one_space": test_function(rw_rw_same_weights_one_space, bitwidths, matsizes), # 5 consecutive RWs
+        # "rw_rw_diff_weights_one_space": test_function(rw_rw_diff_weights_one_space, bitwidths, matsizes), # 5 consecutive RWs
+        # "rw_rw_same_weights_full": test_function(rw_rw_same_weights_full, bitwidths, matsizes), # 6 consecutive RWs
+        # "rw_rw_diff_weights_full": test_function(rw_rw_diff_weights_full, bitwidths, matsizes) # 6 consecutive RWs
     }
 
 # reading from RW0 and RW0, buffer starts empty (same weights)
@@ -825,8 +828,8 @@ def test_all_rw_mmc(test_function, bitwidths, matsizes):
         "rw_mmc_empty_yes_s": test_function(rw_mmc_empty_yes_s, bitwidths, matsizes),
         "rw_mmc_one_space_no_s": test_function(rw_mmc_one_space_no_s, bitwidths, matsizes),
         "rw_mmc_one_space_yes_s": test_function(rw_mmc_one_space_yes_s, bitwidths, matsizes),
-        "rw_mmc_full_no_s": test_function(rw_mmc_full_no_s, bitwidths, matsizes),
-        "rw_mmc_full_yes_s": test_function(rw_mmc_full_yes_s, bitwidths, matsizes)
+        # "rw_mmc_full_no_s": test_function(rw_mmc_full_no_s, bitwidths, matsizes), # 5 consecutive RWs
+        # "rw_mmc_full_yes_s": test_function(rw_mmc_full_yes_s, bitwidths, matsizes) # 5 consecutive RWs
     }
 
 # reading from RW0, buffer starts empty, multiplying UB0 into ACC0, no .S
@@ -1162,11 +1165,11 @@ def mmc_whm_diff_ub_yes_s(distance, bitwidth, matsize, use_nops):
 ### MMC-RW TESTS ###
 def test_all_mmc_rw(test_function, bitwidths, matsizes):
     return {
-        "mmc_rw_empty_no_s": test_function(mmc_rw_empty_no_s, bitwidths, matsizes),
-        "mmc_rw_empty_yes_s": test_function(mmc_rw_empty_yes_s, bitwidths, matsizes),
+        # "mmc_rw_empty_no_s": test_function(mmc_rw_empty_no_s, bitwidths, matsizes), # MMC with empty queue
+        # "mmc_rw_empty_yes_s": test_function(mmc_rw_empty_yes_s, bitwidths, matsizes), # MMC with empty queue
         "mmc_rw_one_space_no_s": test_function(mmc_rw_one_space_no_s, bitwidths, matsizes),
-        "mmc_rw_one_space_yes_s": test_function(mmc_rw_one_space_yes_s, bitwidths, matsizes),
-        "mmc_rw_full_no_s": test_function(mmc_rw_full_no_s, bitwidths, matsizes),
+        "mmc_rw_one_space_yes_s": test_function(mmc_rw_one_space_yes_s, bitwidths, matsizes), # shortened cleanup to avoid empty queue MMC
+        # "mmc_rw_full_no_s": test_function(mmc_rw_full_no_s, bitwidths, matsizes), # overloads queue with 5 MMCs
         "mmc_rw_full_yes_s": test_function(mmc_rw_full_yes_s, bitwidths, matsizes)
     }
 
@@ -1250,9 +1253,9 @@ def mmc_rw_one_space_yes_s(distance, bitwidth, matsize, use_nops):
                                 "RHM 4 4 1", "MMC.S 2 4 1", "ACT 2 5 1", 
                                 "WHM 5 5 1",
                                 "RHM 6 6 1", "MMC.S 3 6 1", "ACT 3 7 1", 
-                                "WHM 7 7 1",
-                                "RHM 8 8 1", "MMC.S 4 8 1", "ACT 4 9 1", 
-                                "WHM 9 9 1"],
+                                "WHM 7 7 1"],
+                                #"RHM 8 8 1", "MMC.S 4 8 1", "ACT 4 9 1", 
+                                #"WHM 9 9 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="mmc_rw_one_space_yes_s",
                        reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,

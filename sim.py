@@ -1,5 +1,6 @@
 # coding=utf-8
 import argparse
+import os
 import sys
 import numpy as np
 from collections import deque
@@ -44,11 +45,18 @@ class TPUSim(object):
         print("Host memory:\n", self.host_memory)
         print("Weight memory:\n", self.weight_memory)
         print("UBuffer:\n", self.unified_buffer)
-        print("FIFO Queue:\n", np.array(self.weight_fifo)) # can't believe this just works :O
+        print("FIFO Queue:\n", self.fifo_to_np()) # can't believe this just works :O
         print("Accumulators:\n", self.accumulator)
 
     def get_mems(self):
-        return self.host_memory, self.weight_memory, self.unified_buffer, self.weight_fifo, self.accumulator
+        npfifo = self.fifo_to_np()
+        print("npfifo shape", npfifo.shape)
+        return self.host_memory, self.weight_memory, self.unified_buffer, \
+               self.fifo_to_np(), self.accumulator
+
+    def fifo_to_np(self):
+        return np.array(self.weight_fifo)\
+                 .reshape((len(self.weight_fifo), self.matsize, self.matsize))
 
     def run(self):
         # load program and execute instructions
@@ -81,10 +89,11 @@ class TPUSim(object):
 
         # all done, exit
         self.program.close()
+        os.makedirs(self.output_folder, exist_ok=True)
         np.save(f'{self.output_folder}/sim_hostmem.npy', self.host_memory)
         np.save(f'{self.output_folder}/sim_weightsmem.npy', self.weight_memory)
         np.save(f'{self.output_folder}/sim_ubuffer.npy', self.unified_buffer)
-        np.save(f'{self.output_folder}/sim_wqueue.npy', np.array(self.weight_fifo))
+        np.save(f'{self.output_folder}/sim_wqueue.npy', self.fifo_to_np())
         np.save(f'{self.output_folder}/sim_accmems.npy', self.accumulator)
 
         print("""\nALL DONE!

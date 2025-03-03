@@ -7,8 +7,8 @@ from squishtest import ProgramType
 
 TEST_FOLDER_1 = "full_test_100d_small_matsizes"
 TEST_FOLDER_2 = "full_test_nonop_attempt_2"
-TYPE_1 = "ctrl" #ProgramType.Control
-TYPE_2 = "nonop" #ProgramType.NoNop
+TYPE_1 = ProgramType.Control.value #ProgramType.Control
+TYPE_2 = ProgramType.NoNop.value #ProgramType.NoNop
 
 # Find the subset of tests that are common to both folders
 tests_1 = set([os.path.basename(x) for x in glob.glob(f"{TEST_FOLDER_1}/*") if os.path.isdir(x)])
