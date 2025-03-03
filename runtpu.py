@@ -134,7 +134,6 @@ def wqueue_to_np(sim, buf4, buf3, buf2, buf1, bitwidth, matsize):
 
     buf1_val = 0
     for i in range(math.ceil(matsize*matsize/64)-1, -1, -1):
-        print("buf1 = ", buf1[i])
         buf1_val = (buf1_val << 64*bitwidth) | sim.inspect(buf1[i])
     buf1_tile = make_tile(buf1_val, bitwidth, matsize)
     wqueue_np[3] = buf1_tile
