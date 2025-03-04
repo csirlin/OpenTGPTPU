@@ -114,14 +114,13 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     
     # prevent new instructions from being dispatched while ACT instr is running.
     # max ACT duration is ACT length.
-    # N should start at that minus 1. then need to check whether N <= 1, since 
-    # for ACT length = 1, N starts at 0. unfortunately, an ACT with 
-    # length 1 still takes 2 cycles.
+    # This takes <ACT length + 1> cycles. In theory we should be able to get 
+    # it to ACT length cycles but it's awkward
     with conditional_assignment:
         with start:  # new instruction being dispatched
             accum_addr.next |= start_addr
             ub_waddr.next |= dest_addr
-            N.next |= nvecs - 1
+            N.next |= nvecs
             act_func.next |= func
             busy.next |= 1
             
