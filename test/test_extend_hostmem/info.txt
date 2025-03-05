@@ -1,0 +1,83 @@
+Test that extends the host memory size dynamically during program execution to 
+see how that's handled.
+
+Designed for 4x4 matrices with 32-bit values.
+Designed for sim and hazard-detecting runtpu.
+Use test/squish/generate.py to make weights and hostmem:
+generate.make_hostmem('../test_extend_hostmem/', matsize=4, bitwidth=32, num_tiles=4)
+generate.make_weights('../test_extend_hostmem/', matsize=4, bitwidth=32, num_weights=4)
+
+With 4 4x4 tiles, hostmem should be 16x4. So the test writes a matrix from 
+HM[0:4] to UB[0:4], and then back to HM[28:32] to see whether it inserts the 
+matrix and what it does with the empty space of rows [16:28].
+
+Sim:
+Command: python ../../sim.py test_extend_hostmem.out hostmem_32b_4m.npy weights_32b_4m.npy -m 4 -b 32 -f sim_out
+Hostmem:
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]
+ [17 18 19 20]
+ [21 22 23 24]
+ [25 26 27 28]
+ [29 30 31 32]
+ [33 34 35 36]
+ [37 38 39 40]
+ [41 42 43 44]
+ [45 46 47 48]
+ [49 50 51 52]
+ [53 54 55 56]
+ [57 58 59 60]
+ [61 62 63 64]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+Runtpu:
+Command: python ../../runtpu.py test_extend_hostmem.out hostmem_32b_4m.npy weights_32b_4m.npy -m 4 -b 32 -f runtpu_out
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]
+ [17 18 19 20]
+ [21 22 23 24]
+ [25 26 27 28]
+ [29 30 31 32]
+ [33 34 35 36]
+ [37 38 39 40]
+ [41 42 43 44]
+ [45 46 47 48]
+ [49 50 51 52]
+ [53 54 55 56]
+ [57 58 59 60]
+ [61 62 63 64]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 0  0  0  0]
+ [ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
