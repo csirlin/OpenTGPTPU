@@ -1,0 +1,22 @@
+RHM 0, 0, 8
+RHM 8, 8, 8
+RHM 16, 16, 8
+RHM 24, 24, 8
+RHM 32, 32, 8
+RHM 40, 40, 8
+RHM 48, 48, 8
+RHM 56, 56, 8
+RW 0x4
+RHM 23, 55, 1
+WHM 1, 44, 3
+WHM 60, 31, 2
+RHM 8, 44, 5
+RW 0x3
+RHM 48, 9, 1
+ACT 0x1, 59, 4
+RHM 37, 9, 6
+RW 0x0
+RHM 17, 14, 6
+RHM 27, 1, 5
+ACT 0x1, 2, 1
+HLT
