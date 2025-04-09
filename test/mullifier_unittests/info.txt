@@ -1,0 +1,35 @@
+Mullifier Unit Tests will test for special mullifier capabilities, as described
+and numbered below.
+
+A nop and regular version will exist of each test.
+
+ACT instruction
+    Branch
+        1. Branch forward using value in res[0][0]
+        2. Branch backward using value in res[0][0]
+        3. Branch forward using value in res[0][1]
+        4. Branch backward using value in res[0][1]
+    Equality check
+        5. Equal to 0
+        6. Not equal to 0
+    Less than check
+        7. Less than 0
+        8. Equal to 0
+        9. Greater than 0
+    Unconditional jump
+        10. Jump forward
+        11. Jump backward
+    12. Normal activation
+
+RHM instruction
+    Switch flag
+        13. Length == 0
+        14. Length != 0 
+    15. Convolution flag
+    16. Normal RHM
+
+WHM instruction
+    Switch flag
+        17. Length == 0
+        18. Length != 0
+    19. Normal WHM

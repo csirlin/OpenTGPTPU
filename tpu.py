@@ -1,3 +1,4 @@
+import math
 from pyrtl import *
 from pyrtl.analysis import area_estimation, TimingAnalysis
 
@@ -50,7 +51,8 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     #  Unified Buffer
     ############################################################
 
-    UBuffer = MemBlock(bitwidth=MATSIZE*DWIDTH, addrwidth=UB_ADDR_SIZE, max_write_ports=2)
+    UBuffer = MemBlock(bitwidth=MATSIZE*DWIDTH, addrwidth=UB_ADDR_SIZE, 
+                       max_write_ports=2, max_read_ports=3)
 
     # Address and data wires for MM read port
     ub_mm_raddr = WireVector(UBuffer.addrwidth, "tpu_ub_mm_raddr")  # MM UB read address
@@ -64,7 +66,7 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
         ub_start_addr, ub_dec_addr, ub_dest_addr, rhm_dec_addr, whm_dec_addr, \
         rhm_length, whm_length, mmc_length, act_length, act_type, accum_raddr, \
         accum_waddr, accum_overwrite, switch_weights, weights_raddr, \
-        weights_read = decode(instr)
+        weights_read, rhm_switch, rhm_conv, whm_switch = decode(instr)
 
     halt <<= dispatch_halt
 
@@ -113,24 +115,49 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     hostmem_waddr = Output(HOST_ADDR_SIZE, "tpu_hostmem_waddr")
     hostmem_wdata = Output(DWIDTH*MATSIZE, "tpu_hostmem_wdata")
     hostmem_we = Output(1, "tpu_hostmem_we")
+    hostmem_raddr_whm = WireVector(HOST_ADDR_SIZE, "tpu_hostmem_raddr_whm")
+
+    # split addr buffer into vec (row) and col
+    addrbuf = WireVector(DWIDTH, "tpu_addrbuf")
+    addrbuf <<= UBuffer[2**UB_ADDR_SIZE-1][0:DWIDTH]
+    split_point = int(math.log(MATSIZE, 2)) 
+    vec_addr = WireVector(DWIDTH-split_point, "tpu_addrbuf_vec")
+    vec_addr <<= addrbuf[split_point:]
+    col_addr = WireVector(split_point, "tpu_addrbuf_col")
+    col_addr <<= addrbuf[0:split_point]
 
     # Write Host Memory control logic
     whm_N = Register(len(whm_length), "tpu_whm_N")
     whm_ub_raddr = Register(len(ub_dec_addr), "tpu_whm_ub_addr")
     whm_addr = Register(len(whm_dec_addr), "tpu_whm_addr")
     whm_busy = Register(1, "tpu_whm_busy")
-
-    ubuffer_out = UBuffer[whm_ub_raddr]
-
-    hostmem_waddr <<= whm_addr
-    hostmem_wdata <<= ubuffer_out
-
+    whm_src = Register(1, "tpu_whm_src_reg")
+    whm_read_hm = WireVector(1, "tpu_whm_read_hm")
+    
     with conditional_assignment:
         with dispatch_whm:
-            whm_N.next |= whm_length
-            whm_ub_raddr.next |= ub_dec_addr
-            whm_addr.next |= whm_dec_addr
-            whm_busy.next |= 1
+            with whm_switch:
+                with whm_length == 0: # HM[vec_addr][col] = UB[src_addr][0]
+                    whm_N.next |= 1
+                    whm_ub_raddr.next |= ub_dec_addr
+                    whm_addr.next |= vec_addr
+                    whm_busy.next |= 1
+                    whm_src.next |= 1
+                    whm_read_hm |= 1
+                    hostmem_raddr_whm |= vec_addr
+                with otherwise: # HM[vec_addr:vec_addr+len] = UB[src_addr:src_addr+len]
+                    whm_N.next |= whm_length
+                    whm_ub_raddr.next |= ub_dec_addr
+                    whm_addr.next |= vec_addr
+                    whm_busy.next |= 1
+                    whm_src.next |= 0
+            with otherwise: # normal: HM[dest_addr:dest_addr+len] = UB[dest_addr:dest_addr+len]
+                whm_N.next |= whm_length
+                whm_ub_raddr.next |= ub_dec_addr
+                whm_addr.next |= whm_dec_addr
+                whm_busy.next |= 1
+                whm_src.next |= 0
+
         with whm_busy:
             whm_N.next |= whm_N - 1
             whm_ub_raddr.next |= whm_ub_raddr + 1
@@ -139,6 +166,25 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
             with whm_N == 1:
                 whm_busy.next |= 0
 
+    # prepare write to HM
+
+    # store UB row
+    ubuffer_out = WireVector(bitwidth=MATSIZE*DWIDTH, name="tpu_ubuffer_out")
+    ubuffer_out <<= UBuffer[whm_ub_raddr]
+
+    # write UB[UB row][0] to HM[vec_addr][col] without modifying other cells in
+    # HM[vec_addr], using bitmasks
+    whm_mask = WireVector(DWIDTH*MATSIZE, "tpu_whm_mask")
+    whm_mask <<= ~shift_left_logical(Const(2**DWIDTH-1, DWIDTH*MATSIZE), DWIDTH*col_addr)
+    whm_write_cell = WireVector(DWIDTH, "tpu_whm_write_cell")
+    whm_write_cell <<= ubuffer_out[0:DWIDTH] 
+    write_data = WireVector(DWIDTH*MATSIZE, "tpu_whm_write_data")
+    write_data <<= shift_left_logical(whm_write_cell.zero_extended(bitwidth=DWIDTH*MATSIZE), DWIDTH*col_addr)
+
+    # update HM write address and write data - choose between normal ubuffer
+    # and masked write
+    hostmem_waddr <<= whm_addr
+    hostmem_wdata <<= mux(whm_src, ubuffer_out, (hostmem_rdata & whm_mask) | write_data)
 
     # Read Host Memory control logic
     # probe(rhm_length, "rhm_length")
@@ -146,24 +192,62 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     rhm_addr = Register(len(rhm_dec_addr), "tpu_rhm_addr")
     rhm_busy = Register(1, "tpu_rhm_busy")
     rhm_ub_waddr = Register(len(ub_dec_addr), "tpu_rhm_ub_waddr")
-    # hostmem_raddr_reg = Register(HOST_ADDR_SIZE, "tpu_hostmem_raddr_reg")
+    rhm_src = Register(2, "tpu_rhm_src")
+    rhm_pc_payload = WireVector(DWIDTH*MATSIZE, name="tpu_rhm_pc_payload")
+    rhm_pc_payload <<= concat_list([Const(0, DWIDTH), 
+                                    (pc + 2).sign_extended(DWIDTH), 
+                                    Const(0, DWIDTH * (MATSIZE - 3)), 
+                                    Const(4, DWIDTH)])
+
+    # HM read enable during RHM or a WHM variant:
+    # HM[vec_addr][col] = UB[src_addr][0]
+    with conditional_assignment:
+        with dispatch_rhm | rhm_busy | (dispatch_whm & whm_switch & whm_length == 0):
+            hostmem_re |= 1 
+
+    hostmem_raddr_rhm = WireVector(HOST_ADDR_SIZE, "tpu_hostmem_raddr_rhm")
     with conditional_assignment:
         with dispatch_rhm:
-            rhm_N.next |= rhm_length
             rhm_busy.next |= 1
-            hostmem_raddr |= rhm_dec_addr
-            hostmem_re |= 1
-            rhm_addr.next |= rhm_dec_addr + 1
             rhm_ub_waddr.next |= ub_dec_addr
+            with rhm_switch:
+                with rhm_length == 0: #UB[ub_dec_addr] = [HM[vec_addr][col], 0, ..., 0]
+                    rhm_N.next |= 1
+                    hostmem_raddr_rhm |= vec_addr       
+                    rhm_addr.next |= vec_addr + 1 # don't care?
+                    rhm_src.next |= 1
+                with otherwise: #UB[ub_dec_addr:ub_dec_addr+len] = HM[vec_addr:vec_addr+len]
+                    rhm_N.next |= rhm_length
+                    hostmem_raddr_rhm |= vec_addr
+                    rhm_addr.next |= vec_addr + 1
+                    rhm_src.next |= 0
+            with rhm_conv: #UB[ub_dec_addr] = [0, pc+2, 0, ..., 0, 4] - for function returns
+                rhm_N.next |= 1
+                hostmem_raddr_rhm |= rhm_dec_addr # don't care?
+                rhm_addr.next |= rhm_dec_addr + 1 # don't care?
+                rhm_src.next |= 2
+            with otherwise: # Normal: UB[ub_dec_addr:ub_dec_addr+len] = HM[rhm_dec_addr:rhm_dec_addr+len]
+                rhm_N.next |= rhm_length
+                hostmem_raddr_rhm |= rhm_dec_addr
+                rhm_addr.next |= rhm_dec_addr + 1
+                rhm_src.next |= 0
+        
+        
         with rhm_busy:
             rhm_N.next |= rhm_N - 1
-            hostmem_raddr |= rhm_addr
-            hostmem_re |= 1
+            hostmem_raddr_rhm |= rhm_addr
             rhm_addr.next |= rhm_addr + 1
             rhm_ub_waddr.next |= rhm_ub_waddr + 1
-            UBuffer[rhm_ub_waddr] |= hostmem_rdata
+            UBuffer[rhm_ub_waddr] |= mux(rhm_src, 
+                                         hostmem_rdata,
+                                         concat_list([shift_right_logical(hostmem_rdata, DWIDTH*col_addr)[0:DWIDTH], Const(0, DWIDTH * (MATSIZE-1))]),
+                                         rhm_pc_payload, 
+                                         default=0)
             with rhm_N == 1:
                 rhm_busy.next |= 0
+
+    hostmem_raddr <<= select(dispatch_rhm | rhm_busy, hostmem_raddr_rhm, 
+                                                      hostmem_raddr_whm)
 
     ############################################################
     #  Weights Memory
@@ -187,7 +271,7 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     return IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, \
         halt, hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, \
         hostmem_wdata, weights_dram_read, weights_dram_raddr, acc_mems, buf4, \
-        buf3, buf2, buf1
+        buf3, buf2, buf1, whm_src
 
 
 def run_synth():

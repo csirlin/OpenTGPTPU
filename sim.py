@@ -1,25 +1,27 @@
 # coding=utf-8
 import argparse
+import math
 import os
 import sys
 import numpy as np
 from collections import deque
 from math import exp
+import utils
 
 import isa
 
 SIGNED_DTYPES = {
-    8: np.uint8,
-    16: np.uint16,
-    32: np.uint32,
-    64: np.uint64
-}
-
-UNSIGNED_DTYPES = {
     8: np.int8,
     16: np.int16,
     32: np.int32,
     64: np.int64
+}
+
+UNSIGNED_DTYPES = {
+    8: np.uint8,
+    16: np.uint16,
+    32: np.uint32,
+    64: np.uint64
 }
 
 class TPUSim(object):
@@ -27,11 +29,11 @@ class TPUSim(object):
                  weightsmem_filename: str, bitwidth: int, matsize: int, 
                  output_folder: str):
         self.program = open(prog, 'rb')
-        self.weight_memory = np.load(weightsmem_filename).astype(SIGNED_DTYPES[bitwidth])
-        self.host_memory = np.load(hostmem_filename).astype(SIGNED_DTYPES[bitwidth])
+        self.weight_memory = np.load(weightsmem_filename).astype(UNSIGNED_DTYPES[bitwidth])
+        self.host_memory = np.load(hostmem_filename).astype(UNSIGNED_DTYPES[bitwidth])
 
-        self.unified_buffer = np.zeros(self.host_memory.shape, dtype=SIGNED_DTYPES[bitwidth])
-        self.accumulator = np.zeros(self.host_memory.shape, dtype=SIGNED_DTYPES[bitwidth])
+        self.unified_buffer = np.zeros(self.host_memory.shape, dtype=UNSIGNED_DTYPES[bitwidth])
+        self.accumulator = np.zeros(self.host_memory.shape, dtype=UNSIGNED_DTYPES[bitwidth])
         self.weight_fifo = deque()
 
         self.bitwidth = bitwidth
@@ -40,17 +42,14 @@ class TPUSim(object):
 
         self.pc = 0
 
-    def print_mems(self):
-        np.set_printoptions(threshold=np.inf, linewidth=300)
-        print("Host memory:\n", self.host_memory)
-        print("Weight memory:\n", self.weight_memory)
-        print("UBuffer:\n", self.unified_buffer)
-        print("FIFO Queue:\n", self.fifo_to_np()) # can't believe this just works :O
-        print("Accumulators:\n", self.accumulator)
+        self.rw_count = 0
+        self.hm_count = 0
+        self.mmc_count = 0
+        self.act_count = 0
+        self.prev_rw = None
+        self.reload_count = 0
 
     def get_mems(self):
-        npfifo = self.fifo_to_np()
-        print("npfifo shape", npfifo.shape)
         return self.host_memory, self.weight_memory, self.unified_buffer, \
                self.fifo_to_np(), self.accumulator
 
@@ -74,8 +73,10 @@ class TPUSim(object):
                 self.memops(opcodes[self.pc], *operands[self.pc])
             elif opcodes[self.pc] == 'MMC':
                 self.matrix_multiply_convolve(*operands[self.pc])
+                self.mmc_count += 1
             elif opcodes[self.pc] == 'ACT':
                 self.act(*operands[self.pc])
+                self.act_count += 1
             elif opcodes[self.pc] == 'SYNC':
                 self.pc += 1
             elif opcodes[self.pc] == 'NOP':
@@ -89,6 +90,13 @@ class TPUSim(object):
 
         # all done, exit
         self.program.close()
+
+        print("MMC Count: {}".format(self.mmc_count))
+        print("HM Count: {}".format(self.hm_count))
+        print("ACT Count: {}".format(self.act_count))
+        print("RW Count: {}".format(self.rw_count))
+        print("RW Reloads: {}".format(self.reload_count))
+
         os.makedirs(self.output_folder, exist_ok=True)
         np.save(f'{self.output_folder}/sim_hostmem.npy', self.host_memory)
         np.save(f'{self.output_folder}/sim_weightsmem.npy', self.weight_memory)
@@ -134,7 +142,7 @@ class TPUSim(object):
             print('SIGMOID')
             vfunc = np.vectorize(lambda x: int(255./(1.+exp(-x))))
         else:
-            print('None')
+            # print('None')
             vfunc = np.vectorize(lambda x: x)
             #raise Exception('(╯°□°）╯︵ ┻━┻ bad activation function!')
 
@@ -152,8 +160,8 @@ class TPUSim(object):
         
         # equality check
         elif result[0][-1] == 2:
-            result[0][-1] == 0
-            if result[0][0] == result[0][1]:
+            result[0][-1] = 0
+            if result[0][0] == 0:
                 result[0][0] = 1
             else:
                 result[0][0] = 0
@@ -162,17 +170,24 @@ class TPUSim(object):
         
         # less than check
         elif result[0][-1] == 3:
-            result[0][-1] == 0
-            if result[0][0] < result[0][1]:
+            result[0][-1] = 0
+            if result[0][0] < 0:
                 result[0][0] = 1
             else:
                 result[0][0] = 0
-            result[0][1] = 0
-            self.pc += 1 
+            self.pc += 1
+        
+        # unconditional jump
+        elif result[0][-1] == 4:
+            self.pc = result[0][1]
+            return
 
         # normal activation
         else:
             self.pc += 1      
+
+        print("After branch/comparison/jump:")
+        print(result)
 
         # extend the unified buffer if needed
         if (self.unified_buffer.shape[0] < dest + length):
@@ -181,26 +196,66 @@ class TPUSim(object):
 
     def memops(self, opcode, src_addr, dest_addr, length, flag):
         if opcode == 'RHM':
+            self.hm_count += 1
             print(f'RHM: read host memory [{src_addr}:{src_addr + length}], write to unified buffer [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
             print(self.host_memory[src_addr:src_addr + length])
 
-            # extend the unified buffer if needed
-            if (self.unified_buffer.shape[0] < dest_addr + length):
-                self.unified_buffer.resize((dest_addr + length, self.matsize))
-            self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[src_addr:src_addr + length]
+            read_data = np.zeros((1, self.matsize))
+            if flag & isa.SWITCH_MASK:
+                addr = self.unified_buffer[-1][0]
+                vec_addr = addr // self.matsize
+                column = addr % self.matsize
+                if length == 0:
+                    read_data[0][0] = self.host_memory[vec_addr][column]
+                    if (self.unified_buffer.shape[0] < dest_addr + 1):
+                        self.unified_buffer.resize((dest_addr + 1, self.matsize))
+                    self.unified_buffer[dest_addr] = read_data
+                else:
+                    if (self.unified_buffer.shape[0] < dest_addr + length):
+                        self.unified_buffer.resize((dest_addr + length, self.matsize))
+                    self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[vec_addr:vec_addr + length]
+            elif flag & isa.CONV_MASK:
+                read_data[0][1] = self.pc + 2
+                read_data[0][-1] = 4
+                if (self.unified_buffer.shape[0] < dest_addr + 1):
+                    self.unified_buffer.resize((dest_addr + 1, self.matsize))
+                self.unified_buffer[dest_addr] = read_data
+            else:
+                if (self.unified_buffer.shape[0] < dest_addr + length):
+                    self.unified_buffer.resize((dest_addr + length, self.matsize))
+                self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[src_addr:src_addr + length]
 
         elif opcode == 'WHM':
+            self.hm_count += 1
             print(f'WHM: read unified buffer [{src_addr}:{src_addr + length}], write to host memory [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
             print(self.unified_buffer[src_addr:src_addr + length])
             
-            # extend the host memory if needed
-            if (self.host_memory.shape[0] < dest_addr + length):
-                self.host_memory.resize((dest_addr + length, self.matsize))
-            self.host_memory[dest_addr:dest_addr + length] = self.unified_buffer[src_addr:src_addr + length]
-
+            if flag & isa.SWITCH_MASK:
+                addr = self.unified_buffer[-1][0]
+                vec_addr = addr // self.matsize
+                column = addr % self.matsize
+                print(f'addr = {addr}, vec_addr = {vec_addr}, column = {column}')
+                print(f'matsize = {self.matsize}, log2(matsize) = {int(math.log2(self.matsize))}')
+                if length == 0:
+                    if (self.host_memory.shape[0] < vec_addr + 1):
+                        self.host_memory.resize((vec_addr + 1, self.matsize))
+                    self.host_memory[vec_addr][column] = self.unified_buffer[src_addr][0]
+                else:
+                    if (self.host_memory.shape[0] < vec_addr + length):
+                        self.host_memory.resize((vec_addr + length, self.matsize))
+                    self.host_memory[vec_addr:vec_addr + length] = self.unified_buffer[src_addr:src_addr + length]
+            else:
+                if (self.host_memory.shape[0] < dest_addr + length):
+                    self.host_memory.resize((dest_addr + length, self.matsize))
+                self.host_memory[dest_addr:dest_addr + length] = self.unified_buffer[src_addr:src_addr + length]
         elif opcode == 'RW':
             print(f'RW {src_addr}: read weight matrix {src_addr} into weight FIFO')
             print(self.weight_memory[src_addr])
+            if src_addr != self.prev_rw:
+                self.reload_count += 1
+                self.prev_rw = src_addr
+
+            self.rw_count += 1
             self.weight_fifo.append(self.weight_memory[src_addr])
 
         else:
@@ -211,7 +266,7 @@ class TPUSim(object):
     def matrix_multiply_convolve(self, ub_addr, accum_addr, size, flags):
         print(f'MMC: multiply UB[{ub_addr}:{ub_addr + size}] with a weight, store in ACC[{accum_addr}:{accum_addr + size}]')
 
-        inp = self.unified_buffer[ub_addr: ub_addr + size]
+        inp = self.unified_buffer[ub_addr : ub_addr + size]
         weight_mat = self.weight_fifo[0]
         
         if isa.SWITCH_MASK & flags:
@@ -220,7 +275,9 @@ class TPUSim(object):
         print('MMC matrix: \n{}'.format(inp))
         print('MMC weight: \n{}'.format(weight_mat))
 
-        out = np.matmul(inp, weight_mat)
+        out = np.matmul(inp.astype(SIGNED_DTYPES[self.bitwidth]), 
+                        weight_mat.astype(SIGNED_DTYPES[self.bitwidth]))\
+                        .astype(UNSIGNED_DTYPES[self.bitwidth])
 
         print('MMC output: \n{}'.format(out))
 
@@ -262,4 +319,6 @@ if __name__ == '__main__':
     tpusim = TPUSim(args.prog, args.hostmem, args.weightsmem, args.bitwidth,
                     args.matsize, args.folder)
     tpusim.run()
-    tpusim.print_mems()
+    utils.print_mems(tpusim.host_memory, tpusim.weight_memory, 
+                     tpusim.unified_buffer, tpusim.fifo_to_np(), 
+                     tpusim.accumulator, args.matsize)

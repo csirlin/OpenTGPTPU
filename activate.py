@@ -55,7 +55,8 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     first_cycle = Register(1, "act_first_cycle") # true for the first busy activation cycle, false otherwise
     pc_incr_reg = Register(len(pc), "act_pc_incr_reg") # hold the pc jump obtained in this cycle for future cycles
     pc_incr_wv = WireVector(len(pc), "act_pc_incr_wv")
-    
+    pc_absolute_update = WireVector(1, "act_pc_absolute_update") # 1 if pc should be overwritten by jump
+    branch = WireVector(1, "act_branch") # 1 if we have a branch/jump, which shouldn't write anything, so we can end early
     # first busy cycle: store the jump value in pc_incr_reg if there is one
     # and store modified accumulator values in accum_mod
     with conditional_assignment:
@@ -63,18 +64,19 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             # branch
             with accum_out[-1] == 1: 
                 with accum_out[-2] == 1:
-                    pc_incr_wv |= accum_out[0]
-                with accum_out[-2] == 0:
-                    pc_incr_wv |= accum_out[1]
+                    pc_incr_wv |= accum_out[0] + 1
+                with accum_out[-2] != 1:
+                    pc_incr_wv |= accum_out[1] + 1
                 for i in range(len(accum_mod)):
                     accum_mod[i] |= accum_out[i]
+                branch |= 1
 
             # equality check
             with accum_out[-1] == 2:
                 accum_mod[-1] |= 0
-                with accum_out[0] == accum_out[1]:
+                with accum_out[0] == 0:
                     accum_mod[0] |= 1
-                with accum_out[0] != accum_out[1]:
+                with accum_out[0] != 0:
                     accum_mod[0] |= 0
                 accum_mod[1] |= 0
                 for i in range(2, len(accum_mod)-1):
@@ -84,14 +86,19 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             # less than check
             with accum_out[-1] == 3:
                 accum_mod[-1] |= 0
-                with accum_out[0] < accum_out[1]:
+                with accum_out[0] < 0:
                     accum_mod[0] |= 1
-                with accum_out[0] >= accum_out[1]:
+                with accum_out[0] >= 0:
                     accum_mod[0] |= 0
-                accum_mod[1] |= 0
-                for i in range(2, len(accum_mod)-1):
+                for i in range(1, len(accum_mod)-1):
                     accum_mod[i] |= accum_out[i]
                 pc_incr_wv |= 1
+
+            # unconditional jump
+            with accum_out[-1] == 4:
+                pc_absolute_update |= 1
+                pc_incr_wv |= accum_out[1]
+                branch |= 1
             
             # normal activation
             with otherwise:
@@ -111,7 +118,7 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
 
     # jump to the right PC after the last busy cycle
     with conditional_assignment:
-        with N == 1:
+        with (N == 1) | branch:
             # if ACT length is 1, first_cycle is the only cycle, and 
             # pc_incr_reg doesn't hold anything yet
             with first_cycle: 
@@ -123,7 +130,12 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
         with otherwise:
             pc_incr |= 1
 
-    pc.next <<= select(cond, (pc + pc_incr)[0:len(pc)], pc + 1)
+    # if pc_absolute_update = 1, select pc_incr (absolute addr for unconditional jump)
+    # else, pc + pc_incr
+    #     if we're in the last busy cycle (N==1 or branch==1) then pc_incr 
+    #     will hold the relative branch amount (if a branch) or 1 (no branch)
+    #     if we're not in the last busy cycle it also holds 1 (default incr)
+    pc.next <<= select(pc_absolute_update, pc_incr, pc + pc_incr)
 
     with conditional_assignment:
         with start:  # new instruction being dispatched
@@ -138,7 +150,7 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             accum_addr.next |= accum_addr + 1
             ub_waddr.next |= ub_waddr + 1
             N.next |= N - 1
-            with N == 1:  # this was the last vector
+            with (N == 1) | branch:  # this was the last vector or we end early
                 busy.next |= 0
 
         # this only updates first_cycle if start and busy are 0, so first cycle
@@ -153,6 +165,9 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     act_out = mux(act_func, invals, relu_vector(accum_mod, 24), 
                   sigmoid_vector(accum_mod), invals) # relu might not work with 32-bit DWIDTH as represented currently. 
     act_out.name = 'act_out'
-    ub_we = busy
+
+    # write enable from ACC to UB. enable when busy to write back each
+    # row, unless it's a branch/jump ACT, in which case we don't want to write
+    ub_we = select(branch, 0, busy) 
             
     return accum_addr, ub_waddr, act_out, ub_we, busy

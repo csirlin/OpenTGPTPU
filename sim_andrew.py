@@ -6,8 +6,8 @@ from collections import deque
 from math import exp
 
 import isa
-from config import MATSIZE as WIDTH
-
+# from config import MATSIZE as WIDTH
+WIDTH = 8
 args = None
 # width of the tile
 #WIDTH = 16
@@ -45,6 +45,7 @@ class TPUSim(object):
         
         # use self.pc to select next instruction, starting from 0, and finishing when halt is reached
         while True:
+            print(self.pc)
             # print(f'operands = {operands[self.pc]}')
             if opcodes[self.pc] in ['RHM', 'WHM', 'RW']:
                 self.memops(opcodes[self.pc], *operands[self.pc])
@@ -197,8 +198,8 @@ class TPUSim(object):
             if flag & isa.SWITCH_MASK:
                 # breakpoint()
                 addr = self.unified_buffer[-1][0]
-                vec_addr = addr // 8
-                column = addr % 8
+                vec_addr = addr // 8 # matsize?
+                column = addr % 8 # matsize?
                 if length == 0:
                     self.host_memory[vec_addr][column] = self.unified_buffer[src_addr][0]
                 else:

@@ -10,6 +10,7 @@ import numpy as np
 
 from tpu import tpu
 import config
+from utils import print_mems
 
 
 # turns a vector of values into a single integer
@@ -245,8 +246,8 @@ def runtpu(prog: str, hostmem_filename: str, weightsmem_filename: str,
     reset_working_block()
     IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, halt, \
         hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, hostmem_wdata, \
-        weights_dram_read, weights_dram_raddr, acc_mems, buf4, buf3, buf2, buf1 \
-        = tpu(matsize, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
+        weights_dram_read, weights_dram_raddr, acc_mems, buf4, buf3, buf2, buf1, \
+        whm_src = tpu(matsize, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
         config.WEIGHT_DRAM_ADDR_SIZE, config.ACC_ADDR_SIZE, bitwidth, 
         config.INSTRUCTION_WIDTH, config.IMEM_ADDR_SIZE)
 
@@ -283,7 +284,7 @@ def runtpu(prog: str, hostmem_filename: str, weightsmem_filename: str,
             chunkaddr += 1
 
         # Read host memory signal
-        if sim.inspect(hostmem_re):
+        if sim.inspect(hostmem_re): # or sim.inspect(whm_src):
             # print("Reading host memory")
             raddr = sim.inspect(hostmem_raddr)
             # print("Read Host Memory: addr {}".format(raddr))
@@ -388,9 +389,4 @@ if __name__ == '__main__':
                                  args.bitwidth, args.matsize, args.folder, 
                                  output_trace=True)
 
-    np.set_printoptions(threshold=np.inf, linewidth=300)
-    print("Host memory:\n", hm)
-    print("Weight memory:\n", wm)
-    print("UBuffer:\n", ub)
-    print("FIFO Queue:\n", fq)
-    print("Accumulators:\n", acc)
+    print_mems(hm, wm, ub, fq, acc, args.matsize)

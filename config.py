@@ -7,10 +7,14 @@ Hardware configuration.
 # NUM_TILES = 8
 # NUM_WEIGHTS = 8
 
+# ADDR_SIZEs need to be sufficient for the addressed used, otherwise it will 
+# cause issues in pyrtl.
+# squishtests: needs to hold at least 10*MATSIZE rows
+# mullifier unit tests: needs to hold EXACTLY 16*MATSIZE rows
 HOST_ADDR_SIZE = 64
-UB_ADDR_SIZE = 12
+UB_ADDR_SIZE = 7 # 12
 WEIGHT_DRAM_ADDR_SIZE = 40
-ACC_ADDR_SIZE = 16
+ACC_ADDR_SIZE = 7 # 16
 INSTRUCTION_WIDTH = 14 * 8
 IMEM_ADDR_SIZE = 12
 

@@ -1,6 +1,6 @@
 from functools import reduce
 from pyrtl import *
-from pyrtl import rtllib
+from pyrtl import rtllib, corecircuits
 from pyrtl.rtllib import multipliers
 
 #set_debug_mode()
@@ -71,7 +71,7 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     product = WireVector(len(weight) + len(data_in), f"mac_product_{i}_{j}")
     
     # just use the passed in weight. it should be using whatever is at buf4 at the time.
-    product <<= helperfuncs.mult_signed(weight_in, data_in)[:32] 
+    product <<= corecircuits.signed_mult(weight_in, data_in)[:data_width] 
     # product <<= helperfuncs.mult_signed(weight, data_in)[:32]
 
     #plen = len(weight) + len(data_in)

@@ -25,7 +25,10 @@ def decode(instruction):
     act_type = WireVector(2, "dec_act_type")
 
     rhm_addr = WireVector(config.HOST_ADDR_SIZE, "dec_rhm_addr")
+    rhm_switch = WireVector(1, "dec_rhm_switch")
+    rhm_conv = WireVector(1, "dec_rhm_conv")
     whm_addr = WireVector(config.HOST_ADDR_SIZE, "dec_whm_addr")
+    whm_switch = WireVector(1, "dec_whm_switch")
 
     dispatch_mm = WireVector(1, "dec_dispatch_mm")
     dispatch_act = WireVector(1, "dec_dispatch_act")
@@ -58,6 +61,7 @@ def decode(instruction):
             ub_raddr |= memaddr # memaddr and ubaddr are switched to match the simulator
             whm_addr |= ubaddr
             whm_length |= ilength
+            whm_switch |= iflags[isa.SWITCH_BIT]
         with op == isa.OPCODE2BIN['RW'][0]:
             weights_raddr |= memaddr
             weights_read |= 1
@@ -85,6 +89,8 @@ def decode(instruction):
             rhm_addr |= memaddr
             ub_raddr |= ubaddr
             rhm_length |= ilength
+            rhm_switch |= iflags[isa.SWITCH_BIT]
+            rhm_conv |= iflags[isa.CONV_BIT]
         with op == isa.OPCODE2BIN['HLT'][0]:
             dispatch_halt |= 1
 
@@ -95,4 +101,4 @@ def decode(instruction):
            dispatch_halt, ub_addr, ub_raddr, ub_waddr, rhm_addr, whm_addr, \
            rhm_length, whm_length, mmc_length, act_length, act_type, \
            accum_raddr, accum_waddr, accum_overwrite, switch_weights, \
-           weights_raddr, weights_read
+           weights_raddr, weights_read, rhm_switch, rhm_conv, whm_switch

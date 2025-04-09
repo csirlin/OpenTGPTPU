@@ -1,0 +1,6 @@
+RHM 0, 0, 4
+RW 0
+MMC.S 0, 0, 4
+ACT 0, 4, 4
+RHM 8, 8, 1
+HLT
