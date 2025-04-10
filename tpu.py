@@ -233,8 +233,10 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     rhm_ub_waddr = Register(len(ub_dec_addr), "tpu_rhm_ub_waddr")
     rhm_src = Register(2, "tpu_rhm_src")
     rhm_pc_payload = WireVector(DWIDTH*MATSIZE, name="tpu_rhm_pc_payload")
+    # it's pc+2, but this is happening one cycle after RHM dispatch, meaning pc
+    # has already been incremented
     rhm_pc_payload <<= concat_list([Const(0, DWIDTH), 
-                                    (pc + 2).sign_extended(DWIDTH), 
+                                    (pc + 1).sign_extended(DWIDTH),  
                                     Const(0, DWIDTH * (MATSIZE - 3)), 
                                     Const(4, DWIDTH)])
 
