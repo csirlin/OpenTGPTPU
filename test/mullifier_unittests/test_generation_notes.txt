@@ -16,7 +16,7 @@ generate_unit_tests.py
  2: 
  - reg:
    - branch 1 from @3 to @205 (+202)
-   - branch 2 from @208 to @105 (-103)
+   - branch 2 from @207 to @104 (-103)
    - W0 = [201 (not 201) X ... X 1 1]
    - W1 = [(-104: 4294967192 in b32) (not -104) X ... X 1 1]
    - H0 = I_m
@@ -44,7 +44,7 @@ generate_unit_tests.py
  4: 
   - reg:
    - branch 1 from @3 to @205 (+202)
-   - branch 2 from @208 to @105 (-103)
+   - branch 2 from @207 to @104 (-103)
    - W0 = [(not 201) 201 X ... X (not 1) 1]
    - W1 = [(not -104) (-104: 4294967192 in b32) X ... X (not 1) 1]
    - H0 = I_m
@@ -97,9 +97,9 @@ generate_unit_tests.py
 11: 
  - reg:
    - branch 1 from @3 to @205
-   - branch 2 from @208 to @105
+   - branch 2 from @207 to @104
    - W0 = [X 205 X ... X 4]
-   - W1 = [X 105 X ... X 4]
+   - W1 = [X 104 X ... X 4]
    - H0 = I_m
    - default remaining hostmem
  - nop:

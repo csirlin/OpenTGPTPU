@@ -388,7 +388,7 @@ def generate_weightsmem(matsize, bitwidth):
         wm_less_than(matsize, 0),
         wm_less_than(matsize, 15),
         wm_jump(matsize, 104),
-        wm_jump(matsize, 205, 105),
+        wm_jump(matsize, 205, 104),
         wm_normal(matsize),
         wm_default(matsize),
         wm_default(matsize),
