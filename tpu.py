@@ -165,7 +165,6 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     whm_N = Register(len(whm_length), "tpu_whm_N")
     whm_ub_raddr = Register(len(ub_dec_addr), "tpu_whm_ub_addr")
     whm_addr = Register(len(whm_dec_addr), "tpu_whm_addr")
-    whm_busy = Register(1, "tpu_whm_busy")
     whm_src = Register(1, "tpu_whm_src_reg")
     whm_read_hm = WireVector(1, "tpu_whm_read_hm")
 
