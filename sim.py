@@ -1,5 +1,6 @@
 # coding=utf-8
 import argparse
+from datetime import datetime
 import math
 import os
 import sys
@@ -315,6 +316,9 @@ if __name__ == '__main__':
         print('Usage:', sys.argv[0], 'PROGRAM_BINARY DRAM_FILE HOST_FILE')
         sys.exit(0)
     parse_args()
+
+    if not args.folder:
+        args.folder = f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{args.bitwidth}b_{args.matsize}m'
 
     tpusim = TPUSim(args.prog, args.hostmem, args.weightsmem, args.bitwidth,
                     args.matsize, args.folder)
