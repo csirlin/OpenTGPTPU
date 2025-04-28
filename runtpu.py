@@ -359,9 +359,9 @@ def runtpu(prog: str, hostmem_filename: str, weightsmem_filename: str,
 
     hostmem_np = hostmem_to_np(hostmem, bitwidth, matsize)
     weightsmem_np = weightsmem_to_np(weightsmem, bitwidth, matsize)
-    ubuffer_np = ubuffer_to_np(sim, UBuffer, bitwidth, matsize, len(hostmem))
+    ubuffer_np = ubuffer_to_np(sim, UBuffer, bitwidth, matsize, row_count=0)
     wqueue_np = wqueue_to_np(sim, buf4, buf3, buf2, buf1, bitwidth, matsize)
-    accmems_np = accmem_to_np(sim, acc_mems, matsize, len(hostmem))
+    accmems_np = accmem_to_np(sim, acc_mems, matsize, row_count=0)
 
     np.save(f'{output_folder}/runtpu_hostmem.npy', hostmem_np)
     np.save(f'{output_folder}/runtpu_weightsmem.npy', weightsmem_np)

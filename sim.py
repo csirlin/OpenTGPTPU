@@ -8,6 +8,7 @@ import numpy as np
 from collections import deque
 from math import exp
 import utils
+import config
 
 import isa
 
@@ -33,8 +34,8 @@ class TPUSim(object):
         self.weight_memory = np.load(weightsmem_filename).astype(UNSIGNED_DTYPES[bitwidth])
         self.host_memory = np.load(hostmem_filename).astype(UNSIGNED_DTYPES[bitwidth])
 
-        self.unified_buffer = np.zeros(self.host_memory.shape, dtype=UNSIGNED_DTYPES[bitwidth])
-        self.accumulator = np.zeros(self.host_memory.shape, dtype=UNSIGNED_DTYPES[bitwidth])
+        self.unified_buffer = np.zeros((0, matsize), dtype=UNSIGNED_DTYPES[bitwidth])
+        self.accumulator = np.zeros((0, matsize), dtype=UNSIGNED_DTYPES[bitwidth])
         self.weight_fifo = deque()
 
         self.bitwidth = bitwidth
@@ -42,6 +43,7 @@ class TPUSim(object):
         self.output_folder = output_folder
 
         self.pc = 0
+        self.pc_history = []
 
         self.rw_count = 0
         self.hm_count = 0
@@ -70,6 +72,7 @@ class TPUSim(object):
         while True:
             # print(f'operands = {operands[self.pc]}')
             print(f"PC = {self.pc}")
+            self.pc_history.append(self.pc)
             if opcodes[self.pc] in ['RHM', 'WHM', 'RW']:
                 self.memops(opcodes[self.pc], *operands[self.pc])
             elif opcodes[self.pc] == 'MMC':
@@ -105,6 +108,8 @@ class TPUSim(object):
         np.save(f'{self.output_folder}/sim_wqueue.npy', self.fifo_to_np())
         np.save(f'{self.output_folder}/sim_accmems.npy', self.accumulator)
 
+        # print("PC history:\n", self.pc_history)
+
         print("""\nALL DONE!
         (•_•)
         ( •_•)>⌐■-■
@@ -135,6 +140,9 @@ class TPUSim(object):
     def act(self, src, dest, length, flag):
         print(f'ACT: read ACC[{src}:{src + length}], and write to UB[{dest}:{dest + length}]. Activation function:', end = ' ')
 
+        # extend the accumulator if needed
+        if (self.accumulator.shape[0] < src + length):
+            self.accumulator.resize((src + length, self.matsize))
         result = self.accumulator[src:src+length]
         if flag & isa.FUNC_RELU_MASK:
             print('RELU!!!!')
