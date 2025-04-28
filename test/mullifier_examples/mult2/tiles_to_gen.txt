@@ -1,4 +1,0 @@
-cond_br 10 20
-extract 1 2
-acc
-add

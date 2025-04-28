@@ -46,10 +46,10 @@ def print_mems(host_memory, weight_memory, unified_buffer, fifo, accumulator,
 def compare_mem(test_mem, ctrl_mem, name):
     if not np.array_equal(ctrl_mem, test_mem):
         print(f"Test failed ({name})")
-        print("Control:")
-        print(ctrl_mem, ctrl_mem.dtype)
+        print("Control:") #  not sure I want to print this if I also print row-by-row, although printing the whole thing also prints the dtype which is nice
+        print(ctrl_mem, ctrl_mem.dtype, ctrl_mem.shape)
         print("Test:")
-        print(test_mem, test_mem.dtype)
+        print(test_mem, test_mem.dtype, test_mem.shape)
         for i in range(len(ctrl_mem)):
             if not np.array_equal(ctrl_mem[i], test_mem[i]):
                 print(f"row {i}: Control: {ctrl_mem[i]}, Test: {test_mem[i]}")

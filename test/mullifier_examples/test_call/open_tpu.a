@@ -1,0 +1,48 @@
+RHM 0, 0, 5
+# Function gpmm_main Entry
+# Block Entry
+RW 0
+MMC.SO 0, 0, 1
+RW 3
+MMC.S 0, 0, 1
+ACT 0, 9, 1
+RW 4
+MMC.SO 0, 2, 1
+RHM.C 0, 8, 1
+ACT 0, 0, 1
+RW 0
+MMC.SO 0, 7, 1
+ACT 0, 5, 1
+RW 0
+MMC.SO 0, 5, 1
+RW 5
+MMC.S 0, 4, 1
+ACT 0, 6, 1
+RW 0
+MMC.SO 0, 6, 1
+ACT 0, 7, 1
+WHM 1, 7, 1
+HLT
+# Function sub Entry
+# Block Entry
+RW 0
+MMC.SO 0, 9, 1
+RW 1
+MMC.S 0, 9, 1
+ACT 0, 10, 1
+RW 0
+MMC.SO 0, 10, 1
+RW 0
+MMC.S 0, 4, 1
+ACT 0, 11, 1
+RW 0
+MMC.SO 0, 10, 1
+RW 0
+MMC.S 0, 11, 1
+ACT 0, 12, 1
+RW 0
+MMC.SO 0, 12, 1
+ACT 0, 7, 1
+RW 2
+MMC.SO 0, 8, 1
+ACT 0, 0, 1

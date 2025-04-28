@@ -11,10 +11,11 @@ Hardware configuration.
 # cause issues in pyrtl.
 # squishtests: needs to hold at least 10*MATSIZE rows
 # mullifier unit tests: needs to hold EXACTLY 16*MATSIZE rows
+# mullifier examples: UB and ACC sizes must be exactly 12
 HOST_ADDR_SIZE = 64
-UB_ADDR_SIZE = 7 # 12
+UB_ADDR_SIZE = 12
 WEIGHT_DRAM_ADDR_SIZE = 40
-ACC_ADDR_SIZE = 7 # 16
+ACC_ADDR_SIZE = 12 # 16
 INSTRUCTION_WIDTH = 14 * 8
 IMEM_ADDR_SIZE = 12
 

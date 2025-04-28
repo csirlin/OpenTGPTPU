@@ -1,0 +1,89 @@
+RHM 0, 0, 5
+# Function gpmm_main Entry
+# Block Entry
+RW 0
+MMC.SO 0, 0, 1
+RW 7
+MMC.S 0, 0, 1
+ACT 0, 9, 1
+RW 8
+MMC.SO 0, 2, 1
+RHM.C 0, 8, 1
+ACT 0, 0, 1
+RW 0
+MMC.SO 0, 7, 1
+ACT 0, 5, 1
+RW 0
+MMC.SO 0, 5, 1
+RW 9
+MMC.S 0, 4, 1
+ACT 0, 6, 1
+RW 0
+MMC.SO 0, 6, 1
+ACT 0, 7, 1
+WHM 1, 7, 1
+HLT
+# Function add42 Entry
+# Block Entry
+RW 0
+MMC.SO 0, 9, 1
+RW 0
+MMC.S 0, 4, 1
+ACT 0, 10, 1
+RW 0
+MMC.SO 0, 10, 1
+ACT 0, 7, 1
+RW 1
+MMC.SO 0, 8, 1
+ACT 0, 0, 1
+# Function sub Entry
+# Block Entry
+RW 0
+MMC.SO 0, 9, 1
+RW 2
+MMC.S 0, 9, 1
+ACT 0, 10, 1
+RW 0
+MMC.SO 0, 10, 1
+RW 3
+MMC.S 0, 4, 1
+ACT 0, 11, 1
+RW 0
+MMC.SO 0, 10, 1
+RW 0
+MMC.S 0, 11, 1
+ACT 0, 12, 1
+RW 0
+MMC.SO 0, 3, 1
+RW 4
+MMC.S 0, 4, 1
+ACT 0, 3, 1
+RW 0
+MMC.SO 0, 3, 1
+ACT 0, 4095, 1
+WHM.S 0, 8, 6
+RW 0
+MMC.SO 0, 12, 1
+ACT 0, 9, 1
+RW 5
+MMC.SO 0, 2, 1
+RHM.C 0, 8, 1
+ACT 0, 0, 1
+RW 0
+MMC.SO 0, 3, 1
+ACT 0, 4095, 1
+RHM.S 0, 8, 6
+RW 0
+MMC.SO 0, 3, 1
+RW 6
+MMC.S 0, 4, 1
+ACT 0, 3, 1
+RW 0
+MMC.SO 0, 7, 1
+ACT 0, 13, 1
+RW 0
+MMC.SO 0, 13, 1
+ACT 0, 7, 1
+RW 1
+MMC.SO 0, 8, 1
+ACT 0, 0, 1
