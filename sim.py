@@ -1,7 +1,6 @@
 # coding=utf-8
 import argparse
 from datetime import datetime
-import math
 import os
 import sys
 import numpy as np
@@ -9,7 +8,6 @@ from collections import deque
 from math import exp
 import utils
 import config
-
 import isa
 
 SIGNED_DTYPES = {
@@ -59,6 +57,18 @@ class TPUSim(object):
     def fifo_to_np(self):
         return np.array(self.weight_fifo)\
                  .reshape((len(self.weight_fifo), self.matsize, self.matsize))
+
+    # resize the slice to fit shape. slice.shape and shape will always have
+    # the same width, and slice.shape's height will be less than or equal to 
+    # shape's height. if less, the extra rows will be filled with 0s. this lets
+    # memories get read beyond their current address without creating new rows,
+    # while writing non-existant 0-rows to the write memeory
+    def pad_zeros(self, slice, shape):
+        if slice.shape[0] < shape[0]:
+            print(f"padded with {shape[0] - slice.shape[0]} 0-rows")
+        res = np.zeros(shape, dtype=UNSIGNED_DTYPES[self.bitwidth])
+        res[:slice.shape[0]] = slice
+        return res
 
     def run(self):
         # load program and execute instructions
@@ -141,9 +151,7 @@ class TPUSim(object):
         print(f'ACT: read ACC[{src}:{src + length}], and write to UB[{dest}:{dest + length}]. Activation function:', end = ' ')
 
         # extend the accumulator if needed
-        if (self.accumulator.shape[0] < src + length):
-            self.accumulator.resize((src + length, self.matsize))
-        result = self.accumulator[src:src+length]
+        result = self.pad_zeros(self.accumulator[src:src+length], (length, self.matsize))
         if flag & isa.FUNC_RELU_MASK:
             print('RELU!!!!')
             vfunc = np.vectorize(lambda x: 0 * x if x < 0. else x)
@@ -162,8 +170,10 @@ class TPUSim(object):
         # branching/comparison logic
         if result[0][-1] == 1:
             if result[0][-2] == 1:
+                print(f"Branch from {self.pc} to {self.pc + 1 + result[0][0]}. No write to UB.")
                 self.pc += 1 + result[0][0].astype(SIGNED_DTYPES[self.bitwidth])
             else:
+                print(f"Branch from {self.pc} to {self.pc + 1 + result[0][1]}. No write to UB.")
                 self.pc += 1 + result[0][1].astype(SIGNED_DTYPES[self.bitwidth])
             return # don't to the UB write when there's a branch
         
@@ -171,8 +181,10 @@ class TPUSim(object):
         elif result[0][-1] == 2:
             result[0][-1] = 0
             if result[0][0] == 0:
+                print(f"Equality check, evaluates to True.")
                 result[0][0] = 1
             else:
+                print(f"Equality check, evaluates to False.")
                 result[0][0] = 0
             result[0][1] = 0
             self.pc += 1
@@ -181,18 +193,22 @@ class TPUSim(object):
         elif result[0][-1] == 3:
             result[0][-1] = 0
             if result[0][0] < 0:
+                print(f"Less than check, evaluates to True ({result[0][0]} < 0).")
                 result[0][0] = 1
             else:
+                print(f"Less than check, evaluates to False ({result[0][0]} !< 0).")
                 result[0][0] = 0
             self.pc += 1
         
         # unconditional jump
         elif result[0][-1] == 4:
+            print(f"Unconditional jump from {self.pc} to {result[0][1]}. No write to UB.")
             self.pc = result[0][1]
             return
 
         # normal activation
         else:
+            print(f"Normal activation.")
             self.pc += 1      
 
         print("After branch/comparison/jump:")
@@ -206,57 +222,88 @@ class TPUSim(object):
     def memops(self, opcode, src_addr, dest_addr, length, flag):
         if opcode == 'RHM':
             self.hm_count += 1
-            print(f'RHM: read host memory [{src_addr}:{src_addr + length}], write to unified buffer [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
-            print(self.host_memory[src_addr:src_addr + length])
-
             read_data = np.zeros((1, self.matsize))
+
             if flag & isa.SWITCH_MASK:
-                addr = self.unified_buffer[-1][0]
+                # extending UB to 2^UB_SIZE-1 could cause mismatch between sim 
+                # and runtpu but hard to fix. fortunately it's hard to see a
+                # scenario where this would get read from but never written to
+                if (self.unified_buffer.shape[0] < 2**config.UB_ADDR_SIZE): 
+                    self.unified_buffer.resize((2**config.UB_ADDR_SIZE, self.matsize))
+                addr = self.unified_buffer[2**config.UB_ADDR_SIZE-1][0]
                 vec_addr = addr // self.matsize
                 column = addr % self.matsize
+                
                 if length == 0:
-                    read_data[0][0] = self.host_memory[vec_addr][column]
+                    print(f"RHM vec cell: read host memory [{vec_addr}][{column}] and pad with 0s, write to unified buffer [{dest_addr}]. Buffer addr is {addr} -> [{vec_addr}][{column}]. Flags? {flag}")
+                    read_data[0][0] = self.pad_zeros(self.host_memory[vec_addr:vec_addr+1], (1, self.matsize))
                     if (self.unified_buffer.shape[0] < dest_addr + 1):
                         self.unified_buffer.resize((dest_addr + 1, self.matsize))
+                    print(read_data)
                     self.unified_buffer[dest_addr] = read_data
+                
                 else:
+                    print(f"RHM vec matrix: read host memory [{vec_addr}:{vec_addr + length}], write to unified buffer [{dest_addr}:{dest_addr + length}]. Buffer addr is {addr} -> [{vec_addr}][{column}]. Flags? {flag}")
                     if (self.unified_buffer.shape[0] < dest_addr + length):
                         self.unified_buffer.resize((dest_addr + length, self.matsize))
-                    self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[vec_addr:vec_addr + length]
+                    print(self.host_memory[vec_addr:vec_addr + length])
+                    res = self.pad_zeros(self.host_memory[vec_addr:vec_addr+length], (length, self.matsize))
+                    print(res)
+                    self.unified_buffer[dest_addr:dest_addr + length] = res
+
             elif flag & isa.CONV_MASK:
+                print(f"RHM pc return: create curent pc vector, write to unified buffer [{dest_addr}]. Flags? {flag}")
                 read_data[0][1] = self.pc + 2
                 read_data[0][-1] = 4
+                print(read_data)
                 if (self.unified_buffer.shape[0] < dest_addr + 1):
                     self.unified_buffer.resize((dest_addr + 1, self.matsize))
                 self.unified_buffer[dest_addr] = read_data
+            
             else:
+                print(f"RHM standard matrix: read host memory [{src_addr}:{src_addr + length}], write to unified buffer [{dest_addr}:{dest_addr + length}]. Flags? {flag}")
                 if (self.unified_buffer.shape[0] < dest_addr + length):
                     self.unified_buffer.resize((dest_addr + length, self.matsize))
-                self.unified_buffer[dest_addr:dest_addr + length] = self.host_memory[src_addr:src_addr + length]
+                res = self.pad_zeros(self.host_memory[src_addr:src_addr+length], (length, self.matsize))
+                print(res)
+                self.unified_buffer[dest_addr:dest_addr + length] = res
 
         elif opcode == 'WHM':
             self.hm_count += 1
-            print(f'WHM: read unified buffer [{src_addr}:{src_addr + length}], write to host memory [{dest_addr}:{dest_addr + length}]. Flags? {flag}')
-            print(self.unified_buffer[src_addr:src_addr + length])
             
             if flag & isa.SWITCH_MASK:
-                addr = self.unified_buffer[-1][0]
+                if (self.unified_buffer.shape[0] < 2**config.UB_ADDR_SIZE):
+                    self.unified_buffer.resize((2**config.UB_ADDR_SIZE, self.matsize))
+                addr = self.unified_buffer[2**config.UB_ADDR_SIZE-1][0]
                 vec_addr = addr // self.matsize
                 column = addr % self.matsize
-                print(f'addr = {addr}, vec_addr = {vec_addr}, column = {column}')
-                print(f'matsize = {self.matsize}, log2(matsize) = {int(math.log2(self.matsize))}')
+                
                 if length == 0:
+                    print(f"WHM vec cell: read unified buffer [{src_addr}][0], write to host memory [{vec_addr}][{column}]. Buffer addr is {addr} -> [{vec_addr}][{column}]. Flags? {flag}")
                     if (self.host_memory.shape[0] < vec_addr + 1):
                         self.host_memory.resize((vec_addr + 1, self.matsize))
-                    self.host_memory[vec_addr][column] = self.unified_buffer[src_addr][0]
+                    res = self.pad_zeros(self.unified_buffer[src_addr:src_addr+1], (1, self.matsize))
+                    print(f"UB[{src_addr}]: {res}")
+                    print(f"HM[{vec_addr}] before: {self.host_memory[vec_addr]}")
+                    self.host_memory[vec_addr][column] = res[0]
+                    print(f"HM[{vec_addr}]  after: {self.host_memory[vec_addr]}")
+                
                 else:
+                    print(f"WHM vec matrix: read unified buffer [{src_addr}:{src_addr + length}], write to host memory [{vec_addr}:{vec_addr + length}]. Buffer addr is {addr} -> [{vec_addr}][{column}]. Flags? {flag}")
                     if (self.host_memory.shape[0] < vec_addr + length):
                         self.host_memory.resize((vec_addr + length, self.matsize))
-                    self.host_memory[vec_addr:vec_addr + length] = self.unified_buffer[src_addr:src_addr + length]
+                    res = self.pad_zeros(self.unified_buffer[src_addr:src_addr+length], (length, self.matsize))
+                    print(res)
+                    self.host_memory[vec_addr:vec_addr + length] = res
+            
             else:
+                print(f"WHM standard matrix: read unified buffer [{src_addr}:{src_addr + length}], write to host memory [{dest_addr}:{dest_addr + length}]. Flags? {flag}")
                 if (self.host_memory.shape[0] < dest_addr + length):
                     self.host_memory.resize((dest_addr + length, self.matsize))
-                self.host_memory[dest_addr:dest_addr + length] = self.unified_buffer[src_addr:src_addr + length]
+                res = self.pad_zeros(self.unified_buffer[src_addr:src_addr+length], (length, self.matsize))
+                print(res)
+                self.host_memory[dest_addr:dest_addr + length] = res
+        
         elif opcode == 'RW':
             print(f'RW {src_addr}: read weight matrix {src_addr} into weight FIFO')
             print(self.weight_memory[src_addr])
@@ -275,7 +322,7 @@ class TPUSim(object):
     def matrix_multiply_convolve(self, ub_addr, accum_addr, size, flags):
         print(f'MMC: multiply UB[{ub_addr}:{ub_addr + size}] with a weight, store in ACC[{accum_addr}:{accum_addr + size}]')
 
-        inp = self.unified_buffer[ub_addr : ub_addr + size]
+        inp = self.pad_zeros(self.unified_buffer[ub_addr:ub_addr + size], (size, self.matsize))
         weight_mat = self.weight_fifo[0]
         
         if isa.SWITCH_MASK & flags:
@@ -303,7 +350,7 @@ class TPUSim(object):
             print(f'{self.accumulator[accum_addr: accum_addr + size]}')
             self.accumulator[accum_addr:accum_addr + size] += out
         
-        print(f'After MMC + ACC: \n{self.accumulator[accum_addr: accum_addr + size]}')
+        print(f'After MMC + ACC: \n{self.accumulator[accum_addr:accum_addr + size]}')
 
         self.pc += 1
 

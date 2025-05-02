@@ -162,11 +162,10 @@ def accmem_to_np(sim, acc_mems, matsize, row_count):
     keys = sorted(list(keys))
     if len(keys) > 0:
         row_count = max(row_count, keys[-1]+1)
-
     accmem_np = np.zeros((row_count, matsize))
     for k in keys:
         for i in range(matsize):
-            accmem_np[k][i] = acc_mems_vals[i][k]
+            accmem_np[k][i] = acc_mems_vals[i].get(k, 0)
     return accmem_np.astype(int)
 
 
