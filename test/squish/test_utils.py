@@ -354,6 +354,27 @@ def rhm_act_diff_ub(distance, bitwidth, matsize, use_nops):
 
 
 
+### RHM-HLT TESTS ###
+def test_all_rhm_hlt(test_function, bitwidths, matsizes):
+    return {
+        "rhm_hlt": test_function(rhm_hlt, bitwidths, matsizes)
+    }
+
+# from HM0 to UB0 and halting
+# setup is not needed.
+# instrs write HM 0 to UB 0 and then halt.
+# cleanup is not needed.
+def rhm_hlt(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=[],
+                       instrs=[f"RHM 0 0 {L1}", f"HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rhm_hlt",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+
+
 ### WHM-RHM TESTS ###
 def test_all_whm_rhm(test_function, bitwidths, matsizes):
     return {
@@ -620,6 +641,27 @@ def whm_act_diff_ub(distance, bitwidth, matsize, use_nops):
                        cleanup=["WHM 1 1 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="whm_act_diff_ub",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+
+
+### WHM-HLT TESTS ###
+def test_all_whm_hlt(test_function, bitwidths, matsizes):
+    return {
+        "whm_hlt": test_function(whm_hlt, bitwidths, matsizes)
+    }
+
+# from UB0 to HM0 and halting
+# setup writes a matrix from HM1 to UB0 to put a value in it. 
+# instrs write from UB0 to HM0 and then halt.
+# cleanup is not needed.
+def whm_hlt(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RHM 1 0 1"],
+                       instrs=[f"WHM 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="whm_hlt",
                        reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
                        ctrl_distance = START_DISTANCE, use_nops=use_nops)
 
@@ -987,6 +1029,56 @@ def rw_act(distance, bitwidth, matsize, use_nops):
                                 "ACT 1 3 1", "WHM 3 3 1"],
                        distance=distance, bitwidth=bitwidth, matsize=matsize,
                        name="rw_act",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+
+
+### RW-HLT TESTS ###
+def test_all_rw_hlt(test_function, bitwidths, matsizes):
+    return {
+        "rw_hlt_empty": test_function(rw_hlt_empty, bitwidths, matsizes),
+        "rw_hlt_one_space": test_function(rw_hlt_one_space, bitwidths, matsizes),
+        # "rw_hlt_full": test_function(rw_hlt_full, bitwidths, matsizes) # 5 consecutive RWs
+    }
+
+# reading from RW0 and halting, buffer starts empty
+# setup not needed.
+# instrs load RW0 into the weight queue and then halt.
+# cleanup not needed.
+def rw_hlt_empty(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=[],
+                       instrs=["RW 0", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_hlt_empty",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+# reading from RW0 and halting, buffer starts with one space
+# setup reads RW0, RW1, and RW2 into the weight queue so that there's one slot
+#     remaining.
+# instrs load RW3 into the weight queue and then halt.
+# cleanup not needed.
+def rw_hlt_one_space(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2"],
+                       instrs=["RW 3", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_hlt_one_space",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+# reading from RW0 and halting, buffer starts full
+# setup reads RW0, RW1, RW2, and RW3 into the weight queue so that there's no 
+#     slots remaining.
+# instrs load RW4 into the weight queue and then halt.
+def rw_hlt_full(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3"],
+                       instrs=["RW 4", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="rw_hlt_full",
                        reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
                        ctrl_distance = START_DISTANCE, use_nops=use_nops)
 
@@ -1819,6 +1911,103 @@ def mmc_act_same_ub_same_acc_yes_s(distance, bitwidth, matsize, use_nops):
 
 
 
+### MMC-HLT TESTS ###
+def test_all_mmc_hlt(test_function, bitwidths, matsizes):
+    return {
+        # "mmc_hlt_empty_no_s": test_function(mmc_hlt_empty_no_s, bitwidths, matsizes), # MMC with empty queue
+        # "mmc_hlt_empty_yes_s": test_function(mmc_hlt_empty_yes_s, bitwidths, matsizes), # MMC with empty queue
+        "mmc_hlt_one_space_no_s": test_function(mmc_hlt_one_space_no_s, bitwidths, matsizes),
+        "mmc_hlt_one_space_yes_s": test_function(mmc_hlt_one_space_yes_s, bitwidths, matsizes),
+        "mmc_hlt_full_no_s": test_function(mmc_hlt_full_no_s, bitwidths, matsizes),
+        "mmc_hlt_full_yes_s": test_function(mmc_hlt_full_yes_s, bitwidths, matsizes)
+    }
+
+# multiplying UB0 into ACC0, no .S, halting, buffer starts empty
+# setup reads HM0 into UB0. 
+# instrs multiply UB0 with the fifo queue into ACC0 when there's nothing in the 
+#     FIFO queue. Then halt.
+# cleanup not needed.
+def mmc_hlt_empty_no_s(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RHM 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_hlt_empty_no_s",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+# multiplying UB0 into ACC0, w/ .S, halting, buffer starts empty
+# setup reads HM0 into UB0. 
+# instrs multiply UB0 with the fifo queue into ACC0 when there's nothing in the 
+#     FIFO queue. Then halt.
+# cleanup not needed.
+def mmc_hlt_empty_yes_s(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RHM 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_hlt_empty_yes_s",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+# multiplying UB0 into ACC0, no .S, halting, buffer starts with one space
+# setup reads RW0, RW1, and RW2 into the FIFO queue so that there's one slot 
+#     left. it also reads HM0 into UB0.
+# instrs multiply UB0 with the fifo queue into ACC0. Then halt.
+# cleanup not needed.
+def mmc_hlt_one_space_no_s(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2", "RHM 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_hlt_one_space_no_s",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+# multiplying UB0 into ACC0, w/ .S, halting, buffer starts with one space
+# setup reads RW0, RW1, and RW2 into the FIFO queue so that there's one slot 
+#     left. it also reads HM0 into UB0.
+# instrs multiply UB0 with the fifo queue into ACC0. Then halt.
+# cleanup not needed.
+def mmc_hlt_one_space_yes_s(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2", "RHM 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_hlt_one_space_yes_s",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+# multiplying UB0 into ACC0, no .S, halting, buffer starts full
+# setup reads RW0, RW1, RW2, and RW3 into the FIFO queue so that there's no 
+#     space left. it also reads HM0 into UB0.
+# instrs multiply UB0 with the fifo queue into ACC0. Then halt.
+# cleanup not needed.
+def mmc_hlt_full_no_s(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3", "RHM 0 0 1"],
+                       instrs=[f"MMC 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_hlt_full_no_s",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+# multiplying UB0 into ACC0, w/ .S, halting, buffer starts full
+# setup reads RW0, RW1, RW2, and RW3 into the FIFO queue so that there's no 
+#     space left. it also reads HM0 into UB0.
+# instrs multiply UB0 with the fifo queue into ACC0. Then halt.
+# cleanup not needed.
+def mmc_hlt_full_yes_s(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RW 0", "RW 1", "RW 2", "RW 3", "RHM 0 0 1"],
+                       instrs=[f"MMC.S 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="mmc_hlt_full_yes_s",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+
+
 ### ACT-RHM TESTS ###
 def test_all_act_rhm(test_function, bitwidths, matsizes):
     return {
@@ -2164,6 +2353,27 @@ def act_act_same_ub_same_acc(distance, bitwidth, matsize, use_nops):
 
 
 
+### ACT-HLT TESTS ###
+def test_all_act_hlt(test_function, bitwidths, matsizes):
+    return {
+        "act_hlt": test_function(act_hlt, bitwidths, matsizes),
+    }
+
+# accumulate from ACC0 to UB0, halt
+# setup reads HM1 into UB1, loads RW0, and multiplies UB1 with RW0 (no S) into
+#     ACC0 to prepare for instr 1 to write it back to UB.
+# instrs write ACC0 to UB0 and halt.
+def act_hlt(distance, bitwidth, matsize, use_nops):
+    return squish_test(setup=["RHM 1 1 1", "RW 0", "MMC 0 1 1"],
+                       instrs=[f"ACT 0 0 {L1}", "HLT"],
+                       cleanup=[],
+                       distance=distance, bitwidth=bitwidth, matsize=matsize,
+                       name="act_hlt",
+                       reset=False, absoluteaddrs=False, test_folder=TEST_FOLDER,
+                       ctrl_distance = START_DISTANCE, use_nops=use_nops)
+
+
+
 def test_all(test_func, bitwidths, matsizes):
     tests = {}
 
@@ -2172,30 +2382,35 @@ def test_all(test_func, bitwidths, matsizes):
     tests.update(test_all_rhm_rw(test_func, bitwidths, matsizes))
     tests.update(test_all_rhm_mmc(test_func, bitwidths, matsizes))
     tests.update(test_all_rhm_act(test_func, bitwidths, matsizes))
+    tests.update(test_all_rhm_hlt(test_func, bitwidths, matsizes))
 
     tests.update(test_all_whm_rhm(test_func, bitwidths, matsizes))
     tests.update(test_all_whm_whm(test_func, bitwidths, matsizes))
     tests.update(test_all_whm_rw(test_func, bitwidths, matsizes))
     tests.update(test_all_whm_mmc(test_func, bitwidths, matsizes))
     tests.update(test_all_whm_act(test_func, bitwidths, matsizes))
+    tests.update(test_all_whm_hlt(test_func, bitwidths, matsizes))
 
     tests.update(test_all_rw_rhm(test_func, bitwidths, matsizes))
     tests.update(test_all_rw_whm(test_func, bitwidths, matsizes))
     tests.update(test_all_rw_rw(test_func, bitwidths, matsizes))
     tests.update(test_all_rw_mmc(test_func, bitwidths, matsizes))
     tests.update(test_all_rw_act(test_func, bitwidths, matsizes))
+    tests.update(test_all_rw_hlt(test_func, bitwidths, matsizes))
 
     tests.update(test_all_mmc_rhm(test_func, bitwidths, matsizes))
     tests.update(test_all_mmc_whm(test_func, bitwidths, matsizes))
     tests.update(test_all_mmc_rw(test_func, bitwidths, matsizes))
     tests.update(test_all_mmc_mmc(test_func, bitwidths, matsizes))
     tests.update(test_all_mmc_act(test_func, bitwidths, matsizes))
+    tests.update(test_all_mmc_hlt(test_func, bitwidths, matsizes))
 
     tests.update(test_all_act_rhm(test_func, bitwidths, matsizes))
     tests.update(test_all_act_whm(test_func, bitwidths, matsizes))
     tests.update(test_all_act_rw(test_func, bitwidths, matsizes))
     tests.update(test_all_act_mmc(test_func, bitwidths, matsizes))
     tests.update(test_all_act_act(test_func, bitwidths, matsizes))
+    tests.update(test_all_act_hlt(test_func, bitwidths, matsizes))
 
     return tests
 
