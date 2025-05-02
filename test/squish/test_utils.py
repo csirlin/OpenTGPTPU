@@ -7,9 +7,13 @@ L2 = 1
 
 
 # run a squish test with chosen bitwidth and matsize for different distances. 
-# work from a chosen large distance and reduce until the test doesn't match the
-# control, or a distance of 1 is reached successfully.
-# return the lowest distance that was successful.
+# binary search the distances in the range [1, START_DISTANCE) to find the 
+# minimum distance that works. 
+# return the lowest distance that was successful. If the final distance is 
+# reported as START_DISTANCE, it means that the test failed at all distances in 
+# the range. It could work at a distance d >= START_DISTANCE, or it could always
+# fail. Either way, it's a signal to investigate further and/or rerun with a 
+# higher START_DISTANCE.
 def min_viable_distance_fixed(function, bitwidth, matsize):
     left = 1
     right = START_DISTANCE
