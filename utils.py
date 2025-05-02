@@ -2,6 +2,10 @@
 import numpy as np
 
 def print_grid_mem_concise(mem, matsize):
+    if mem.shape[0] == 0:
+        print(" []")
+        return
+
     max_num_width = max(len(str(np.min(mem))), len(str(np.max(mem))))
     max_index_width = len(str(mem.shape[0]))
 
@@ -96,6 +100,7 @@ def run_and_compare_all_mems(prog_name, hm_name, wm_name, test_name,
         print(f"Test {test_name} failed")
         return False
     
+# this assumes all mems are in the same parent directory, in subfolders runtpu/ and sim/, which is not the case for squishtests
 def load_and_compare_all_mems(output_base):
     test_hostmem = np.load(output_base + "/runtpu/runtpu_hostmem.npy")
     test_weightsmem = np.load(output_base + "/runtpu/runtpu_weightsmem.npy")
