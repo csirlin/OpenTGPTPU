@@ -3,6 +3,7 @@ pyenv/*
 *.npy
 *.pkl
 *.out
+old/test_results/**
 test/squish/**/*.a
 traces/*
 **/.DS_Store
