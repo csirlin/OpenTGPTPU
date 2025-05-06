@@ -54,7 +54,7 @@ def compare_mem(test_mem, ctrl_mem, name):
         print(ctrl_mem, ctrl_mem.dtype, ctrl_mem.shape)
         print("Test:")
         print(test_mem, test_mem.dtype, test_mem.shape)
-        for i in range(len(ctrl_mem)):
+        for i in range(min(len(test_mem), len(ctrl_mem))):
             if not np.array_equal(ctrl_mem[i], test_mem[i]):
                 print(f"row {i}: Control: {ctrl_mem[i]}, Test: {test_mem[i]}")
         return False

@@ -118,7 +118,7 @@ class TPUSim(object):
         np.save(f'{self.output_folder}/sim_wqueue.npy', self.fifo_to_np())
         np.save(f'{self.output_folder}/sim_accmems.npy', self.accumulator)
 
-        # print("PC history:\n", self.pc_history)
+        print("PC history:\n", self.pc_history)
 
         print("""\nALL DONE!
         (•_•)
@@ -171,10 +171,10 @@ class TPUSim(object):
         if result[0][-1] == 1:
             if result[0][-2] == 1:
                 print(f"Branch from {self.pc} to {self.pc + 1 + result[0][0]}. No write to UB.")
-                self.pc += 1 + result[0][0].astype(SIGNED_DTYPES[self.bitwidth])
+                self.pc = int(self.pc + 1 + result[0][0]) % 2**config.IMEM_ADDR_SIZE
             else:
                 print(f"Branch from {self.pc} to {self.pc + 1 + result[0][1]}. No write to UB.")
-                self.pc += 1 + result[0][1].astype(SIGNED_DTYPES[self.bitwidth])
+                self.pc = int(self.pc + 1 + result[0][1]) % 2**config.IMEM_ADDR_SIZE
             return # don't to the UB write when there's a branch
         
         # equality check
@@ -203,7 +203,7 @@ class TPUSim(object):
         # unconditional jump
         elif result[0][-1] == 4:
             print(f"Unconditional jump from {self.pc} to {result[0][1]}. No write to UB.")
-            self.pc = result[0][1]
+            self.pc = int(result[0][1])
             return
 
         # normal activation
@@ -236,7 +236,7 @@ class TPUSim(object):
                 
                 if length == 0:
                     print(f"RHM vec cell: read host memory [{vec_addr}][{column}] and pad with 0s, write to unified buffer [{dest_addr}]. Buffer addr is {addr} -> [{vec_addr}][{column}]. Flags? {flag}")
-                    read_data[0][0] = self.pad_zeros(self.host_memory[vec_addr:vec_addr+1], (1, self.matsize))
+                    read_data[0][0] = self.pad_zeros(self.host_memory[vec_addr:vec_addr+1], (1, self.matsize))[0][column]
                     if (self.unified_buffer.shape[0] < dest_addr + 1):
                         self.unified_buffer.resize((dest_addr + 1, self.matsize))
                     print(read_data)
@@ -285,7 +285,7 @@ class TPUSim(object):
                     res = self.pad_zeros(self.unified_buffer[src_addr:src_addr+1], (1, self.matsize))
                     print(f"UB[{src_addr}]: {res}")
                     print(f"HM[{vec_addr}] before: {self.host_memory[vec_addr]}")
-                    self.host_memory[vec_addr][column] = res[0]
+                    self.host_memory[vec_addr][column] = res[0][0]
                     print(f"HM[{vec_addr}]  after: {self.host_memory[vec_addr]}")
                 
                 else:
