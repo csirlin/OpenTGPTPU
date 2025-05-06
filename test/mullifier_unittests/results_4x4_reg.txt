@@ -1,0 +1,1262 @@
+Testing 19_whm_normal
+Simulation terminated at cycle 10
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 1
+WHM standard matrix: read unified buffer [0:4], write to host memory [4:8]. Flags? 0
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 2
+H A L T
+MMC Count: 0
+HM Count: 2
+ACT Count: 0
+RW Count: 0
+RW Reloads: 0
+PC history:
+ [0, 1, 2]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 19_whm_normal passed
+Testing 18_whm_vec
+Simulation terminated at cycle 10
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [60:64]. Flags? 0
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 1
+WHM vec matrix: read unified buffer [60:64], write to host memory [3:7]. Buffer addr is 13 -> [3][1]. Flags? 1
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 2
+H A L T
+MMC Count: 0
+HM Count: 2
+ACT Count: 0
+RW Count: 0
+RW Reloads: 0
+PC history:
+ [0, 1, 2]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 18_whm_vec passed
+Testing 11_jump_backward
+Simulation terminated at cycle 47
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[  1 205   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[  1 205   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+MMC output: 
+[[  1 205   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[  1 205   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[  1 205   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+After activation:
+[[  1 205   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+Unconditional jump from 3 to 205. No write to UB.
+
+PC = 205
+RW 1: read weight matrix 1 into weight FIFO
+[[ 17 104  19   4]
+ [ 21  22  23  24]
+ [ 25  26  27  28]
+ [ 29  30  31  32]]
+
+PC = 206
+MMC: multiply UB[0:4] with a weight, store in ACC[4:8]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[ 17 104  19   4]
+ [ 21  22  23  24]
+ [ 25  26  27  28]
+ [ 29  30  31  32]]
+MMC output: 
+[[ 17 104  19   4]
+ [ 21  22  23  24]
+ [ 25  26  27  28]
+ [ 29  30  31  32]]
+Accumulating with ACC[4:8]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[ 17 104  19   4]
+ [ 21  22  23  24]
+ [ 25  26  27  28]
+ [ 29  30  31  32]]
+
+PC = 207
+ACT: read ACC[4:8], and write to UB[8:12]. Activation function: Before activation:
+[[ 17 104  19   4]
+ [ 21  22  23  24]
+ [ 25  26  27  28]
+ [ 29  30  31  32]]
+After activation:
+[[ 17 104  19   4]
+ [ 21  22  23  24]
+ [ 25  26  27  28]
+ [ 29  30  31  32]]
+Unconditional jump from 207 to 104. No write to UB.
+
+PC = 104
+H A L T
+MMC Count: 2
+HM Count: 1
+ACT Count: 2
+RW Count: 2
+RW Reloads: 2
+PC history:
+ [0, 1, 2, 3, 205, 206, 207, 104]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 11_jump_backward passed
+Testing 3_branch_forward_second
+Simulation terminated at cycle 26
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[10100   100     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[10100   100     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+MMC output: 
+[[10100   100     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[10100   100     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[10100   100     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+After activation:
+[[10100   100     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Branch from 3 to 104. No write to UB.
+
+PC = 104
+H A L T
+MMC Count: 1
+HM Count: 1
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 104]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 3_branch_forward_second passed
+Testing 17_whm_cell
+Simulation terminated at cycle 7
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [60:64]. Flags? 0
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 1
+WHM vec cell: read unified buffer [60][0], write to host memory [3][1]. Buffer addr is 13 -> [3][1]. Flags? 1
+UB[60]: [[1 2 3 4]]
+HM[3] before: [13 14 15 16]
+HM[3]  after: [13  1 15 16]
+
+PC = 2
+H A L T
+MMC Count: 0
+HM Count: 2
+ACT Count: 0
+RW Count: 0
+RW Reloads: 0
+PC history:
+ [0, 1, 2]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 17_whm_cell passed
+Testing 4_branch_backward_second
+Simulation terminated at cycle 47
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[10201   201     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[10201   201     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+MMC output: 
+[[10201   201     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[10201   201     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[10201   201     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+After activation:
+[[10201   201     0     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Branch from 3 to 205. No write to UB.
+
+PC = 205
+RW 1: read weight matrix 1 into weight FIFO
+[[      9896 4294967192          0          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+
+PC = 206
+MMC: multiply UB[0:4] with a weight, store in ACC[4:8]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[      9896 4294967192          0          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+MMC output: 
+[[      9896 4294967192          0          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+Accumulating with ACC[4:8]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[      9896 4294967192          0          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+
+PC = 207
+ACT: read ACC[4:8], and write to UB[8:12]. Activation function: Before activation:
+[[      9896 4294967192          0          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+After activation:
+[[      9896 4294967192          0          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+Branch from 207 to 104. No write to UB.
+
+PC = 104
+H A L T
+MMC Count: 2
+HM Count: 1
+ACT Count: 2
+RW Count: 2
+RW Reloads: 2
+PC history:
+ [0, 1, 2, 3, 205, 206, 207, 104]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 4_branch_backward_second passed
+Testing 2_branch_backward_first
+Simulation terminated at cycle 47
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[  201 10201     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[  201 10201     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+MMC output: 
+[[  201 10201     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[  201 10201     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[  201 10201     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+After activation:
+[[  201 10201     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Branch from 3 to 205. No write to UB.
+
+PC = 205
+RW 1: read weight matrix 1 into weight FIFO
+[[4294967192       9896          1          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+
+PC = 206
+MMC: multiply UB[0:4] with a weight, store in ACC[4:8]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[4294967192       9896          1          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+MMC output: 
+[[4294967192       9896          1          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+Accumulating with ACC[4:8]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[4294967192       9896          1          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+
+PC = 207
+ACT: read ACC[4:8], and write to UB[8:12]. Activation function: Before activation:
+[[4294967192       9896          1          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+After activation:
+[[4294967192       9896          1          1]
+ [        21         22         23         24]
+ [        25         26         27         28]
+ [        29         30         31         32]]
+Branch from 207 to 104. No write to UB.
+
+PC = 104
+H A L T
+MMC Count: 2
+HM Count: 1
+ACT Count: 2
+RW Count: 2
+RW Reloads: 2
+PC history:
+ [0, 1, 2, 3, 205, 206, 207, 104]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 2_branch_backward_first passed
+Testing 13_rhm_cell
+Simulation terminated at cycle 7
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [60:64]. Flags? 0
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 1
+RHM vec cell: read host memory [3][1] and pad with 0s, write to unified buffer [0]. Buffer addr is 13 -> [3][1]. Flags? 1
+[[14.  0.  0.  0.]]
+
+PC = 2
+H A L T
+MMC Count: 0
+HM Count: 2
+ACT Count: 0
+RW Count: 0
+RW Reloads: 0
+PC history:
+ [0, 1, 2]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 13_rhm_cell passed
+Testing 1_branch_forward_first
+Simulation terminated at cycle 26
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[  100 10100     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[  100 10100     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+MMC output: 
+[[  100 10100     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[  100 10100     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[  100 10100     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+After activation:
+[[  100 10100     1     1]
+ [    5     6     7     8]
+ [    9    10    11    12]
+ [   13    14    15    16]]
+Branch from 3 to 104. No write to UB.
+
+PC = 104
+H A L T
+MMC Count: 1
+HM Count: 1
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 104]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 1_branch_forward_first passed
+Testing 7_lt_check_lt0
+Simulation terminated at cycle 31
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[4294967281          2          3          3]
+ [         5          6          7          8]
+ [         9         10         11         12]
+ [        13         14         15         16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[4294967281          2          3          3]
+ [         5          6          7          8]
+ [         9         10         11         12]
+ [        13         14         15         16]]
+MMC output: 
+[[4294967281          2          3          3]
+ [         5          6          7          8]
+ [         9         10         11         12]
+ [        13         14         15         16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[4294967281          2          3          3]
+ [         5          6          7          8]
+ [         9         10         11         12]
+ [        13         14         15         16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[4294967281          2          3          3]
+ [         5          6          7          8]
+ [         9         10         11         12]
+ [        13         14         15         16]]
+After activation:
+[[4294967281          2          3          3]
+ [         5          6          7          8]
+ [         9         10         11         12]
+ [        13         14         15         16]]
+Less than check, evaluates to False (4294967281 !< 0).
+After branch/comparison/jump:
+[[ 0  2  3  0]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 4
+RHM standard matrix: read host memory [8:9], write to unified buffer [8:9]. Flags? 0
+[[33 34 35 36]]
+
+PC = 5
+H A L T
+MMC Count: 1
+HM Count: 2
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 4, 5]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 7_lt_check_lt0 passed
+Testing 16_rhm_normal
+Simulation terminated at cycle 5
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 1
+H A L T
+MMC Count: 0
+HM Count: 1
+ACT Count: 0
+RW Count: 0
+RW Reloads: 0
+PC history:
+ [0, 1]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 16_rhm_normal passed
+Testing 12_act_normal
+Simulation terminated at cycle 31
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[ 1  2  3 42]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[ 1  2  3 42]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+MMC output: 
+[[ 1  2  3 42]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[ 1  2  3 42]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[ 1  2  3 42]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+After activation:
+[[ 1  2  3 42]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Normal activation.
+After branch/comparison/jump:
+[[ 1  2  3 42]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 4
+RHM standard matrix: read host memory [8:9], write to unified buffer [8:9]. Flags? 0
+[[33 34 35 36]]
+
+PC = 5
+H A L T
+MMC Count: 1
+HM Count: 2
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 4, 5]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 12_act_normal passed
+Testing 14_rhm_vec
+Simulation terminated at cycle 10
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [60:64]. Flags? 0
+[[ 1  2  3  4]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 1
+RHM vec matrix: read host memory [3:7], write to unified buffer [0:4]. Buffer addr is 13 -> [3][1]. Flags? 1
+[[13 14 15 16]
+ [17 18 19 20]
+ [21 22 23 24]
+ [25 26 27 28]]
+[[13 14 15 16]
+ [17 18 19 20]
+ [21 22 23 24]
+ [25 26 27 28]]
+
+PC = 2
+H A L T
+MMC Count: 0
+HM Count: 2
+ACT Count: 0
+RW Count: 0
+RW Reloads: 0
+PC history:
+ [0, 1, 2]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 14_rhm_vec passed
+Testing 5_eq_check_eq
+Simulation terminated at cycle 31
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[ 0  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[ 0  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+MMC output: 
+[[ 0  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[ 0  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[ 0  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+After activation:
+[[ 0  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Equality check, evaluates to True.
+After branch/comparison/jump:
+[[ 1  0  3  0]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 4
+RHM standard matrix: read host memory [8:9], write to unified buffer [8:9]. Flags? 0
+[[33 34 35 36]]
+
+PC = 5
+H A L T
+MMC Count: 1
+HM Count: 2
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 4, 5]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 5_eq_check_eq passed
+Testing 8_lt_check_eq0
+Simulation terminated at cycle 31
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[ 0  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[ 0  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+MMC output: 
+[[ 0  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[ 0  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[ 0  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+After activation:
+[[ 0  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Less than check, evaluates to False (0 !< 0).
+After branch/comparison/jump:
+[[ 0  2  3  0]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 4
+RHM standard matrix: read host memory [8:9], write to unified buffer [8:9]. Flags? 0
+[[33 34 35 36]]
+
+PC = 5
+H A L T
+MMC Count: 1
+HM Count: 2
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 4, 5]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 8_lt_check_eq0 passed
+Testing 9_lt_check_gt0
+Simulation terminated at cycle 31
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[15  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[15  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+MMC output: 
+[[15  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[15  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[15  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+After activation:
+[[15  2  3  3]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Less than check, evaluates to False (15 !< 0).
+After branch/comparison/jump:
+[[ 0  2  3  0]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 4
+RHM standard matrix: read host memory [8:9], write to unified buffer [8:9]. Flags? 0
+[[33 34 35 36]]
+
+PC = 5
+H A L T
+MMC Count: 1
+HM Count: 2
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 4, 5]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 9_lt_check_gt0 passed
+Testing 6_eq_check_neq
+Simulation terminated at cycle 31
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[42  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[42  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+MMC output: 
+[[42  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[42  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[42  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+After activation:
+[[42  2  3  2]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+Equality check, evaluates to False.
+After branch/comparison/jump:
+[[ 0  0  3  0]
+ [ 5  6  7  8]
+ [ 9 10 11 12]
+ [13 14 15 16]]
+
+PC = 4
+RHM standard matrix: read host memory [8:9], write to unified buffer [8:9]. Flags? 0
+[[33 34 35 36]]
+
+PC = 5
+H A L T
+MMC Count: 1
+HM Count: 2
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 4, 5]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 6_eq_check_neq passed
+Testing 15_rhm_pc_ret
+Simulation terminated at cycle 2
+PC = 0
+RHM pc return: create curent pc vector, write to unified buffer [4]. Flags? 2
+[[0. 2. 0. 4.]]
+
+PC = 1
+H A L T
+MMC Count: 0
+HM Count: 1
+ACT Count: 0
+RW Count: 0
+RW Reloads: 0
+PC history:
+ [0, 1]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 15_rhm_pc_ret passed
+Testing 10_jump_forward
+Simulation terminated at cycle 26
+PC = 0
+RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+
+PC = 1
+RW 0: read weight matrix 0 into weight FIFO
+[[  1 104   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+
+PC = 2
+MMC: multiply UB[0:4] with a weight, store in ACC[0:4]
+MMC matrix: 
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]]
+MMC weight: 
+[[  1 104   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+MMC output: 
+[[  1 104   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+Accumulating with ACC[0:4]
+[[0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]
+ [0 0 0 0]]
+After MMC + ACC: 
+[[  1 104   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+
+PC = 3
+ACT: read ACC[0:4], and write to UB[4:8]. Activation function: Before activation:
+[[  1 104   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+After activation:
+[[  1 104   3   4]
+ [  5   6   7   8]
+ [  9  10  11  12]
+ [ 13  14  15  16]]
+Unconditional jump from 3 to 104. No write to UB.
+
+PC = 104
+H A L T
+MMC Count: 1
+HM Count: 1
+ACT Count: 1
+RW Count: 1
+RW Reloads: 1
+PC history:
+ [0, 1, 2, 3, 104]
+
+ALL DONE!
+        (•_•)
+        ( •_•)>⌐■-■
+        (⌐■_■)
+Test 10_jump_forward passed
