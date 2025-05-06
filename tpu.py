@@ -87,10 +87,10 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     ub_mm_raddr <<= ub_mm_raddr_sig
 
     # prevent new instructions from being dispatched while MMC instr is running.
-    # max MMC duration is 2*matsize + MMC length + 3.
+    # max MMC duration is 2*matsize + MMC length + 6.
     # mmc_cycles should start at that minus 1.
     mmc_N = Register(len(mmc_length), "tpu_mmc_N")
-    mmc_cycles = Const(2*MATSIZE + 2) + mmc_length
+    mmc_cycles = Const(2*MATSIZE + 5) + mmc_length
     with conditional_assignment:
         with dispatch_mm:
             mmc_busy.next |= 1
@@ -301,10 +301,10 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     weights_dram_read <<= weights_read
 
     # prevent new instructions from being dispatched while RW instr is running.
-    # max RW duration is max(1, ceil(matsize^2/64)) + 3.
+    # max RW duration is max(1, ceil(matsize^2/64)) + 5.
     # rw_N should start at that minus 1.
     rw_N = Register(len(weights_raddr), "tpu_rw_N")
-    rw_cycles = Const(math.ceil(MATSIZE*MATSIZE/64)+2) 
+    rw_cycles = Const(math.ceil(MATSIZE*MATSIZE/64)+4) 
     with conditional_assignment:
         with weights_read: # basically dispatch_rw
             rw_N.next |= rw_cycles # stay busy for full duration
