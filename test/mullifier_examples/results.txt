@@ -1,5 +1,5 @@
 test/mullifier_examples/argmin/
-Simulation terminated at cycle 679
+Simulation terminated at cycle 809
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -999,7 +999,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/argmin passed
 test/mullifier_examples/argmin10/
-Simulation terminated at cycle 679
+Simulation terminated at cycle 809
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -1999,7 +1999,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/argmin10 passed
 test/mullifier_examples/argmin100/
-Simulation terminated at cycle 679
+Simulation terminated at cycle 809
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -2999,7 +2999,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/argmin100 passed
 test/mullifier_examples/argmin1000/
-Simulation terminated at cycle 679
+Simulation terminated at cycle 809
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -3999,7 +3999,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/argmin1000 passed
 test/mullifier_examples/bfs/
-Simulation terminated at cycle 2752
+Simulation terminated at cycle 3262
 PC = 0
 RHM standard matrix: read host memory [0:7], write to unified buffer [0:7]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -7981,7 +7981,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/bfs passed
 test/mullifier_examples/bfsbig/
-Simulation terminated at cycle 193
+Simulation terminated at cycle 223
 PC = 0
 RHM standard matrix: read host memory [0:7], write to unified buffer [0:7]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -8261,7 +8261,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/bfsbig passed
 test/mullifier_examples/bfstiny/
-Simulation terminated at cycle 2752
+Simulation terminated at cycle 3262
 PC = 0
 RHM standard matrix: read host memory [0:7], write to unified buffer [0:7]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -12243,7 +12243,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/bfstiny passed
 test/mullifier_examples/insertion_sort10/
-Simulation terminated at cycle 419
+Simulation terminated at cycle 499
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -12863,7 +12863,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/insertion_sort10 passed
 test/mullifier_examples/insertion_sort100/
-Simulation terminated at cycle 419
+Simulation terminated at cycle 499
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -13483,7 +13483,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/insertion_sort100 passed
 test/mullifier_examples/insertion_sort1000/
-Simulation terminated at cycle 419
+Simulation terminated at cycle 499
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -14103,7 +14103,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/insertion_sort1000 passed
 test/mullifier_examples/mult2_nop_f0/
-Simulation terminated at cycle 1386
+Simulation terminated at cycle 1426
 PC = 0
 RHM standard matrix: read host memory [0:3], write to unified buffer [0:3]. Flags? 0
 [[2 0 0 0 0 0 0 0]
@@ -16776,7 +16776,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/mult2_nop_f0 passed
 test/mullifier_examples/mult2_nop_f1/
-Simulation terminated at cycle 572
+Simulation terminated at cycle 587
 PC = 0
 RHM standard matrix: read host memory [0:3], write to unified buffer [0:3]. Flags? 0
 [[2 1 0 0 0 0 0 0]
@@ -17890,7 +17890,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/mult2_nop_f1 passed
 test/mullifier_examples/search/
-Simulation terminated at cycle 2752
+Simulation terminated at cycle 3262
 PC = 0
 RHM standard matrix: read host memory [0:7], write to unified buffer [0:7]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -21872,7 +21872,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/search passed
 test/mullifier_examples/test_add/
-Simulation terminated at cycle 84
+Simulation terminated at cycle 99
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -22010,7 +22010,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_add passed
 test/mullifier_examples/test_bfs/
-Simulation terminated at cycle 1378
+Simulation terminated at cycle 1633
 PC = 0
 RHM standard matrix: read host memory [0:7], write to unified buffer [0:7]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -24021,7 +24021,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_bfs passed
 test/mullifier_examples/test_branch_eq/
-Simulation terminated at cycle 260
+Simulation terminated at cycle 310
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -24406,7 +24406,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_branch_eq passed
 test/mullifier_examples/test_call/
-Simulation terminated at cycle 390
+Simulation terminated at cycle 465
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -24980,7 +24980,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_call passed
 test/mullifier_examples/test_construct_tensor/
-Simulation terminated at cycle 134
+Simulation terminated at cycle 159
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -25188,7 +25188,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_construct_tensor passed
 test/mullifier_examples/test_fib/
-Simulation terminated at cycle 260
+Simulation terminated at cycle 310
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -25573,7 +25573,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_fib passed
 test/mullifier_examples/test_global/
-Simulation terminated at cycle 240
+Simulation terminated at cycle 285
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -25939,7 +25939,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_global passed
 test/mullifier_examples/test_insertion_sort/
-Simulation terminated at cycle 419
+Simulation terminated at cycle 499
 PC = 0
 RHM standard matrix: read host memory [0:6], write to unified buffer [0:6]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -26559,7 +26559,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_insertion_sort passed
 test/mullifier_examples/test_non_driver_call/
-Simulation terminated at cycle 738
+Simulation terminated at cycle 878
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -27640,7 +27640,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_non_driver_call passed
 test/mullifier_examples/test_pointer_sum/
-Simulation terminated at cycle 334
+Simulation terminated at cycle 399
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -28124,7 +28124,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_pointer_sum passed
 test/mullifier_examples/test_rec_add_1/
-Simulation terminated at cycle 392
+Simulation terminated at cycle 467
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -28704,7 +28704,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_rec_add_1 passed
 test/mullifier_examples/test_rec_fib/
-Simulation terminated at cycle 364
+Simulation terminated at cycle 434
 PC = 0
 RHM standard matrix: read host memory [0:7], write to unified buffer [0:7]. Flags? 0
 [[         0          0          0          0          0          0          0          0]
@@ -29237,7 +29237,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_rec_fib passed
 test/mullifier_examples/test_simple_branch/
-Simulation terminated at cycle 160
+Simulation terminated at cycle 190
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -29482,7 +29482,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_simple_branch passed
 test/mullifier_examples/test_simple_store/
-Simulation terminated at cycle 112
+Simulation terminated at cycle 132
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
@@ -29665,7 +29665,7 @@ ALL DONE!
         (⌐■_■)
 Test test/mullifier_examples/test_simple_store passed
 test/mullifier_examples/test_sub/
-Simulation terminated at cycle 84
+Simulation terminated at cycle 99
 PC = 0
 RHM standard matrix: read host memory [0:5], write to unified buffer [0:5]. Flags? 0
 [[    0     0     0     0     0     0     0     0]
