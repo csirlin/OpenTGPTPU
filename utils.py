@@ -100,25 +100,30 @@ def run_and_compare_all_mems(prog_name, hm_name, wm_name, test_name,
         print(f"Test {test_name} failed")
         return False
     
-# this assumes all mems are in the same parent directory, in subfolders runtpu/ and sim/, which is not the case for squishtests
-def load_and_compare_all_mems(output_base):
-    test_hostmem = np.load(output_base + "/runtpu/runtpu_hostmem.npy")
-    test_weightsmem = np.load(output_base + "/runtpu/runtpu_weightsmem.npy")
-    test_ubuffer = np.load(output_base + "/runtpu/runtpu_ubuffer.npy")
-    test_wqueue = np.load(output_base + "/runtpu/runtpu_wqueue.npy")
-    test_accmems = np.load(output_base + "/runtpu/runtpu_accmems.npy")
-    ctrl_hostmem = np.load(output_base + "/sim/sim_hostmem.npy")
-    ctrl_weightsmem = np.load(output_base + "/sim/sim_weightsmem.npy")
-    ctrl_ubuffer = np.load(output_base + "/sim/sim_ubuffer.npy")
-    ctrl_wqueue = np.load(output_base + "/sim/sim_wqueue.npy")
-    ctrl_accmems = np.load(output_base + "/sim/sim_accmems.npy")
+def load_and_compare_all_mems_combined(output_base):
+    return load_and_compare_all_mems(output_base + "/runtpu", "runtpu", 
+                                     output_base + "/sim", "sim")
+    
+def load_and_compare_all_mems(output_base_1, group_name_1, output_base_2, group_name_2):
+    test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems \
+        = load_group_mems(output_base_1, group_name_1)
+    ctrl_hostmem, ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, ctrl_accmems \
+        = load_group_mems(output_base_2, group_name_2)
+    
     if compare_all_mems(test_hostmem, test_weightsmem, test_ubuffer, 
                         test_wqueue, test_accmems, ctrl_hostmem, 
                         ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, 
                         ctrl_accmems):
-        print(f"Test {output_base} passed")
+        print(f"Test {output_base_1} vs {output_base_2} passed")
         return True
     else:
-        print(f"Test {output_base} failed")
+        print(f"Test {output_base_1} vs {output_base_2} failed")
         return False
     
+def load_group_mems(output_base, group_name):
+    test_hostmem = np.load(output_base + f"/{group_name}_hostmem.npy")
+    test_weightsmem = np.load(output_base + f"/{group_name}_weightsmem.npy")
+    test_ubuffer = np.load(output_base + f"/{group_name}_ubuffer.npy")
+    test_wqueue = np.load(output_base + f"/{group_name}_wqueue.npy")
+    test_accmems = np.load(output_base + f"/{group_name}_accmems.npy")
+    return test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems
