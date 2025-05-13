@@ -61,7 +61,7 @@ ALL DONE!
         (⌐■_■)
 Test 18_whm_vec passed
 Testing 11_jump_backward
-Simulation terminated at cycle 47
+Simulation terminated at cycle 57
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -181,7 +181,7 @@ ALL DONE!
         (⌐■_■)
 Test 11_jump_backward passed
 Testing 3_branch_forward_second
-Simulation terminated at cycle 26
+Simulation terminated at cycle 31
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -283,7 +283,7 @@ ALL DONE!
         (⌐■_■)
 Test 17_whm_cell passed
 Testing 4_branch_backward_second
-Simulation terminated at cycle 47
+Simulation terminated at cycle 57
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -403,7 +403,7 @@ ALL DONE!
         (⌐■_■)
 Test 4_branch_backward_second passed
 Testing 2_branch_backward_first
-Simulation terminated at cycle 47
+Simulation terminated at cycle 57
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -551,7 +551,7 @@ ALL DONE!
         (⌐■_■)
 Test 13_rhm_cell passed
 Testing 1_branch_forward_first
-Simulation terminated at cycle 26
+Simulation terminated at cycle 31
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -623,7 +623,7 @@ ALL DONE!
         (⌐■_■)
 Test 1_branch_forward_first passed
 Testing 7_lt_check_lt0
-Simulation terminated at cycle 31
+Simulation terminated at cycle 36
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -728,7 +728,7 @@ ALL DONE!
         (⌐■_■)
 Test 16_rhm_normal passed
 Testing 12_act_normal
-Simulation terminated at cycle 31
+Simulation terminated at cycle 36
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -844,7 +844,7 @@ ALL DONE!
         (⌐■_■)
 Test 14_rhm_vec passed
 Testing 5_eq_check_eq
-Simulation terminated at cycle 31
+Simulation terminated at cycle 36
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -925,7 +925,7 @@ ALL DONE!
         (⌐■_■)
 Test 5_eq_check_eq passed
 Testing 8_lt_check_eq0
-Simulation terminated at cycle 31
+Simulation terminated at cycle 36
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -1006,7 +1006,7 @@ ALL DONE!
         (⌐■_■)
 Test 8_lt_check_eq0 passed
 Testing 9_lt_check_gt0
-Simulation terminated at cycle 31
+Simulation terminated at cycle 36
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -1087,7 +1087,7 @@ ALL DONE!
         (⌐■_■)
 Test 9_lt_check_gt0 passed
 Testing 6_eq_check_neq
-Simulation terminated at cycle 31
+Simulation terminated at cycle 36
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
@@ -1189,7 +1189,7 @@ ALL DONE!
         (⌐■_■)
 Test 15_rhm_pc_ret passed
 Testing 10_jump_forward
-Simulation terminated at cycle 26
+Simulation terminated at cycle 31
 PC = 0
 RHM standard matrix: read host memory [0:4], write to unified buffer [0:4]. Flags? 0
 [[1 0 0 0]
