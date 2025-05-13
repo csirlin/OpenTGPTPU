@@ -248,7 +248,8 @@ def runtpu(prog: str, hostmem_filename: str, weightsmem_filename: str,
         weights_dram_read, weights_dram_raddr, acc_mems, buf4, buf3, buf2, buf1, \
         whm_src = tpu(matsize, config.HOST_ADDR_SIZE, config.UB_ADDR_SIZE, 
         config.WEIGHT_DRAM_ADDR_SIZE, config.ACC_ADDR_SIZE, bitwidth, 
-        config.INSTRUCTION_WIDTH, config.IMEM_ADDR_SIZE)
+        config.INSTRUCTION_WIDTH, config.IMEM_ADDR_SIZE, 
+        config.HAZARD_DETECTION)
 
 
     # Run Simulation

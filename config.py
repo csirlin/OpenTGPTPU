@@ -19,6 +19,8 @@ ACC_ADDR_SIZE = 12 # 16
 INSTRUCTION_WIDTH = 14 * 8
 IMEM_ADDR_SIZE = 12
 
+HAZARD_DETECTION = True
+
 # values = [host_addr_size, ub_addr_size, weight_dram_addr_size, acc_addr_size, mat_mul_size, data_width]
 #
 # def set_config(values):

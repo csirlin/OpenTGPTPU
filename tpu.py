@@ -5,12 +5,13 @@ from pyrtl.analysis import area_estimation, TimingAnalysis
 
 
 def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE, 
-        ACC_ADDR_SIZE, DWIDTH, INSTRUCTION_WIDTH, IMEM_ADDR_SIZE):
+        ACC_ADDR_SIZE, DWIDTH, INSTRUCTION_WIDTH, IMEM_ADDR_SIZE, 
+        HAZARD_DETECTION):
     from decoder import decode
     from matrix import MMU_top
     from activate import act_top
 
-    # accumulator memories
+    # accumulator memories - TODO: shouldn't it be BITWIDTH, not hard coded 32?
     acc_mems = []
     for i in range(MATSIZE):
         acc_mems.append(MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, 
@@ -32,16 +33,10 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     #  Instruction Memory and PC
     ############################################################
 
-    # incr_amt = WireVector(DWIDTH) #TODO: is DWIDTH the data width (eg DWIDTH = 8 means 8-bit data in the matrix?)
-
     IMem = MemBlock(bitwidth=INSTRUCTION_WIDTH, addrwidth=IMEM_ADDR_SIZE)
     pc = Register(IMEM_ADDR_SIZE, "tpu_pc")
     # probe(pc, 'pc')
-    pc.incr = WireVector(1, "tpu_pc.incr")
-    # with conditional_assignment:
-    #     with pc.incr:
-    #         pc.next |= pc + 1 #incr_amt
-    pc.incr <<= 1  # right now, increment the PC every cycle
+
     instr = IMem[pc]
     # probe(instr, "instr")
     pc_out = Output(len(pc), "tpu_pc_out")
@@ -61,12 +56,30 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     ############################################################
     #  Decoder
     ############################################################
+    
+    rhm_busy = Register(1, "tpu_rhm_busy")
+    whm_busy = Register(1, "tpu_whm_busy")
+    act_busy = Register(1, "tpu_act_busy")
+    
+    if HAZARD_DETECTION:
+        mmc_busy = Register(1, "tpu_mmc_busy") 
+        rw_busy = Register(1, "tpu_rw_busy")
 
-    dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, \
-        ub_start_addr, ub_dec_addr, ub_dest_addr, rhm_dec_addr, whm_dec_addr, \
-        rhm_length, whm_length, mmc_length, act_length, act_type, accum_raddr, \
-        accum_waddr, accum_overwrite, switch_weights, weights_raddr, \
-        weights_read, rhm_switch, rhm_conv, whm_switch = decode(instr)
+        dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, \
+            dispatch_nop, ub_start_addr, ub_dec_addr, ub_dest_addr, \
+            rhm_dec_addr, whm_dec_addr, rhm_length, whm_length, mmc_length, \
+            act_length, act_type, accum_raddr, accum_waddr, accum_overwrite, \
+            switch_weights, weights_raddr, weights_read, rhm_switch, rhm_conv, \
+            whm_switch = decode(instr, HAZARD_DETECTION, mmc_busy, act_busy, 
+                                rhm_busy, whm_busy, rw_busy, pc)
+
+    elif not HAZARD_DETECTION:
+        dispatch_mm, dispatch_act, dispatch_rhm, dispatch_whm, dispatch_halt, \
+            ub_start_addr, ub_dec_addr, ub_dest_addr, rhm_dec_addr, \
+            whm_dec_addr, rhm_length, whm_length, mmc_length, act_length, \
+            act_type, accum_raddr, accum_waddr, accum_overwrite, \
+            switch_weights, weights_raddr, weights_read, rhm_switch, rhm_conv, \
+            whm_switch = decode(instr, HAZARD_DETECTION)
 
     halt <<= dispatch_halt
 
@@ -74,24 +87,42 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     #  Matrix Multiply Unit
     ############################################################
 
-    ub_mm_raddr_sig, acc_out, mm_busy, mm_done, buf4, buf3, buf2, buf1 = MMU_top(
+    ub_mm_raddr_sig, acc_out, buf4, buf3, buf2, buf1 = MMU_top(
         acc_mems=acc_mems, data_width=DWIDTH, matrix_size=MATSIZE, 
         accum_size=ACC_ADDR_SIZE, ub_size=UB_ADDR_SIZE, start=dispatch_mm, 
         start_addr=ub_start_addr, nvecs=mmc_length, dest_acc_addr=accum_waddr, 
         overwrite=accum_overwrite, swap_weights=switch_weights, ub_rdata=UB2MM, 
         accum_raddr=accum_act_raddr, weights_dram_in=weights_dram_in, 
-        weights_dram_valid=weights_dram_valid, MATSIZE=MATSIZE, DWIDTH=DWIDTH)
+        weights_dram_valid=weights_dram_valid, MATSIZE=MATSIZE, DWIDTH=DWIDTH, 
+        HAZARD_DETECTION=HAZARD_DETECTION)
 
     ub_mm_raddr <<= ub_mm_raddr_sig
+
+    if HAZARD_DETECTION:
+        # prevent new instructions from being dispatched while MMC instr is 
+        # running. max MMC duration is 2*matsize + MMC length + 6.
+        # mmc_cycles should start at that minus 1.
+        mmc_N = Register(len(mmc_length), "tpu_mmc_N")
+        mmc_cycles = Const(2*MATSIZE + 5) + mmc_length
+        with conditional_assignment:
+            with dispatch_mm:
+                mmc_busy.next |= 1
+                mmc_N.next |= mmc_cycles
+            with mmc_busy:
+                mmc_N.next |= mmc_N - 1
+                with mmc_N == 1:
+                    mmc_busy.next |= 0
 
     ############################################################
     #  Activate Unit
     ############################################################
-
-    accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, act_busy = act_top(
-        start=dispatch_act, start_addr=accum_raddr, dest_addr=ub_dest_addr, 
-        nvecs=act_length, func=act_type, accum_out=acc_out, 
-        pc=pc, acc_mems=acc_mems, DWIDTH=DWIDTH)
+    
+    # act_busy is None if HAZARD_DETECTION is False
+    accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, pc_update, \
+        act_first_cycle, act_pc_absolute_update = act_top(start=dispatch_act,
+        start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, 
+        func=act_type, accum_out=acc_out, pc=pc, acc_mems=acc_mems, 
+        busy=act_busy, DWIDTH=DWIDTH, HAZARD_DETECTION=HAZARD_DETECTION)
 
     accum_act_raddr <<= accum_raddr_sig
 
@@ -105,6 +136,28 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     # probe(act_out, "act_out")
     # probe(accum_raddr_sig, "accum_raddr")
 
+    ############################################################
+    #  Update PC
+    ############################################################
+    
+    if HAZARD_DETECTION:
+        with conditional_assignment:
+            # normal PC increment following instruction dispatch
+            with dispatch_mm | dispatch_rhm | dispatch_whm | weights_read | dispatch_nop:
+                pc.next |= pc + 1
+            # ACT increments PC in first busy cycle. can't increment in dispatch
+            # because the increment isn't known yet 
+            with dispatch_act: 
+                pass
+            with act_first_cycle: 
+                pc.next |= select(act_pc_absolute_update, pc_update, 
+                                                          pc + pc_update)
+
+    # in N mode, pc_update holds 1 and act_pc_absolute is 0 by default, giving 
+    # pc+1. pc_update holds or branch/jump amount after a branch/jump
+    elif not HAZARD_DETECTION:
+        pc.next <<= select(act_pc_absolute_update, pc_update, pc + pc_update)
+    
     ############################################################
     #  Read/Write Host Memory
     ############################################################
@@ -130,10 +183,12 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     whm_N = Register(len(whm_length), "tpu_whm_N")
     whm_ub_raddr = Register(len(ub_dec_addr), "tpu_whm_ub_addr")
     whm_addr = Register(len(whm_dec_addr), "tpu_whm_addr")
-    whm_busy = Register(1, "tpu_whm_busy")
     whm_src = Register(1, "tpu_whm_src_reg")
     whm_read_hm = WireVector(1, "tpu_whm_read_hm")
     
+    # prevent new instructions from being dispatched while WHM instr is running.
+    # max WHM duration is WHM length + 1.
+    # whm_N should start at that minus 1.
     with conditional_assignment:
         with dispatch_whm:
             with whm_switch:
@@ -187,15 +242,24 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     hostmem_wdata <<= mux(whm_src, ubuffer_out, (hostmem_rdata & whm_mask) | write_data)
 
     # Read Host Memory control logic
+    # prevent new instructions from being dispatched while RHM instr is running.
+    # max RHM duration is RHM length + 1.
+    # rhm_N should start at that minus 1.
     # probe(rhm_length, "rhm_length")
     rhm_N = Register(len(rhm_length), "tpu_rhm_N")
     rhm_addr = Register(len(rhm_dec_addr), "tpu_rhm_addr")
-    rhm_busy = Register(1, "tpu_rhm_busy")
     rhm_ub_waddr = Register(len(ub_dec_addr), "tpu_rhm_ub_waddr")
     rhm_src = Register(2, "tpu_rhm_src")
+    # it should be pc+2. this works correctly in N mode (sort of) but in H mode,
+    # this is happening one cycle after RHM dispatch, meaning pc has already 
+    # been incremented by 1 and only needs 1 to be added.
+    if HAZARD_DETECTION:
+        increment = 1
+    else:
+        increment = 2
     rhm_pc_payload = WireVector(DWIDTH*MATSIZE, name="tpu_rhm_pc_payload")
     rhm_pc_payload <<= concat_list([Const(0, DWIDTH), 
-                                    (pc + 2).sign_extended(DWIDTH), 
+                                    (pc + increment).sign_extended(DWIDTH), 
                                     Const(0, DWIDTH * (MATSIZE - 3)), 
                                     Const(4, DWIDTH)])
 
@@ -232,7 +296,6 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
                 rhm_addr.next |= rhm_dec_addr + 1
                 rhm_src.next |= 0
         
-        
         with rhm_busy:
             rhm_N.next |= rhm_N - 1
             hostmem_raddr_rhm |= rhm_addr
@@ -259,10 +322,23 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     weights_dram_raddr <<= weights_raddr
     weights_dram_read <<= weights_read
 
+    # in H mode, prevent new instructions from being dispatched while RW instr 
+    # is running. max RW duration is max(1, ceil(matsize^2/64)) + 5.
+    # rw_N should start at that minus 1.
+    if HAZARD_DETECTION:
+        rw_N = Register(len(weights_raddr), "tpu_rw_N")
+        rw_cycles = Const(math.ceil(MATSIZE*MATSIZE/64)+4) 
+        with conditional_assignment:
+            with weights_read: # basically dispatch_rw
+                rw_N.next |= rw_cycles # stay busy for full duration
+                rw_busy.next |= 1
+            with rw_busy:
+                rw_N.next |= rw_N - 1
+                with rw_N == 1:
+                    rw_busy.next |= 0
+
     # probe(weights_raddr, "weights_raddr")
     # probe(weights_read, "weights_read")
-
-                
     # probe(dispatch_mm, "dispatch_mm")
     # probe(dispatch_act, "dispatch_act")
     # probe(dispatch_rhm, "dispatch_rhm")

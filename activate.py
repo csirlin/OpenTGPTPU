@@ -16,13 +16,13 @@ def sigmoid_vector(vec):
     return concat_list([ sigmoid(x) for x in vec ])
 
 
-def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, DWIDTH):
+def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
+            busy, DWIDTH, HAZARD_DETECTION):
 
     # func: 0 - nothing
     #       1 - ReLU
     #       2 - sigmoid
 
-    busy = Register(1, "act_busy")
     accum_addr = Register(len(start_addr), "act_accum_addr")
     ub_waddr = Register(len(dest_addr), "act_ub_waddr")
     N = Register(len(nvecs), "act_N")
@@ -42,18 +42,17 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
 
     start_addr_reg.next <<= select(start, start_addr, start_addr_reg)
 
-    pc_incr = WireVector(len(pc), "act_pc_incr") # keep
-
-    # general condition to take action:
-    cond = WireVector(1, "act_cond") # new
-    cond <<= busy & (N_wv == 1) # new
+    # pc_incr and pc_incr reg only needed in N mode. in H mode, pc_incr_wv is 
+    # returned and used to update the pc in the tpu-level PC update logic
+    if not HAZARD_DETECTION:
+        pc_incr = WireVector(len(pc), "act_pc_incr")
+        pc_incr_reg = Register(len(pc), "act_pc_incr_reg") # hold the pc jump obtained in this cycle for future cycles
 
     accum_mod = [WireVector(len(accum_out[i]), f"act_accum_mod_{i}") for i in range(len(accum_out))]
     for i in range(len(accum_out)):
         accum_out[i].name = f'act_accum_out_{i}'
 
     first_cycle = Register(1, "act_first_cycle") # true for the first busy activation cycle, false otherwise
-    pc_incr_reg = Register(len(pc), "act_pc_incr_reg") # hold the pc jump obtained in this cycle for future cycles
     pc_incr_wv = WireVector(len(pc), "act_pc_incr_wv")
     pc_absolute_update = WireVector(1, "act_pc_absolute_update") # 1 if pc should be overwritten by jump
     branch = WireVector(1, "act_branch") # 1 if we have a branch/jump, which shouldn't write anything, so we can end early
@@ -107,36 +106,45 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
                 pc_incr_wv |= 1
 
             # set pc_incr_reg for the rest of the ACT instruction
-            pc_incr_reg.next |= pc_incr_wv
+            # pc_incr_reg is N mode only
+            if not HAZARD_DETECTION:
+                pc_incr_reg.next |= pc_incr_wv
 
-        # pc_incr_reg holds it's value until the next ACT instruction
         with otherwise:
-            pc_incr_reg.next |= pc_incr_reg
-            # might need this for later as part of the first cycle fix
-            # for i in range(len(accum_mod)):
-            #    accum_mod[i] |= accum_out[i]
-
-    # jump to the right PC after the last busy cycle
+            for i in range(len(accum_mod)):
+                accum_mod[i] |= accum_out[i]
+            # pc_incr_reg holds it's value until the next ACT instruction
+            if not HAZARD_DETECTION:
+                pc_incr_reg.next |= pc_incr_reg
+    
+    # first_cycle is high for the first cycle after start
     with conditional_assignment:
-        with (N == 1) | branch:
-            # if ACT length is 1, first_cycle is the only cycle, and 
-            # pc_incr_reg doesn't hold anything yet
-            with first_cycle: 
-                pc_incr |= pc_incr_wv
-            # otherwise, pc_incr_wv is blank, and the value is in
-            # pc_incr_reg
-            with otherwise:
-                pc_incr |= pc_incr_reg
+        with start:
+            first_cycle.next |= 1
         with otherwise:
-            pc_incr |= 1
+            first_cycle.next |= 0
 
-    # if pc_absolute_update = 1, select pc_incr (absolute addr for unconditional jump)
-    # else, pc + pc_incr
-    #     if we're in the last busy cycle (N==1 or branch==1) then pc_incr 
-    #     will hold the relative branch amount (if a branch) or 1 (no branch)
-    #     if we're not in the last busy cycle it also holds 1 (default incr)
-    pc.next <<= select(pc_absolute_update, pc_incr, pc + pc_incr)
+    # N mode: set pc_incr to 1 (default) or the correct update value after the 
+    # last busy cycle
+    with conditional_assignment:
+        if not HAZARD_DETECTION:
+            with (N == 1) | branch:
+                # if ACT length is 1, first_cycle is the only cycle, and 
+                # pc_incr_reg doesn't hold anything yet
+                with first_cycle: 
+                    pc_incr |= pc_incr_wv
+                # otherwise, pc_incr_wv is blank, and the value is in
+                # pc_incr_reg
+                with otherwise:
+                    pc_incr |= pc_incr_reg
+            with otherwise:
+                pc_incr |= 1
+        
 
+    # prevent new instructions from being dispatched while ACT instr is running.
+    # max ACT duration is ACT length.
+    # This takes <ACT length + 1> cycles. In theory we should be able to get 
+    # it to ACT length cycles but it's awkward
     with conditional_assignment:
         with start:  # new instruction being dispatched
             accum_addr.next |= start_addr
@@ -144,7 +152,6 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             N.next |= nvecs
             act_func.next |= func
             busy.next |= 1
-            first_cycle.next |= 1
             
         with busy:  # Do activate on another vector this cycle
             accum_addr.next |= accum_addr + 1
@@ -152,13 +159,6 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
             N.next |= N - 1
             with (N == 1) | branch:  # this was the last vector or we end early
                 busy.next |= 0
-
-        # this only updates first_cycle if start and busy are 0, so first cycle
-        # is held to 1 for the duration of the activation. I think this is 
-        # wrong but it appears to work and I don't feel like re-running all the
-        # tests to ensure it works after I fix it. but a note for the future.
-        with first_cycle:
-            first_cycle.next |= 0
 
     # old: accum_out. new: accum_mod
     invals = concat_list([ x[:DWIDTH] for x in accum_mod ]) 
@@ -169,5 +169,18 @@ def act_top(pc, acc_mems, start, start_addr, dest_addr, nvecs, func, accum_out, 
     # write enable from ACC to UB. enable when busy to write back each
     # row, unless it's a branch/jump ACT, in which case we don't want to write
     ub_we = select(branch, 0, busy) 
-            
-    return accum_addr, ub_waddr, act_out, ub_we, busy
+    
+    # N mode: pc_incr controls has the updated PC value. by default, it's 1 so
+    # that the PC is incremented by 1 each cycle. if a branch occurs, it holds
+    # either the branch relative address or the jump absolute address. which one
+    # is controlled by pc_absolute_update.
+    if not HAZARD_DETECTION:
+        return accum_addr, ub_waddr, act_out, ub_we, pc_incr, first_cycle, \
+                pc_absolute_update
+    # H mode: pc_incr_wv holds the updated PC value, but only when a branch 
+    # occurs. regular PC increment is handled in tpu.py. like N mode, it holds
+    # either the branch relative address or the jump absolute address. which one
+    # is controlled by pc_absolute_update.
+    elif HAZARD_DETECTION:
+        return accum_addr, ub_waddr, act_out, ub_we, pc_incr_wv, first_cycle, \
+               pc_absolute_update
