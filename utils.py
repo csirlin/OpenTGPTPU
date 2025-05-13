@@ -64,11 +64,12 @@ def compare_all_mems(test_hostmem, test_weightsmem, test_ubuffer, test_wqueue,
                      test_accmems,
                      ctrl_hostmem, ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue,
                      ctrl_accmems):
-    if not compare_mem(test_hostmem, ctrl_hostmem, "hostmem") or \
-        not compare_mem(test_weightsmem, ctrl_weightsmem, "weightsmem") or \
-        not compare_mem(test_ubuffer, ctrl_ubuffer, "ubuffer") or \
-        not compare_mem(test_wqueue, ctrl_wqueue, "wqueue") or \
-        not compare_mem(test_accmems, ctrl_accmems, "accmems"):
+    hm = compare_mem(test_hostmem, ctrl_hostmem, "hostmem")
+    wm = compare_mem(test_weightsmem, ctrl_weightsmem, "weightsmem")
+    ub = compare_mem(test_ubuffer, ctrl_ubuffer, "ubuffer")
+    wq = compare_mem(test_wqueue, ctrl_wqueue, "wqueue")
+    ac = compare_mem(test_accmems, ctrl_accmems, "accmems")
+    if not hm or not wm or not ub or not wq or not ac:
         return False
     return True
 
