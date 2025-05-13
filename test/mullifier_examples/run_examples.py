@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 
 from runtpu import runtpu
 from sim import TPUSim
-from utils import load_and_compare_all_mems
+from utils import load_and_compare_all_mems_combined
 
 # run all examples in test/mullifier_examples
 # run from OpenTGPTPU as current directory
@@ -33,5 +33,5 @@ for tf in test_folders:
     sim.run()
 
     # compare results between the two
-    load_and_compare_all_mems(test_path)
+    load_and_compare_all_mems_combined(test_path)
 
