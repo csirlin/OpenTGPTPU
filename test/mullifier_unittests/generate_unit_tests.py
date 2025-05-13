@@ -11,6 +11,7 @@ from generate import make_hostmem, make_weights
 from runtpu import runtpu
 from sim import TPUSim
 from utils import run_and_compare_all_mems
+import config
 
 
 # hostmem length in units of matsizes. so if HM_ADDR_SIZE is 8 and matsize is 
@@ -19,7 +20,9 @@ HM_ADDR_BLOCKS = 16
 UB_ADDR_BLOCKS = 16
 WM_ADDR_BLOCKS = 16
 BITWIDTH = 32
-MATSIZE = 8
+MATSIZE = 4
+
+DISTANCE = 110 # distance between instructions
 
 UNSIGNED_DTYPES = {
     8: np.uint8,
@@ -36,132 +39,132 @@ def twos_comp(val, bits):
 # for tests 1, 3, 10
 def prog_act_branch_forward(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("RW 0")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"MMC.S 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"ACT 0, {matsize}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
-    instrs += [f"RHM {2*matsize}, {2*matsize}, 1", "NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
+    instrs += [f"RHM {2*matsize}, {2*matsize}, 1", "NOP"] * (DISTANCE//2)
     instrs.append("HLT")
-    instrs += [f"RHM {3*matsize}, {3*matsize}, 1", "NOP"] * 50
+    instrs += [f"RHM {3*matsize}, {3*matsize}, 1", "NOP"] * (DISTANCE//2)
     return instrs
 
 # for tests 2, 4, 11
 def prog_act_branch_backward(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("RW 0")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"MMC.S 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"ACT 0, {matsize}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
-    instrs += [f"RHM {3*matsize}, {3*matsize}, 1", "NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
+    instrs += [f"RHM {3*matsize}, {3*matsize}, 1", "NOP"] * (DISTANCE//2)
     instrs.append("HLT")
-    instrs += [f"RHM {4*matsize}, {4*matsize}, 1", "NOP"] * 50
-    if is_nop: instrs += ["NOP"] * 49
+    instrs += [f"RHM {4*matsize}, {4*matsize}, 1", "NOP"] * (DISTANCE//2)
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("RW 1")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"MMC.S {matsize}, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"ACT {matsize}, {2*matsize}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
-    instrs += [f"RHM {5*matsize}, {5*matsize}, 1", "NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
+    instrs += [f"RHM {5*matsize}, {5*matsize}, 1", "NOP"] * (DISTANCE//2)
     return instrs
 
 # for tests 5, 6, 7, 8, 9, 12
 def prog_act_no_branch(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("RW 0")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"MMC.S 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"ACT 0, {matsize}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM {2*matsize}, {2*matsize}, 1")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
 # for test 13
 def prog_rhm_cell(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, {matsize*(UB_ADDR_BLOCKS-1)}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("RHM.S 0, 0, 0")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
 # for test 14
 def prog_rhm_vec(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, {matsize*(UB_ADDR_BLOCKS-1)}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM.S 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
 # for test 15
 def prog_rhm_pc_ret(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM.C {2*matsize}, {matsize}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
 # for test 16
 def prog_rhm_normal(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
 # for test 17
 def prog_whm_cell(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, {matsize*(UB_ADDR_BLOCKS-1)}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"WHM.S 0, {matsize*(UB_ADDR_BLOCKS-1)}, 0")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
 # for test 18
 def prog_whm_vec(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, {matsize*(UB_ADDR_BLOCKS-1)}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"WHM.S 0, {matsize*(UB_ADDR_BLOCKS-1)}, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
 # for test 19
 def prog_whm_normal(matsize, is_nop):
     instrs = []
-    if is_nop: instrs += ["NOP"] * 50
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"RHM 0, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append(f"WHM {matsize}, 0, {matsize}")
-    if is_nop: instrs += ["NOP"] * 49
+    if is_nop: instrs += ["NOP"] * DISTANCE
     instrs.append("HLT")
     return instrs
 
@@ -378,17 +381,17 @@ def generate_hostmem(matsize, bitwidth):
 def generate_weightsmem(matsize, bitwidth):
     # get weight matrices for each reg test
     reg_weight_map = [
-        wm_branch(matsize, 100, 1),
-        wm_branch(matsize, 201, 1, twos_comp(-104, bitwidth), 1),
-        wm_branch(matsize, 100, 0),
-        wm_branch(matsize, 201, 0, twos_comp(-104, bitwidth), 0),
+        wm_branch(matsize, 110, 1),
+        wm_branch(matsize, 221, 1, twos_comp(-114, bitwidth), 1),
+        wm_branch(matsize, 110, 0),
+        wm_branch(matsize, 221, 0, twos_comp(-114, bitwidth), 0),
         wm_equality(matsize, 0),
         wm_equality(matsize, 42),
         wm_less_than(matsize, twos_comp(-15, bitwidth)),
         wm_less_than(matsize, 0),
         wm_less_than(matsize, 15),
-        wm_jump(matsize, 104),
-        wm_jump(matsize, 205, 104),
+        wm_jump(matsize, 114),
+        wm_jump(matsize, 225, 114),
         wm_normal(matsize),
         wm_default(matsize),
         wm_default(matsize),
@@ -401,17 +404,17 @@ def generate_weightsmem(matsize, bitwidth):
 
     # get weight matrices for each nop test
     nop_weight_map = [
-        wm_branch(matsize, 148, 1),
-        wm_branch(matsize, 298, 1, twos_comp(-252, bitwidth), 1),
-        wm_branch(matsize, 148, 0),
-        wm_branch(matsize, 298, 0, twos_comp(-252, bitwidth), 0),
+        wm_branch(matsize, 219, 1),
+        wm_branch(matsize, 440, 1, twos_comp(-445, bitwidth), 1),
+        wm_branch(matsize, 219, 0),
+        wm_branch(matsize, 440, 0, twos_comp(-445, bitwidth), 0),
         wm_equality(matsize, 0),
         wm_equality(matsize, 42),
         wm_less_than(matsize, twos_comp(-15, bitwidth)),
         wm_less_than(matsize, 0),
         wm_less_than(matsize, 15),
-        wm_jump(matsize, 350),
-        wm_jump(matsize, 500, 350),
+        wm_jump(matsize, 664),
+        wm_jump(matsize, 885, 664),
         wm_normal(matsize),
         wm_default(matsize),
         wm_default(matsize),
@@ -461,5 +464,7 @@ if __name__ == "__main__":
     generate_hostmem(MATSIZE, BITWIDTH)
     generate_weightsmem(MATSIZE, BITWIDTH)
 
-    # run_tests(MATSIZE, BITWIDTH, "reg")
-    run_tests(MATSIZE, BITWIDTH, "nop")
+    if config.HAZARD_DETECTION:
+        run_tests(MATSIZE, BITWIDTH, "reg")
+    else:
+        run_tests(MATSIZE, BITWIDTH, "nop")

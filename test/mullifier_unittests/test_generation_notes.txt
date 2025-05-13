@@ -3,57 +3,57 @@ generate_unit_tests.py
 
  1: 
  - reg: 
-   - branch from @3 to @104 (+101)
-   - W0 = [100 (not 100) X ... X 1 1]
+   - branch from @3 to @114 (+111)
+   - W0 = [110 (not 110) X ... X 1 1]
    - H0 = I_m
    - default remaining hostmem
  - nop:
-   - branch from @200/@201 to @350 (+150/+149) - pick +149
-   - W0 = [148 (not 148) X ... X 1 1]
+   - branch from @443/@444 to @664 (+221/+220) - pick +220
+   - W0 = [219 (not 219) X ... X 1 1]
    - H0 = I_m
    - default remaining hostmem
 
  2: 
  - reg:
-   - branch 1 from @3 to @205 (+202)
-   - branch 2 from @207 to @104 (-103)
-   - W0 = [201 (not 201) X ... X 1 1]
-   - W1 = [(-104: 4294967192 in b32) (not -104) X ... X 1 1]
+   - branch 1 from @3 to @225 (+222)
+   - branch 2 from @227 to @114 (-113)
+   - W0 = [221 (not 221) X ... X 1 1]
+   - W1 = [(-114: 4294967182 in b32) (not -114) X ... X 1 1]
    - H0 = I_m
    - default remaining hostmem
  - nop:
-   - branch 1 from @200/@201 to @500 (+300/+299) - pick +299
-   - branch 2 from @600/@601 to @350 (-250/-251) - pick -251
-   - W0 = [298 (not 298) X ... X 1 1]
-   - W1 = [(-252: 4294967044 in b32) (not -252) X ... X 1 1]
+   - branch 1 from @443/@444 to @885 (+442/+441) - pick +441
+   - branch 2 from @1107/@1108 to @664 (-443/-444) - pick -444
+   - W0 = [440 (not 440) X ... X 1 1]
+   - W1 = [(-445: 4294966851 in b32) (not -445) X ... X 1 1]
    - H0 = I_m
    - default remaining hostmem
 
  3: 
  - reg: 
-   - branch from @3 to @104 (+101)
-   - W0 = [(not 100) 100 X ... X (not 1) 1]
+   - branch from @3 to @114 (+111)
+   - W0 = [(not 110) 110 X ... X (not 1) 1]
    - H0 = I_m
    - default remaining hostmem
  - nop:
-   - branch from @200/@201 to @350 (+150/+149) - pick +149
-   - W0 = [(not 148) 148 X ... X (not 1) 1]
+   - branch from @443/@444 to @664 (+221/+220) - pick +220
+   - W0 = [(not 219) 219 X ... X (not 1) 1]
    - H0 = I_m
    - default remaining hostmem
 
  4: 
   - reg:
-   - branch 1 from @3 to @205 (+202)
-   - branch 2 from @207 to @104 (-103)
-   - W0 = [(not 201) 201 X ... X (not 1) 1]
-   - W1 = [(not -104) (-104: 4294967192 in b32) X ... X (not 1) 1]
+   - branch 1 from @3 to @225 (+222)
+   - branch 2 from @227 to @114 (-113)
+   - W0 = [(not 221) 221 X ... X (not 1) 1]
+   - W1 = [(not -114) (-114: 4294967182 in b32) X ... X (not 1) 1]
    - H0 = I_m
    - default remaining hostmem
  - nop:
-   - branch 1 from @200/@201 to @500 (+300/+299) - pick +299
-   - branch 2 from @600/@601 to @350 (-250/-251) - pick -251
-   - W0 = [(not 298) 298 X ... X (not 1) 1]
-   - W1 = [(not -252) (-252: 4294967044 in b32) X ... X (not 1) 1]
+   - branch 1 from @443/@444 to @885 (+442/+441) - pick +441
+   - branch 2 from @1107/@1108 to @664 (-443/-444) - pick -444
+   - W0 = [(not 440) 440 X ... X (not 1) 1]
+   - W1 = [(not -445) (-445: 4294966851 in b32) X ... X (not 1) 1]
    - H0 = I_m
    - default remaining hostmem
 
@@ -84,29 +84,29 @@ generate_unit_tests.py
 
 10: 
  - reg: 
-   - branch from @3 to @104
-   - W0 = [X 104 X ... X 4]
+   - branch from @3 to @114
+   - W0 = [X 114 X ... X 4]
    - H0 = I_m
    - default remaining hostmem
  - nop:
-   - branch from @200/@201 to @350
-   - W0 = [X 350 X ... X 4]
+   - branch from @443/@444 to @664
+   - W0 = [X 664 X ... X 4]
    - H0 = I_m
    - default remaining hostmem
 
 11: 
  - reg:
-   - branch 1 from @3 to @205
-   - branch 2 from @207 to @104
-   - W0 = [X 205 X ... X 4]
-   - W1 = [X 104 X ... X 4]
+   - branch 1 from @3 to @225
+   - branch 2 from @227 to @114
+   - W0 = [X 225 X ... X 4]
+   - W1 = [X 114 X ... X 4]
    - H0 = I_m
    - default remaining hostmem
  - nop:
-   - branch 1 from @200/@201 to @500
-   - branch 2 from @600/@601 to @350
-   - W0 = [X 500 X ... X 4]
-   - W1 = [X 350 X ... X 4]
+   - branch 1 from @443/@444 to @885
+   - branch 2 from @1107/@1108 to @664
+   - W0 = [X 885 X ... X 4]
+   - W1 = [X 664 X ... X 4]
    - H0 = I_m
    - default remaining hostmem
 
