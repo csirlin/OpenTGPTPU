@@ -11,10 +11,10 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     from matrix import MMU_top
     from activate import act_top
 
-    # accumulator memories - TODO: shouldn't it be BITWIDTH, not hard coded 32?
+    # accumulator memories
     acc_mems = []
     for i in range(MATSIZE):
-        acc_mems.append(MemBlock(bitwidth=32, addrwidth=ACC_ADDR_SIZE, 
+        acc_mems.append(MemBlock(bitwidth=DWIDTH, addrwidth=ACC_ADDR_SIZE, 
                                 max_write_ports=None, max_read_ports=None, 
                                 name=f"acc_mems_{i}"))
 
@@ -259,7 +259,7 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
         increment = 2
     rhm_pc_payload = WireVector(DWIDTH*MATSIZE, name="tpu_rhm_pc_payload")
     rhm_pc_payload <<= concat_list([Const(0, DWIDTH), 
-                                    (pc + increment).sign_extended(DWIDTH), 
+                                    (pc + increment)[:DWIDTH].sign_extended(DWIDTH), 
                                     Const(0, DWIDTH * (MATSIZE - 3)), 
                                     Const(4, DWIDTH)])
 

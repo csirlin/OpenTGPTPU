@@ -5,11 +5,12 @@ from pyrtl.rtllib import multipliers
 
 #set_debug_mode()
 globali = 0  # To give unique numbers to each MAC
-def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we, weight_tag, i, j):
+def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
+         weight_tag, BITWIDTH, i, j):
     '''Multiply-Accumulate unit with programmable weight.
     Inputs
     data_in: The 8-bit activation value to multiply by weight.
-    acc_in: 32-bit value to accumulate with product.
+    acc_in: BITWIDTH-bit value to accumulate with product.
     switchw: Control signal; when 1, switch to using the other weight buffer.
     weight_in: 8-bit value to write to the secondary weight buffer.
     weight_we: When high, weights are being written; if tag matches, store weights.
@@ -72,7 +73,6 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     
     # just use the passed in weight. it should be using whatever is at buf4 at the time.
     product <<= corecircuits.signed_mult(weight_in, data_in)[:data_width] 
-    # product <<= helperfuncs.mult_signed(weight, data_in)[:32]
 
     #plen = len(weight) + len(data_in)
     #product = weight.sign_extended(plen) * data_in.sign_extended(plen)
@@ -84,8 +84,8 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     #l = max(len(product), len(acc_in))
     #out = product.sign_extended(l) + acc_in.sign_extended(l)
 
-    if len(out) > 32:
-        out = out[:32]
+    if len(out) > BITWIDTH:
+        out = out[:BITWIDTH]
                 
     # For values that need to be forward to the right/bottom, store in pipeline registers
     data_reg = Register(len(data_in), f"mac_data_reg_{i}_{j}")  # pipeline register, holds data value for cell to the right
@@ -104,7 +104,8 @@ def MAC(data_width, matrix_size, data_in, acc_in, switchw, weight_in, weight_we,
     return acc_reg, data_reg, switch_reg, weight_reg, weight_we_reg, weight_tag_reg
 
     
-def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_we):
+def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, 
+            weights_we, BITWIDTH):
     '''
     data_in: 256-array of 8-bit activation values from systolic_setup buffer
     new_weights: 256-array of 1-bit control values indicating that new weight should be used
@@ -185,9 +186,10 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
         switchin = new_weights[i]
         #probe(switchin, "switch" + str(i))
         for j in range(matrix_size):  # for each column
-
+            # bitwidth stored in a wv
             data_width_in = WireVector(32, f"mma_in_data_width_{i}_{j}")
             data_width_in <<= data_width
+            # matsize stored in a wv
             matrix_size_in = WireVector(32, f"mma_in_matrix_size_{i}_{j}")
             matrix_size_in <<= matrix_size
             din_in = WireVector(len(din), f"mma_in_din_{i}_{j}")
@@ -208,7 +210,7 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
                     #   weights_in_last[j], 
                       cells[i][j], # using the cell from buf4 - way easier
                       weights_enable[j], weights_tag[j],
-                      i, j)
+                      BITWIDTH, i, j)
             #probe(data_out[j], "MACacc{}_{}".format(i, j))
             #probe(acc_out, "MACout{}_{}".format(i, j))
             #probe(din, "MACdata{}_{}".format(i, j))
@@ -229,11 +231,12 @@ def MMArray(data_width, matrix_size, data_in, new_weights, weights_in, weights_w
             weights_tag[j] = newtag
             data_out[j] = acc_out
 
-    return [ x.sign_extended(32) for x in data_out ]
+    return [ x.sign_extended(BITWIDTH) for x in data_out ]
 
 
-def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index):
-    '''A single 32-bit accumulator with 2^size 32-bit buffers.
+def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index, 
+          BITWIDTH):
+    '''A single BITWIDTH-bit accumulator with 2^size BITWIDTH-bit buffers.
     On wen, writes data_in to the specified address (waddr) if wclear is high;
     otherwise, it performs an accumulate at the specified address (buffer[waddr] += data_in).
     lastvec is a control signal indicating that the operation being stored now is the
@@ -264,7 +267,7 @@ def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index):
                 acc_mem[waddr] |= acc_mem_no_overwrite
 
     # Read
-    data_out = WireVector(32, f"accum_data_out_{index}") # TODO: should be bitwidth, not 32, right?
+    data_out = WireVector(BITWIDTH, f"accum_data_out_{index}")
     data_out <<= acc_mem[raddr]
 
     # Pipeline registers
@@ -279,7 +282,8 @@ def accum(acc_mem, size, data_in, waddr, wen, wclear, raddr, lastvec, index):
 
     return data_out, waddrsave, wensave, wclearsave, lastsave
 
-def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec):
+def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec,
+                 BITWIDTH):
     '''
     Produces array of accumulators of same dimension as datas_in.
     '''
@@ -301,7 +305,8 @@ def accumulators(acc_mems, accsize, datas_in, waddr, we, wclear, raddr, lastvec)
         wein_before <<= wein
         dout, waddrin, wein, wclearin, lastvecin = accum(acc_mems[i], accsize, x, 
                                                          waddrin, wein, wclearin, 
-                                                         raddr, lastvecin, i)
+                                                         raddr, lastvecin, i, 
+                                                         BITWIDTH)
         wein_after = WireVector(len(wein), f"accumulators_wein_after_{i}")
         wein_after <<= wein
         accout[i] = dout
@@ -601,7 +606,7 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr,
 
     mouts = MMArray(data_width=data_width, matrix_size=matrix_size, 
                     data_in=matin, new_weights=switchout, 
-                    weights_in=buf4, weights_we=weights_we)
+                    weights_in=buf4, weights_we=weights_we, BITWIDTH=DWIDTH)
     
     for i in range(len(mouts)):
         mouts_i = WireVector(len(mouts[i]), f"mmu_mouts_{i}")
@@ -610,7 +615,7 @@ def MMU(acc_mems, data_width, matrix_size, accum_size, vector_in, accum_raddr,
     accout, done = accumulators(acc_mems=acc_mems, accsize=accum_size, 
                                 datas_in=mouts, waddr=addrout, we=weout, 
                                 wclear=clearout, raddr=accum_raddr, 
-                                lastvec=doneout)
+                                lastvec=doneout, BITWIDTH=data_width)
 
     switchstart = switchout[0]
     totalwait = Const(matrix_size + 1)

@@ -17,7 +17,7 @@ UB_ADDR_SIZE = 12
 WEIGHT_DRAM_ADDR_SIZE = 40
 ACC_ADDR_SIZE = 12 # 16
 INSTRUCTION_WIDTH = 14 * 8
-IMEM_ADDR_SIZE = 12
+IMEM_ADDR_SIZE = 12 # it doesn't make sense for IMEM to be larger than the bitwidth which can be represented
 
 HAZARD_DETECTION = True
 
