@@ -1,0 +1,11 @@
+# Test instructions with a length longer than MATSIZE. designed for m4
+# Use test/squish/generate.py to make weights and hostmem 
+# (make sure current directory is test/squish)
+# generate.make_hostmem('../long_instrs', matsize=4, bitwidth=32, num_tiles=8)
+# generate.make_weights('../long_instrs', matsize=4, bitwidth=32, num_weights=8)
+RHM 0, 0, 16
+RW 0
+MMC 0, 0, 16
+ACT 0, 16, 16
+WHM 16, 16, 16
+HLT
