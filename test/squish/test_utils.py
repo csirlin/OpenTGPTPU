@@ -31,13 +31,13 @@ class Params:
 
     def _mem_subfolder(self, mem_addr, mem_name):
         relative_addr = mem_addr - self.l2
-        res = "/" + str(mem_name)
-        if mem_addr == 0:
-            return res + "^"
+        res = "/" + str(mem_name) + "2=" + str(mem_name) + "1"
         if relative_addr >= 0:
             res += "+"
-        return res + str(relative_addr)
-
+        res += str(relative_addr)
+        if mem_addr == 0:
+            res += "^"
+        return res
 
     def get_relative_filepath(self):
         fp = self.instr1 + "_" + self.instr2 + "/b" \
@@ -46,11 +46,11 @@ class Params:
         if self.l1 is not None or self.l2 is not None:
             fp += "/"
             if self.l1 is not None:
-                fp += "l" + str(self.l1)
+                fp += "l1=" + str(self.l1)
                 if self.l2 is not None:
                     fp += "_"
             if self.l2 is not None:
-                fp += "l" + str(self.l2)
+                fp += "l2=" + str(self.l2)
 
         if self.hm2 is not None:
             fp += self._mem_subfolder(self.hm2, "hm")
@@ -102,20 +102,7 @@ class ParamHandler:
             return self.h_mode_driver
 
     def get_dict_path_list(self):
-        path = [self.p.instr1 + "_" + self.p.instr2, "b" + str(self.p.bitwidth), 
-                "m" + str(self.p.matsize)]
-        if self.p.l1 is not None:
-            path.append("l1=" + str(self.p.l1))
-        if self.p.l2 is not None:
-            path.append("l2=" + str(self.p.l2))
-        if self.p.hm2 is not None:
-            path.append("hm2=" + str(self.p.hm2))
-        if self.p.ub2 is not None:
-            path.append("ub2=" + str(self.p.ub2))
-        if self.p.acc2 is not None:
-            path.append("acc2=" + str(self.p.acc2))
-        path.append("w" + str(len(self.p.setup_rws)))
-        return path
+        return self.p.get_relative_filepath().split("/")
 
     # run an N-mode squish test with a chosen set of Params.
     # this requires checking different distances in a binary search. 
