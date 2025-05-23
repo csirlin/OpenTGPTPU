@@ -3,7 +3,7 @@
 
 import os
 import sys
-
+from squishtest import squish_test
 
 class Params:
     def __init__(self, instr1, instr2, bitwidth, matsize, use_nops, setup_rw_ct, 
@@ -27,7 +27,7 @@ class Params:
         self.flag2 = ""
 
     def set_distance(self, new_distance):
-        self.distance = new_distance
+        self.test_distance = new_distance
 
     def _mem_subfolder(self, mem_addr, mem_name):
         relative_addr = mem_addr - self.l2
@@ -97,7 +97,7 @@ class ParamHandler:
 
     def get_driver_func(self):
         if self.p.use_nops:
-            return self.n_mode_driver #TODO: maybe change these names
+            return self.n_mode_driver
         else:
             return self.h_mode_driver
 
@@ -120,7 +120,7 @@ class ParamHandler:
         while right - left > 0:
             mid = (left + right)//2
             self.p.set_distance(mid)
-            result = self.func(self.p)
+            result = self._param_passer()
             if result:
                 right = mid
             else:
@@ -130,4 +130,12 @@ class ParamHandler:
     # run an H-mode squish test with a chosen set of Params.
     def h_mode_driver(self):
         # sys.stdout = open(os.devnull, 'w')
-        return self.func(self.p)
+        return self._param_passer()
+    
+    def _param_passer(self):
+        setup, instrs = self.func(self.p)
+        return squish_test(setup, instrs, self.p.test_distance, 
+                           self.p.base_distance, self.p.bitwidth, 
+                           self.p.matsize, self.p.use_nops, self.p.test_folder,
+                           name=self.p.get_relative_filepath(),
+                           reset=False, absoluteaddrs=True)

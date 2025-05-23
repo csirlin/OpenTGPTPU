@@ -17,11 +17,6 @@ from assembler import assemble
 from runtpu import runtpu
 from sim import TPUSim
 
-# TODO: use the Params object as an argument to squish_test from the 
-# parametrized tests to cut down on parameter volume. May even want to pass it
-# to the Instruction and Program classes used here!
-from test_utils import Params 
-
 # TODO: squishtest feature where HM and weights are dynamically generated to be
 # as long as necessary for the supplied program
 class Operation(Enum):
@@ -226,10 +221,10 @@ class Program:
 
 # run the squish test given the args
 # TODO: remove cleanup from squishtests altogether?
-def squish_test(instrs: list, distance: int, bitwidth: int, matsize: int, 
-                name: str, setup: list, reset: bool, absoluteaddrs: bool, 
-                test_folder: str, ctrl_distance: int, cleanup: list = [], 
-                use_nops: bool = True) -> Tuple[bool, Dict[int, int]]:
+def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
+                bitwidth: int, matsize: int, use_nops: bool, test_folder: str, 
+                name: str, reset: bool, absoluteaddrs: bool,  
+                cleanup: list = []) -> Tuple[bool, Dict[int, int]]:
 
     if len(instrs) != 2:
         print("Please provide two instructions to test.")

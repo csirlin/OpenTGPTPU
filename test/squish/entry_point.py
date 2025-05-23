@@ -68,8 +68,6 @@ info_map = {
     "act_hlt":   {"func": tests.act_hlt,   "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1"]},
 }
 
-# TODO: use params object as a passthrough into squishtest?
-
 # if the parametrized test under consideration uses a parameter for instr2's 
 # starting address in a given memory (HM, UB, or ACC), calculate all possible
 # values of that parameter and return them in a list.
@@ -206,25 +204,14 @@ if __name__ == "__main__":
 
     counter = 0
     start_time = time.time()
-    # print("here", file=sys.stderr)
 
-    # for (ph_driver, dict_path) in commands:
-    #     counter += 1
-    #     result = ph_driver()
-    #     set_nested_dict(d, dict_path, result)
-
-    #     if counter%25 == 0:
-    #         current_time = time.time()
-    #         elapsed_time = current_time - start_time
-    #         eta = elapsed_time / counter * (len(commands) - counter)
-    #         print(f"Completed {counter} out of {len(commands)} commands.", file=sys.stderr)
-    #         print(f"Time elapsed: {current_time - start_time}s", file=sys.stderr)
-    #         print(f"Completion ETA: {eta}s", file=sys.stderr)
-
-    # exit(0)
+    # set up the result dictionary with all the possible paths to store 
+    # beforehand so that the dictionary is always sorted
+    for (_, dict_path) in commands:
+        set_nested_dict(d, dict_path, None)
 
     # run each command as a separate process with a configurable number of cores
-    with ProcessPoolExecutor(max_workers=3) as executor:
+    with ProcessPoolExecutor(max_workers=8) as executor:
         future_to_input = {executor.submit(ph_driver): dict_path 
                            for (ph_driver, dict_path) in commands}
         
