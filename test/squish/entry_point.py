@@ -122,6 +122,25 @@ def dict_contains_path(d: dict, path):
         d = d[item]
     return True
 
+# deep comparison between two dictionaries (or integers)
+def dict_deep_compare(value1, value2):
+    if type(value1) is not type(value2): 
+        return False
+
+    if type(value1) is int:
+        return value1 == value2
+
+    for key in value1.keys() | value2.keys():
+        if key not in value1:
+            return False
+        if key not in value2:
+            return False
+
+        if not dict_deep_compare(value1[key], value2[key]):
+            return False
+
+    return True
+
 # recursively simplify the dictionary when all values are the same
 # e.g. d_in  = {a: {a1: 1, a2: 2, a3: 3}, b: {b1: 0, b2: 0, b3: 0}} becomes
 #      d_out = {a: {a1: 1, a2: 2, a3: 3}, b: 0}
@@ -142,7 +161,7 @@ def simplify_dict(d: dict):
     else:
         value = None
         for key in d_simp.keys():
-            if type(d_simp[key]) is not int or (value is not None and value != d_simp[key]):
+            if value is not None and not dict_deep_compare(value, d_simp[key]):
                 return d_simp
             value = d_simp[key]
         return value
@@ -281,11 +300,21 @@ if __name__ == "__main__":
     print(f"Finished {len(commands)} tests in {end_time - start_time}s.")
 
     # create an abriged results dict
-    abridged_d = simplify_dict(d.copy())
+    simp_d = simplify_dict(d.copy())
 
     # store results
-    with open(f"{test_folder}/results.json", "w") as res_file:
-        json.dump(d, res_file, indent=2)
-    with open(f"{test_folder}/results_abridged.json", "w") as abridged_res_file:
-        json.dump(abridged_d, abridged_res_file, indent=2)
+
+    # global
+    with open(f"{test_folder}/results.json", "w") as reg_f:
+        json.dump(d, reg_f, indent=2)
+    with open(f"{test_folder}/results_abridged.json", "w") as simp_f:
+        json.dump(simp_d, simp_f, indent=2)
     
+    # results for each instr combo
+    for instr1 in categories[:-1]: # hlt cannot be instr1
+        for instr2 in categories:
+            instrs = f"{instr1}_{instr2}"
+            with open(f"{test_folder}/{instrs}/results.json", "w") as reg_f:
+                json.dump(d[instrs], reg_f, indent=2)
+            with open(f"{test_folder}/{instrs}/results_abridged.json", "w") as simp_f:
+                json.dump(simp_d[instrs], simp_f, indent=2)
