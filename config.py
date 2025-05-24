@@ -19,7 +19,7 @@ ACC_ADDR_SIZE = 12 # 16
 INSTRUCTION_WIDTH = 14 * 8
 IMEM_ADDR_SIZE = 12 # it doesn't make sense for IMEM to be larger than the bitwidth which can be represented
 
-HAZARD_DETECTION = True
+HAZARD_DETECTION = False
 
 # values = [host_addr_size, ub_addr_size, weight_dram_addr_size, acc_addr_size, mat_mul_size, data_width]
 #

@@ -114,7 +114,7 @@ class ParamHandler:
     # d >= START_DISTANCE, or it could always fail. Either way, it's a signal to
     # investigate further and/or rerun with a higher START_DISTANCE.
     def n_mode_driver(self):
-        # sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, 'w')
         left = 1
         right = self.p.base_distance
         while right - left > 0:
@@ -129,7 +129,7 @@ class ParamHandler:
 
     # run an H-mode squish test with a chosen set of Params.
     def h_mode_driver(self):
-        # sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, 'w')
         return self._param_passer()
     
     def _param_passer(self):

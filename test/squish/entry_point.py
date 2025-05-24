@@ -76,9 +76,8 @@ def get_i2_addrs(has_addr, l1, l2):
     if not has_addr:
         return [-1]
 
-    return [0, l2] # scheme for "diff" and "same" to compare against baseline
+    # return [0, l2] # scheme for "diff" and "same" to compare against baseline
 
-    # eventual scheme
     addrs = set() # use set to remove duplicates
     for l1_adjust in [0, l1//2, l1]: # 1-X, 2-X, 3-X
         for l2_adjust in [0, l2//2, l2]: # X-1, X-2, X-3
@@ -103,8 +102,8 @@ def get_i2_addrs(has_addr, l1, l2):
 def get_lengths(has_len, matsize):
     if not has_len:
         return [-1]
-    return [int(0.5*matsize), int(matsize)]
-    # return [int(0.5*matsize), int(matsize), int(2*matsize)]
+    # return [int(0.5*matsize), int(matsize)]
+    return [int(0.5*matsize), int(matsize), int(2*matsize)]
 
 # nested dictionary insertion. e.g. if keys = ["a", "b", "c"], d["a"]["b"]["c"]
 # will be set to `value`. intermediate steps in the dictionary will be added
@@ -120,7 +119,7 @@ if __name__ == "__main__":
     commands = []
     categories = ["rhm", "whm", "rw", "mmc", "mmcs", "act", "hlt"]
     bitwidths = [32]
-    matsizes = [4] # [4, 8, 16, 32]
+    matsizes = [4, 8, 16] #, 32]
     base_distance = 150
     print("Enter a test name: ")
     test_folder = input()
@@ -211,7 +210,7 @@ if __name__ == "__main__":
         set_nested_dict(d, dict_path, None)
 
     # run each command as a separate process with a configurable number of cores
-    with ProcessPoolExecutor(max_workers=8) as executor:
+    with ProcessPoolExecutor(max_workers=154) as executor:
         future_to_input = {executor.submit(ph_driver): dict_path 
                            for (ph_driver, dict_path) in commands}
         
@@ -232,11 +231,13 @@ if __name__ == "__main__":
                 eta = elapsed_time / counter * (len(commands) - counter)
                 print(f"Completed {counter} out of {len(commands)} commands.", file=sys.stderr)
                 print(f"Time elapsed: {current_time - start_time}s", file=sys.stderr)
-                print(f"Completion ETA: {eta}s", file=sys.stderr)
+                print(f"Completion ETA: {eta}s\n", file=sys.stderr)
 
-    # store results and final timing
-    with open(f"{test_folder}/results.json", "w") as result_file:
-        json.dump(d, result_file, indent=2)
-
+    # final timing
     end_time = time.time()
     print(f"Finished {len(commands)} tests in {end_time - start_time}s.")
+    
+    # store results
+    with open(f"{test_folder}/results.json", "w") as result_file:
+        json.dump(d, result_file, indent=2)
+    
