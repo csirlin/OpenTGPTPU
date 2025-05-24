@@ -6,6 +6,7 @@ from test_utils import ParamHandler
 import sys
 import json
 import time
+from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # add base folder (OPENTGPTPU) to sys.path
@@ -112,17 +113,57 @@ def set_nested_dict(d: dict, keys, value):
     for key in keys[:-1]:
         d = d.setdefault(key, {})
     d[keys[-1]] = value
-    
+
+# return true if d[path[0]][path[1]]...[path[-1]] is defined, false otherwise
+def dict_contains_path(d: dict, path):
+    for item in path:
+        if type(d) is not dict or d.get(item) is None:
+            return False
+        d = d[item]
+    return True
+
+# recursively simplify the dictionary when all values are the same
+# e.g. d_in  = {a: {a1: 1, a2: 2, a3: 3}, b: {b1: 0, b2: 0, b3: 0}} becomes
+#      d_out = {a: {a1: 1, a2: 2, a3: 3}, b: 0}
+# return a new dict
+def simplify_dict(d: dict):
+    # this is a bottom-up algorithm, so simplify all the sub-dicts first and
+    # store in a new dict
+    d_simp = {}
+    for key in d.keys():
+        if type(d[key]) is dict:
+            d_simp[key] = simplify_dict(d[key])
+        else:
+            d_simp[key] = d[key]
+    # then check if the value of every key-value pair is 
+    # 1. an integer 2. the same integer
+    # if so, then you can simplify the whole dict down to the common value. if
+    # not, you can't simplify, so just return the dict
+    else:
+        value = None
+        for key in d_simp.keys():
+            if type(d_simp[key]) is not int or (value is not None and value != d_simp[key]):
+                return d_simp
+            value = d_simp[key]
+        return value
 
 if __name__ == "__main__":
-    d = {}
     commands = []
     categories = ["rhm", "whm", "rw", "mmc", "mmcs", "act", "hlt"]
     bitwidths = [32]
     matsizes = [4, 8, 16] #, 32]
     base_distance = 150
-    print("Enter a test name: ")
-    test_folder = input()
+    if len(sys.argv) < 2:
+        print("No test name entered in command line. Enter a test name: ")
+        test_folder = input()
+    else:
+        test_folder = sys.argv[1]
+
+    if Path(f"{test_folder}/results.json").exists():
+        with open(f"{test_folder}/results.json") as result_file:
+            d = json.load(result_file)
+    else:
+        d = {}
 
     # generate all squishtest commands:
 
@@ -194,10 +235,12 @@ if __name__ == "__main__":
                                             # the commands list, along with the 
                                             # path to place the results of this
                                             # test in the global result dict
-                                            commands.append((
-                                                ph.get_driver_func(),
-                                                ph.get_dict_path_list()
-                                            ))
+                                            dict_path_list = ph.get_dict_path_list()
+                                            if not dict_contains_path(d, dict_path_list):
+                                                commands.append((
+                                                    ph.get_driver_func(),
+                                                    dict_path_list
+                                                ))
 
     # run the commands
 
@@ -236,8 +279,13 @@ if __name__ == "__main__":
     # final timing
     end_time = time.time()
     print(f"Finished {len(commands)} tests in {end_time - start_time}s.")
-    
+
+    # create an abriged results dict
+    abridged_d = simplify_dict(d.copy())
+
     # store results
-    with open(f"{test_folder}/results.json", "w") as result_file:
-        json.dump(d, result_file, indent=2)
+    with open(f"{test_folder}/results.json", "w") as res_file:
+        json.dump(d, res_file, indent=2)
+    with open(f"{test_folder}/results_abridged.json", "w") as abridged_res_file:
+        json.dump(abridged_d, abridged_res_file, indent=2)
     
