@@ -102,8 +102,7 @@ def run_and_compare_all_mems(prog_name, hm_name, wm_name, test_name,
         return False
     
 def load_and_compare_all_mems_combined(output_base):
-    return load_and_compare_all_mems(output_base + "/runtpu", "runtpu", 
-                                     output_base + "/sim", "sim")
+    return load_and_compare_all_mems(output_base, "runtpu", output_base, "sim")
     
 def load_and_compare_all_mems(output_base_1, group_name_1, output_base_2, group_name_2):
     test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems \
@@ -115,16 +114,17 @@ def load_and_compare_all_mems(output_base_1, group_name_1, output_base_2, group_
                         test_wqueue, test_accmems, ctrl_hostmem, 
                         ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, 
                         ctrl_accmems):
-        print(f"Test {output_base_1} vs {output_base_2} passed")
+        print(f"Test {output_base_1}/{group_name_1} vs {output_base_2}/{group_name_2} passed")
         return True
     else:
         print(f"Test {output_base_1} vs {output_base_2} failed")
         return False
     
 def load_group_mems(output_base, group_name):
-    test_hostmem = np.load(output_base + f"/{group_name}_hostmem.npy")
-    test_weightsmem = np.load(output_base + f"/{group_name}_weightsmem.npy")
-    test_ubuffer = np.load(output_base + f"/{group_name}_ubuffer.npy")
-    test_wqueue = np.load(output_base + f"/{group_name}_wqueue.npy")
-    test_accmems = np.load(output_base + f"/{group_name}_accmems.npy")
-    return test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems
+    with np.load(f"{output_base}/{group_name}.npz") as data:
+        test_hm = data["hm"]
+        test_wm = data["wm"]
+        test_ur = data["ub"]
+        test_wq = data["wq"]
+        test_acc = data["acc"]
+    return test_hm, test_wm, test_ur, test_wq, test_acc

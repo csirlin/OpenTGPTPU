@@ -112,11 +112,9 @@ class TPUSim(object):
         print("RW Reloads: {}".format(self.reload_count))
 
         os.makedirs(self.output_folder, exist_ok=True)
-        np.save(f'{self.output_folder}/sim_hostmem.npy', self.host_memory)
-        np.save(f'{self.output_folder}/sim_weightsmem.npy', self.weight_memory)
-        np.save(f'{self.output_folder}/sim_ubuffer.npy', self.unified_buffer)
-        np.save(f'{self.output_folder}/sim_wqueue.npy', self.fifo_to_np())
-        np.save(f'{self.output_folder}/sim_accmems.npy', self.accumulator)
+        np.savez_compressed(f"{self.output_folder}/sim", hm=self.host_memory, 
+                            wm=self.weight_memory, ub=self.unified_buffer, 
+                            wq=self.fifo_to_np(), acc=self.accumulator)
 
         print("PC history:\n", self.pc_history)
 

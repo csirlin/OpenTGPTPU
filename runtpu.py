@@ -363,11 +363,9 @@ def runtpu(prog: str, hostmem_filename: str, weightsmem_filename: str,
     wqueue_np = wqueue_to_np(sim, buf4, buf3, buf2, buf1, bitwidth, matsize)
     accmems_np = accmem_to_np(sim, acc_mems, matsize, row_count=0)
 
-    np.save(f'{output_folder}/runtpu_hostmem.npy', hostmem_np)
-    np.save(f'{output_folder}/runtpu_weightsmem.npy', weightsmem_np)
-    np.save(f'{output_folder}/runtpu_ubuffer.npy', ubuffer_np)
-    np.save(f'{output_folder}/runtpu_wqueue.npy', wqueue_np)
-    np.save(f'{output_folder}/runtpu_accmems.npy', accmems_np)
+    np.savez_compressed(f"{output_folder}/runtpu", hm=hostmem_np, 
+                        wm=weightsmem_np, ub=ubuffer_np, wq=wqueue_np, 
+                        acc=accmems_np)
     return hostmem_np, weightsmem_np, ubuffer_np, wqueue_np, accmems_np
 
 

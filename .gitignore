@@ -1,6 +1,7 @@
 pyenv/*
 **/__pycache__/*
 *.npy
+*.npz
 *.pkl
 *.out
 old/test_results/**

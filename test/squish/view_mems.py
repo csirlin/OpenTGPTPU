@@ -2,6 +2,8 @@ import sys
 import os
 import pickle
 
+# OUTDATED
+
 import numpy as np
 from squishtest import ProgramType
 

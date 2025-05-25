@@ -278,16 +278,12 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
         ctrl_hostmem, ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, ctrl_accmems \
             = sim.get_mems()
     else:
-        with open(os.path.join(ctrl_output_folderpath, "sim_hostmem.npy"), "rb") as f:
-            ctrl_hostmem = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "sim_weightsmem.npy"), "rb") as f:
-            ctrl_weightsmem = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "sim_ubuffer.npy"), "rb") as f:
-            ctrl_ubuffer = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "sim_wqueue.npy"), "rb") as f:
-            ctrl_wqueue = np.load(f)
-        with open(os.path.join(ctrl_output_folderpath, "sim_accmems.npy"), "rb") as f:
-            ctrl_accmems = np.load(f)
+        with np.load(os.path.join(ctrl_output_folderpath, "sim.npz")) as data:
+            ctrl_hostmem = data["hm"]
+            ctrl_weightsmem = data["wm"]
+            ctrl_ubuffer = data["ub"]
+            ctrl_wqueue = data["wq"]
+            ctrl_accmems = data["acc"]
 
     # run runtpu.py in standard mode and get result
     if test_type == ProgramType.NoNop:
@@ -302,16 +298,12 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
                      hostmem_filename, weights_filename, bitwidth, matsize, 
                      test_output_folderpath, output_trace=False)
     else:
-        with open(os.path.join(test_output_folderpath, "runtpu_hostmem.npy"), "rb") as f:
-            test_hostmem = np.load(f)
-        with open(os.path.join(test_output_folderpath, "runtpu_weightsmem.npy"), "rb") as f:
-            test_weightsmem = np.load(f)
-        with open(os.path.join(test_output_folderpath, "runtpu_ubuffer.npy"), "rb") as f:
-            test_ubuffer = np.load(f)
-        with open(os.path.join(test_output_folderpath, "runtpu_wqueue.npy"), "rb") as f:
-            test_wqueue = np.load(f)
-        with open(os.path.join(test_output_folderpath, "runtpu_accmems.npy"), "rb") as f:
-            test_accmems = np.load(f)
+        with np.load(os.path.join(test_output_folderpath, "runtpu.npz")) as data:
+            test_hostmem = data["hm"]
+            test_weightsmem = data["wm"]
+            test_ubuffer = data["ub"]
+            test_wqueue = data["wq"]
+            test_accmems = data["acc"]
 
     # compare results of all memories (hostmem, weightsmem, ubuffer, accmems, 
     # fifo queue) and output a verdict

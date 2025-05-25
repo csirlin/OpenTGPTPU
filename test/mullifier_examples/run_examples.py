@@ -25,11 +25,11 @@ for tf in test_folders:
     # run hardware and software sims
     runtpu(f"{test_path}/open_tpu.out", f"{test_path}/input.npy", 
            f"{test_path}/weights.npy", bitwidth=32, matsize=8, 
-           output_folder=f"{test_path}/runtpu", output_trace=True)
+           output_folder=f"{test_path}", output_trace=True)
     
     sim = TPUSim(f"{test_path}/open_tpu.out", f"{test_path}/input.npy", 
                  f"{test_path}/weights.npy", bitwidth=32, matsize=8, 
-                 output_folder=f"{test_path}/sim")
+                 output_folder=f"{test_path}")
     sim.run()
 
     # compare results between the two
