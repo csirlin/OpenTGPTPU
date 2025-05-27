@@ -112,51 +112,6 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
                 mmc_N.next |= mmc_N - 1
                 with mmc_N == 1:
                     mmc_busy.next |= 0
-
-    ############################################################
-    #  Activate Unit
-    ############################################################
-    
-    # act_busy is None if HAZARD_DETECTION is False
-    accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, pc_update, \
-        act_first_cycle, act_pc_absolute_update = act_top(start=dispatch_act,
-        start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, 
-        func=act_type, accum_out=acc_out, pc=pc, acc_mems=acc_mems, 
-        busy=act_busy, DWIDTH=DWIDTH, HAZARD_DETECTION=HAZARD_DETECTION)
-
-    accum_act_raddr <<= accum_raddr_sig
-
-    # Write the result of activate to the unified buffer
-    with conditional_assignment:
-        with ub_act_we:
-            UBuffer[ub_act_waddr] |= act_out
-
-    # probe(ub_act_we, "ub_act_we")
-    # probe(ub_act_waddr, "ub_act_waddr")
-    # probe(act_out, "act_out")
-    # probe(accum_raddr_sig, "accum_raddr")
-
-    ############################################################
-    #  Update PC
-    ############################################################
-    
-    if HAZARD_DETECTION:
-        with conditional_assignment:
-            # normal PC increment following instruction dispatch
-            with dispatch_mm | dispatch_rhm | dispatch_whm | weights_read | dispatch_nop:
-                pc.next |= pc + 1
-            # ACT increments PC in first busy cycle. can't increment in dispatch
-            # because the increment isn't known yet 
-            with dispatch_act: 
-                pass
-            with act_first_cycle: 
-                pc.next |= select(act_pc_absolute_update, pc_update, 
-                                                          pc + pc_update)
-
-    # in N mode, pc_update holds 1 and act_pc_absolute is 0 by default, giving 
-    # pc+1. pc_update holds or branch/jump amount after a branch/jump
-    elif not HAZARD_DETECTION:
-        pc.next <<= select(act_pc_absolute_update, pc_update, pc + pc_update)
     
     ############################################################
     #  Read/Write Host Memory
@@ -313,6 +268,30 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
                                                       hostmem_raddr_whm)
 
     ############################################################
+    #  Activate Unit
+    ############################################################
+    
+    # act_busy is None if HAZARD_DETECTION is False
+    accum_raddr_sig, ub_act_waddr, act_out, ub_act_we, pc_update, \
+        act_first_cycle, act_pc_absolute_update = act_top(start=dispatch_act,
+        start_addr=accum_raddr, dest_addr=ub_dest_addr, nvecs=act_length, 
+        func=act_type, accum_out=acc_out, pc=pc, acc_mems=acc_mems, 
+        busy=act_busy, DWIDTH=DWIDTH, HAZARD_DETECTION=HAZARD_DETECTION)
+
+    accum_act_raddr <<= accum_raddr_sig
+
+    # Write the result of activate to the unified buffer, as long as RHM isn't
+    # writing to the same UB address.
+    with conditional_assignment:
+        with ub_act_we & (~rhm_busy | (rhm_ub_waddr != ub_act_waddr)):
+            UBuffer[ub_act_waddr] |= act_out
+
+    # probe(ub_act_we, "ub_act_we")
+    # probe(ub_act_waddr, "ub_act_waddr")
+    # probe(act_out, "act_out")
+    # probe(accum_raddr_sig, "accum_raddr")
+
+    ############################################################
     #  Weights Memory
     ############################################################
 
@@ -343,6 +322,28 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     # probe(dispatch_act, "dispatch_act")
     # probe(dispatch_rhm, "dispatch_rhm")
     # probe(dispatch_whm, "dispatch_whm")
+
+    ############################################################
+    #  Update PC
+    ############################################################
+    
+    if HAZARD_DETECTION:
+        with conditional_assignment:
+            # normal PC increment following instruction dispatch
+            with dispatch_mm | dispatch_rhm | dispatch_whm | weights_read | dispatch_nop:
+                pc.next |= pc + 1
+            # ACT increments PC in first busy cycle. can't increment in dispatch
+            # because the increment isn't known yet 
+            with dispatch_act: 
+                pass
+            with act_first_cycle: 
+                pc.next |= select(act_pc_absolute_update, pc_update, 
+                                                          pc + pc_update)
+
+    # in N mode, pc_update holds 1 and act_pc_absolute is 0 by default, giving 
+    # pc+1. pc_update holds or branch/jump amount after a branch/jump
+    elif not HAZARD_DETECTION:
+        pc.next <<= select(act_pc_absolute_update, pc_update, pc + pc_update)
     
     return IMem, UBuffer, weights_dram_in, weights_dram_valid, hostmem_rdata, \
         halt, hostmem_re, hostmem_raddr, hostmem_we, hostmem_waddr, \
