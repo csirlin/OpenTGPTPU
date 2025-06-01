@@ -146,6 +146,7 @@ class ParamHandler:
     # run an H-mode squish test with a chosen set of Params.
     def h_mode_driver(self):
         sys.stdout = open(os.devnull, 'w')
+        self.p.set_distance(1)
         return self._param_passer()
     
     def _param_passer(self):

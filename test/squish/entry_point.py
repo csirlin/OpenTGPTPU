@@ -31,6 +31,7 @@ info_map = {
     "rhm_rhm":   {"func": tests.rhm_rhm,   "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2"]},
     "rhm_rhms":  {"func": tests.rhm_rhms,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "hm2", "ub2", "col"], "argl2": 0}, 
     "rhm_rhmv":  {"func": tests.rhm_rhms,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2", "col"]}, 
+    "rhm_rhmc":  {"func": tests.rhm_rhmc,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "ub2"]},
     "rhm_whm":   {"func": tests.rhm_whm,   "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2"]},
     "rhm_rw":    {"func": tests.rhm_rw,    "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l1"]},
     "rhm_mmc":   {"func": tests.rhm_mmc,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2"]},
@@ -41,6 +42,7 @@ info_map = {
     "rhms_rhm":  {"func": tests.rhms_rhm,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l2", "hm2", "ub2", "col"], "argl1": 0},
     "rhms_rhms": {"func": tests.rhms_rhms, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["ub2", "col"], "argl1": 0, "argl2": 0}, 
     "rhms_rhmv": {"func": tests.rhms_rhms, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l2", "ub2", "col"], "argl1": 0},
+    "rhms_rhmc": {"func": tests.rhms_rhmc, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["ub2", "col"], "argl1": 0},
     "rhms_whm":  {"func": tests.rhms_whm,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l2", "hm2", "ub2", "col"], "argl1": 0},
     "rhms_rw":   {"func": tests.rhms_rw,   "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["col"], "argl1": 0},
     "rhms_mmc":  {"func": tests.rhms_mmc,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l2", "ub2", "col"], "argl1": 0},
@@ -51,6 +53,7 @@ info_map = {
     "rhmv_rhm":  {"func": tests.rhms_rhm,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2", "col"]},
     "rhmv_rhms": {"func": tests.rhms_rhms, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "ub2", "col"], "argl2": 0}, 
     "rhmv_rhmv": {"func": tests.rhms_rhms, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "col"]},
+    "rhmv_rhmc": {"func": tests.rhms_rhmc, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "ub2", "col"]},
     "rhmv_whm":  {"func": tests.rhms_whm,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2", "col"]},
     "rhmv_rw":   {"func": tests.rhms_rw,   "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l1", "col"]},
     "rhmv_mmc":  {"func": tests.rhms_mmc,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "col"]},
@@ -58,9 +61,21 @@ info_map = {
     "rhmv_act":  {"func": tests.rhms_act,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "col"]},
     "rhmv_hlt":  {"func": tests.rhms_hlt,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "col"]},
 
+    "rhmc_rhm":  {"func": tests.rhmc_rhm,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l2", "ub2"]},
+    "rhmc_rhms": {"func": tests.rhmc_rhms, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["ub2", "col"], "argl2": 0}, 
+    "rhmc_rhmv": {"func": tests.rhmc_rhms, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l2", "ub2", "col"]},
+    "rhmc_rhmc": {"func": tests.rhmc_rhmc, "setup_rw_cts": [0, 1, 2, 3, 4], "vars": []},
+    "rhmc_whm":  {"func": tests.rhmc_whm,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l2", "ub2"]},
+    "rhmc_rw":   {"func": tests.rhmc_rw,   "setup_rw_cts": [0, 1, 2, 3   ], "vars": []},
+    "rhmc_mmc":  {"func": tests.rhmc_mmc,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l2", "ub2"]},
+    "rhmc_mmcs": {"func": tests.rhmc_mmc,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l2", "ub2"], "flag2": "S"},
+    "rhmc_act":  {"func": tests.rhmc_act,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l2", "ub2"]},
+    "rhmc_hlt":  {"func": tests.rhmc_hlt,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": []},
+
     "whm_rhm":   {"func": tests.whm_rhm,   "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2"]},
     "whm_rhms":  {"func": tests.whm_rhms,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "hm2", "ub2", "col"], "argl2": 0},
     "whm_rhmv":  {"func": tests.whm_rhms,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2", "col"]},
+    "whm_rhmc":  {"func": tests.whm_rhmc,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "ub2"]},
     "whm_whm":   {"func": tests.whm_whm,   "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "hm2", "ub2"]},
     "whm_rw":    {"func": tests.whm_rw,    "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l1"]},
     "whm_mmc":   {"func": tests.whm_mmc,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2"]},
@@ -71,6 +86,7 @@ info_map = {
     "rw_rhm":    {"func": tests.rw_rhm,    "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l2"]},
     "rw_rhms":   {"func": tests.rw_rhms,   "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["col"], "argl2": 0}, # TODO: any params for this guy?
     "rw_rhmv":   {"func": tests.rw_rhms,   "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l2", "col"]},
+    "rw_rhmc":   {"func": tests.rw_rhmc,   "setup_rw_cts": [0, 1, 2, 3   ], "vars": []},
     "rw_whm":    {"func": tests.rw_whm,    "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l2"]},
     "rw_rw":     {"func": tests.rw_rw,     "setup_rw_cts": [0, 1, 2      ], "vars": []},
     "rw_mmc":    {"func": tests.rw_mmc,    "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l2"]},
@@ -81,6 +97,7 @@ info_map = {
     "mmc_rhm":   {"func": tests.mmc_rhm,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2"]},
     "mmc_rhms":  {"func": tests.mmc_rhms,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "ub2", "col"], "argl2": 0},
     "mmc_rhmv":  {"func": tests.mmc_rhms,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "col"]},
+    "mmc_rhmc":  {"func": tests.mmc_rhmc,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "ub2"]},
     "mmc_whm":   {"func": tests.mmc_whm,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2"]},
     "mmc_rw":    {"func": tests.mmc_rw,    "setup_rw_cts": [   1, 2, 3   ], "vars": ["l1"]},
     "mmc_mmc":   {"func": tests.mmc_mmc,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "acc2"]},
@@ -91,6 +108,7 @@ info_map = {
     "mmcs_rhm":  {"func": tests.mmc_rhm,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2"], "flag1": "S"},
     "mmcs_rhms": {"func": tests.mmc_rhms,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "ub2", "col"], "flag1": "S", "argl2": 0},
     "mmcs_rhmv": {"func": tests.mmc_rhms,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "col"], "flag1": "S"},
+    "mmcs_rhmc": {"func": tests.mmc_rhmc,  "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "ub2"], "flag1": "S"},
     "mmcs_whm":  {"func": tests.mmc_whm,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2"], "flag1": "S"},
     "mmcs_rw":   {"func": tests.mmc_rw,    "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1"], "flag1": "S"},
     "mmcs_mmc":  {"func": tests.mmc_mmc,   "setup_rw_cts": [      2, 3, 4], "vars": ["l1", "l2", "ub2", "acc2"], "flag1": "S"},
@@ -101,6 +119,7 @@ info_map = {
     "act_rhm":   {"func": tests.act_rhm,   "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "ub2"]},
     "act_rhms":  {"func": tests.act_rhms,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "ub2", "col"], "argl2": 0},
     "act_rhmv":  {"func": tests.act_rhms,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "col"]},
+    "act_rhmc":  {"func": tests.act_rhmc,  "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "ub2"]},
     "act_whm":   {"func": tests.act_whm,   "setup_rw_cts": [0, 1, 2, 3, 4], "vars": ["l1", "l2", "ub2"]},
     "act_rw":    {"func": tests.act_rw,    "setup_rw_cts": [0, 1, 2, 3   ], "vars": ["l1"]},
     "act_mmc":   {"func": tests.act_mmc,   "setup_rw_cts": [   1, 2, 3, 4], "vars": ["l1", "l2", "ub2", "acc2"]},
@@ -176,7 +195,7 @@ def dict_deep_compare(value1, value2):
     if type(value1) is not type(value2): 
         return False
 
-    if type(value1) is int:
+    if type(value1) is int or type(value1) is bool:
         return value1 == value2
 
     for key in value1.keys() | value2.keys():
@@ -239,8 +258,8 @@ def simplify_dict(d: dict):
 
 if __name__ == "__main__":
     commands = []
-    categories = ["rhm", "rhms", "rhmv", "whm", "rw", "mmc", "mmcs", "act", 
-                  "hlt"]
+    categories = ["rhm", "rhms", "rhmv", "rhmc", "whm", "rw", "mmc", "mmcs", 
+                  "act", "hlt"]
     bitwidths = [32]
     matsizes = [4, 8, 16] #, 32]
     base_distance = 150
@@ -397,9 +416,11 @@ if __name__ == "__main__":
     end_time = time.time()
     print(f"Finished {len(commands)} tests in {end_time - start_time}s.")
 
-    # create an abriged results dict
-    simp_d = simplify_dict(d.copy())
-
+    # create an abridged results dict
+    simp_d = {}
+    for key in d.keys():
+        simp_d[key] = simplify_dict(d[key])
+    
     # store results
 
     # global

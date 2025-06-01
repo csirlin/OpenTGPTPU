@@ -40,6 +40,17 @@ def rhm_rhms(p: Params):
     instrs = [f"RHM {p.l2} {p.l2} {p.l1}", f"RHM.S 0 {p.ub2} {p.argl2}"]
     return setup, instrs
 
+### RHM-RHMC ###
+# setup not needed
+# instr1: RHM from HM addr `l2` to UB addr `l2` (these addresses let instr2 fit
+#   completely before instr1 in the UB address space)
+# instr2: RHM.C to UB addr `ub2`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C
+def rhm_rhmc(p: Params):
+    setup = p.setup_rws
+    instrs = [f"RHM {p.l2} {p.l2} {p.l1}", f"RHM.C 0 {p.ub2} 0"]
+    return setup, instrs
+
 ### RHM-WHM ###
 # setup pre-fills the UB range accessed by instr2 (WHM) with values from unused
 #   HM addresses
@@ -103,7 +114,7 @@ def rhm_hlt(p: Params):
 #   use to access a chosen HM row and column
 # instr1: RHM.S from HM addr `l2` to UB addr `l2` (this address lets instr2 fit 
 #   completely before instr1 in the HM and UB address spaces), with a dummy src
-#   address to ensure src isn't used in RHM.S's
+#   address to ensure src isn't used in RHM.S
 # instr2: RHM from HM addr `hm2` to UB addr `ub2`
 def rhms_rhm(p: Params):
     buf_val = p.matsize * p.l2 + p.col
@@ -116,13 +127,27 @@ def rhms_rhm(p: Params):
 #   (RHM.S) will later use to access a chosen HM row and column
 # instr1: RHM.S from HM addr `l2` to UB addr `l2` (this address lets instr2 fit 
 #   completely before instr1 in the HM and UB address spaces), with a dummy src
-#   address to ensure src isn't used in RHM.S's
+#   address to ensure src isn't used in RHM.S
 # instr2: RHM.S from HM addr `l2` to UB addr `ub2`, with a dummy src
-#   address to ensure src isn't used in RHM.S's
+#   address to ensure src isn't used in RHM.S
 def rhms_rhms(p: Params):
     buf_val = p.matsize * p.l2 + p.col
     setup = p.setup_rws + [f"RHM {buf_val} {p.buf_addr} 1"]
     instrs = [f"RHM.S 0 {p.l2} {p.argl1}", f"RHM.S 0 {p.ub2} {p.argl2}"]
+    return setup, instrs
+
+### RHMS/V-RHMC ###
+# setup pre-fills the UB buffer cell with a value that instr1 (RHM.S) will later
+#   use to access a chosen HM row and column
+# instr1: RHM.S from HM addr `l2` to UB addr `l2` (this address lets instr2 fit 
+#   completely before instr1 in the UB address space), with a dummy src address
+#   to ensure src isn't used in RHM.S
+# instr2: RHM.C to UB addr `ub2`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C
+def rhms_rhmc(p: Params):
+    buf_val = p.matsize * p.l2 + p.col
+    setup = p.setup_rws + [f"RHM {buf_val} {p.buf_addr} 1"]
+    instrs = [f"RHM.S 0 {p.l2} {p.argl1}", f"RHM.C 1 {p.ub2} 2"]
     return setup, instrs
 
 ### RHMS/V-WHM ###
@@ -131,7 +156,7 @@ def rhms_rhms(p: Params):
 #   accessed by instr2 (WHM) with values from unused HM addresses
 # instr1: RHM.S from HM addr `l2` to UB addr `l2` (this address lets instr2 fit 
 #   completely before instr1 in the HM and UB address spaces), with a dummy src
-#   address to ensure src isn't used in RHM.S's
+#   address to ensure src isn't used in RHM.S
 # instr2: WHM from UB addr `ub2` to HM addr `hm2`
 def rhms_whm(p: Params):
     hm_max = max(p.l2+p.l1, p.hm2+p.l2)
@@ -145,7 +170,7 @@ def rhms_whm(p: Params):
 # setup pre-fills the UB buffer cell with a value that instr1 (RHM.S) will later
 #   use to access a chosen HM row and column
 # instr1: RHM.S from HM addr 1 to UB addr 0, with a dummy src address to ensure 
-#   src isn't used in RHM.S's
+#   src isn't used in RHM.S
 # instr2: RW 0
 def rhms_rw(p: Params):
     buf_val = p.matsize + p.col
@@ -159,7 +184,7 @@ def rhms_rw(p: Params):
 #   accessed by instr2 (MMC/MMC.S) with values from unused HM addresses
 # instr1: RHM.S from HM addr `l2` to UB addr `l2` (this address lets instr2 fit 
 #   completely before instr1 in the HM and UB address spaces), with a dummy src
-#   address to ensure src isn't used in RHM.S's
+#   address to ensure src isn't used in RHM.S
 # instr2: MMC/MMC.S from UB addr `ub2` to ACC addr 0
 def rhms_mmc(p: Params):
     buf_val = p.matsize * p.l2 + p.col
@@ -175,7 +200,7 @@ def rhms_mmc(p: Params):
 #   from UB to ACC)
 # instr1: RHM.S from HM addr `l2` to UB addr `l2` (this address lets instr2 fit 
 #   completely before instr1 in the HM and UB address spaces), with a dummy src
-#   address to ensure src isn't used in RHM.S's
+#   address to ensure src isn't used in RHM.S
 # instr2: ACT from ACC addr 0 to UB addr `ub2`
 def rhms_act(p: Params):
     ub_max = max(p.l2+p.l1, p.ub2+p.l2)
@@ -189,12 +214,108 @@ def rhms_act(p: Params):
 # setup pre-fills the UB buffer cell with a value that instr1 (RHM.S) will later
 #   use to access a chosen HM row and column
 # instr1: RHM.S from HM addr 1 to UB addr 0, with a dummy src address to ensure 
-#   src isn't used in RHM.S's
+#   src isn't used in RHM.S
 # instr2: Halt
 def rhms_hlt(p: Params):
     buf_val = p.matsize + p.col
     setup = p.setup_rws + [f"RHM {buf_val} {p.buf_addr} 1"]
     instrs = [f"RHM.S 0 0 {p.argl1}", "HLT"]
+    return setup, instrs
+
+
+### RHMC TESTS ###
+
+
+### RHMC-RHM ###
+# setup not needed
+# instr1: RHM.C to UB addr `l2`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C (these addresses let instr2 fit
+#   completely before instr1 in the UB address space) 
+# instr2: RHM from HM addr 1 to UB addr `ub2`
+def rhmc_rhm(p: Params):
+    setup = p.setup_rws
+    instrs = [f"RHM.C 11 {p.l2} 20", f"RHM 1 {p.ub2} {p.l2}"]
+    return setup, instrs
+
+### RHMC-RHMS ###
+# setup pre-fills the UB buffer cell with a value that instr2 (RHM.S) will later
+#   use to access a chosen HM row and column
+# instr1: RHM.C to UB addr `l2`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C (these addresses let instr2 fit
+#   completely before instr1 in the UB address space)
+# instr2: RHM.S from HM addr 1 to UB addr `ub2`, with a dummy src address to 
+#   ensure src isn't used in RHM.S
+def rhmc_rhms(p: Params):
+    setup = p.setup_rws + [f"RHM {p.matsize + p.col} {p.buf_addr} 1"]
+    instrs = [f"RHM.C 12 {p.l2} 21", f"RHM.S 0 {p.ub2} {p.argl2}"]
+    return setup, instrs
+
+### RHMC-RHMC ###
+# setup not needed
+# instr1: RHM.C to UB addr 0, with a dummy src address and len value to ensure 
+#   src and len aren't used in RHM.C (these addresses let instr2 fit completely 
+#   before instr1 in the UB address space) 
+# instr2: RHM.C to UB addr `l1`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C (these addresses let instr2 fit 
+#   completely before instr1 in the UB address space) 
+def rhmc_rhmc(p: Params):
+    setup = p.setup_rws
+    instrs = ["RHM.C 13 0 22", f"RHM.C 14 {p.l1} 23"]
+    return setup, instrs
+
+### RHMC-WHM ###
+# setup pre-fills the UB range accessed by instr2 (WHM) with values from unused
+#   HM addresses
+# instr1: RHM.C to UB addr `l2`, with a dummy src address and len value to  
+#   ensure src and len aren't used in RHM.C
+# instr2: WHM from UB addr `ub2` to HM addr 0
+def rhmc_whm(p: Params):
+    setup = p.setup_rws + [f"RHM {p.l2} {p.ub2} {p.l2}"]
+    instrs = [f"RHM.C 14 {p.l2} 23", f"WHM 0 {p.ub2} {p.l2}"]
+    return setup, instrs
+
+### RHMC-RW ###
+# setup not needed
+# instr1: RHM.C to UB addr 0, with a dummy src address and len value to ensure
+#   src and len aren't used in RHM.C
+# instr2: RW 0
+def rhmc_rw(p: Params):
+    setup = p.setup_rws
+    instrs = ["RHM.C 15 0 24", "RW 0"]
+    return setup, instrs
+
+### RHMC-MMC(.S) ###
+# setup pre-fills the UB range accessed by instr2 (MMC/MMC.S) with values from 
+#   unused HM addresses
+# instr1: RHM.C to UB addr `l2`, with a dummy src address and len value to  
+#   ensure src and len aren't used in RHM.C
+# instr2: MMC/MMC.S from UB addr `ub2` to ACC addr 0
+def rhmc_mmc(p: Params):
+    setup = p.setup_rws + [f"RHM 1 {p.ub2} {p.l2}"]
+    instrs = [f"RHM.C 16 {p.l2} 25", f"MMC{p.flag2} 0 {p.ub2} {p.l2}"]
+    return setup, instrs
+
+### RHMC-ACT ###
+# setup pre-fills the accessed ACC range with values from unused HM and UB 
+#   addresses (RHM from HM to UB, MMC.S from UB to ACC)
+# instr1: RHM.C to UB addr `l2`, with a dummy src address and len value to  
+#   ensure src and len aren't used in RHM.C
+# instr2: ACT from ACC addr 0 to UB addr `ub2`
+def rhmc_act(p: Params):
+    ub_max = max(p.l2+p.l1, p.ub2+p.l2)
+    setup = [f"RHM 1 {ub_max} {p.l2}", "RW 2", f"MMC.S 0 {ub_max} {p.l2}"] \
+          + p.setup_rws
+    instrs = [f"RHM.C 17 {p.l2} 26", f"ACT 0 {p.ub2} {p.l2}"]
+    return setup, instrs
+
+### RHMC-HLT ###
+# setup not needed
+# instr1: RHM.C to UB addr 0, with a dummy src address and len value to ensure 
+#   src and len aren't used in RHM.C 
+# instr2: Halt
+def rhmc_hlt(p: Params):
+    setup = p.setup_rws
+    instrs = ["RHM.C 18 0 27", "HLT"]
     return setup, instrs
 
 
@@ -227,6 +348,18 @@ def whm_rhms(p: Params):
     setup = p.setup_rws + [f"RHM {hm_max} {p.l2} {p.l1}", 
                            f"RHM {buf_val} {p.buf_addr} 1"]
     instrs = [f"WHM {p.l2} {p.l2} {p.l1}", f"RHM.S 0 {p.ub2} {p.argl2}"]
+    return setup, instrs
+
+### WHM-RHMC ###
+# setup pre-fills the UB range accessed by instr1 (WHM) with values from unused 
+#   HM addresses
+# instr1: WHM from UB addr `l2` to HM addr `l2` (this address lets instr2 fit 
+#   completely before instr1 in the UB address space)
+# instr2: RHM.C to UB addr `ub2`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C
+def whm_rhmc(p: Params):
+    setup = p.setup_rws + [f"RHM {p.l2+p.l1} {p.l2} {p.l1}"]
+    instrs = [f"WHM {p.l2} {p.l2} {p.l1}", f"RHM.C 2 {p.ub2} 3"]
     return setup, instrs
 
 ### WHM-WHM ###
@@ -315,6 +448,16 @@ def rw_rhms(p: Params):
     instrs = ["RW 0", f"RHM.S 0 0 {p.argl2}"]
     return setup, instrs
 
+### RW-RHMC ###
+# setup not needed
+# instr1: RW 0
+# instr2: RHM.C to UB addr 0, with a dummy src address and len value to ensure 
+#   src and len aren't used in RHM.C
+def rw_rhmc(p: Params):
+    setup = p.setup_rws
+    instrs = ["RW 0", "RHM.C 3 0 4"]
+    return setup, instrs
+
 ### RW-WHM ###
 # setup pre-fills the UB range accessed by instr2 (WHM) with values from unused
 #   HM addresses
@@ -392,6 +535,18 @@ def mmc_rhms(p: Params):
     setup = p.setup_rws + [f"RHM {1+p.l2} {p.l2} {p.l1}",
                            f"RHM {buf_val} {p.buf_addr} 1"]
     instrs = [f"MMC{p.flag1} 0 {p.l2} {p.l1}", f"RHM.S 0 {p.ub2} {p.argl2}"]
+    return setup, instrs
+
+### MMC(.S)-RHMC ###
+# setup pre-fills the UB range accessed by instr1 (MMC/MMC.S) with values from
+#   unused HM addresses
+# instr1: MMC/MMC.S from UB addr `l2` to ACC addr 0 (this UB address lets instr2
+#   fit completely before instr1 in the UB address space)
+# instr2: RHM.C to UB addr `ub2`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C
+def mmc_rhmc(p: Params):
+    setup = p.setup_rws + [f"RHM {p.l2} {p.l2} {p.l1}"]
+    instrs = [f"MMC{p.flag1} 0 {p.l2} {p.l1}", f"RHM.C 4 {p.ub2} 5"]
     return setup, instrs
 
 ### MMC(.S)-WHM ###
@@ -489,6 +644,20 @@ def act_rhms(p: Params):
              f"MMC.S 0 {ub_max} {p.l1}", 
              f"RHM {buf_val} {p.buf_addr} 1"] + p.setup_rws
     instrs = [f"ACT 0 {p.l2} {p.l1}", f"RHM.S 0 {p.ub2} {p.argl2}"]
+    return setup, instrs
+
+### ACT-RHMC ###
+# setup pre-fills the ACC range accessed by instr1 (ACT) with values from unused
+#   HM and UB addresses (RHM from HM to UB, MMC.S from UB to ACC)
+# instr1: ACT from ACC addr 0 to UB addr `l2` (this UB address lets instr2 fit
+#   completely before instr1 in the UB address space)
+# instr2: RHM.C to UB addr `ub2`, with a dummy src address and len value to 
+#   ensure src and len aren't used in RHM.C
+def act_rhmc(p: Params):
+    ub_max = max(p.l2+p.l1, p.ub2+p.l2)
+    setup = [f"RHM 1 {ub_max} {p.l1}", "RW 2", f"MMC.S 0 {ub_max} {p.l1}"] \
+          + p.setup_rws
+    instrs = [f"ACT 0 {p.l2} {p.l1}", f"RHM.C 5 {p.ub2} 6"]
     return setup, instrs
 
 ### ACT-WHM ###
