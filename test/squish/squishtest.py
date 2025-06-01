@@ -140,7 +140,9 @@ class Program:
 
     # parse instrs, setup, and cleanup into Instruction objects
     # load the rest of the args into the Program object
-    def __init__(self, instrs, setup, cleanup, distance, bitwidth, matsize, name, reset, absoluteaddrs, program_dir: str, ctrl_distance: int) -> 'Program':
+    def __init__(self, instrs, setup, cleanup, distance, bitwidth, matsize, 
+                 name, reset, absoluteaddrs, program_dir: str, 
+                 ctrl_distance: int) -> 'Program':
         self.instrs = []
         self.setup = []
         self.cleanup = []
@@ -289,7 +291,7 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
     if reset or not os.path.exists(program.get_filepath(binary=True, ptype=test_type)) or program.name == "test":
         assemble(program.get_filepath(binary=False, ptype=test_type), 0)
 
-    # run control and get the resulting memories
+    # run sim.py on control file and get the resulting memories
     print(f"Running {name} for b = {bitwidth}, m = {matsize}")
     print(f"Control")
     
@@ -299,35 +301,46 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
                  hm_filename, wm_filename, bitwidth, matsize, 
                  ctrl_output_folderpath)
         sim.run()
-        ctrl_hostmem, ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, ctrl_accmems \
-            = sim.get_mems()
+        ctrl_hm, ctrl_wm, ctrl_ub, ctrl_wq, ctrl_acc = sim.get_mems()
     else:
         with np.load(os.path.join(ctrl_output_folderpath, "sim.npz")) as data:
-            ctrl_hostmem = data["hm"]
-            ctrl_weightsmem = data["wm"]
-            ctrl_ubuffer = data["ub"]
-            ctrl_wqueue = data["wq"]
-            ctrl_accmems = data["acc"]
+            ctrl_hm = data["hm"]
+            ctrl_wm = data["wm"]
+            ctrl_ub = data["ub"]
+            ctrl_wq = data["wq"]
+            ctrl_acc = data["acc"]
 
-    # run runtpu.py in standard mode and get result
+    # run runtpu.py and sim.py on test file and get the resulting memories
     if test_type == ProgramType.NoNop:
         print("NoNop Test")
         test_output_folderpath = f'{program_dir}/{ProgramType.NoNop.value}_{bitwidth}b_{matsize}m'
     else:
         print(f"Distance Test (squish distance = {distance}, normal distance = {ctrl_distance})")
         test_output_folderpath = f'{program_dir}/{ProgramType.Distance.value}_{bitwidth}b_{matsize}m_{distance}d'
+
     if reset or not os.path.exists(test_output_folderpath) or program.name == "test":
-        test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems \
-            = runtpu(program.get_filepath(binary=True, ptype=test_type),
+        test_hm, test_wm, test_ub, test_wq, test_acc = runtpu(
+                     program.get_filepath(binary=True, ptype=test_type),
                      hm_filename, wm_filename, bitwidth, matsize, 
                      test_output_folderpath, output_trace=False)
+        sim = TPUSim(program.get_filepath(binary=True, ptype=test_type),
+                     hm_filename, wm_filename, bitwidth, matsize, 
+                     test_output_folderpath)
+        sim.run()
+        ctrl_hm, ctrl_wm, ctrl_ub, ctrl_wq, ctrl_acc = sim.get_mems()
     else:
         with np.load(os.path.join(test_output_folderpath, "runtpu.npz")) as data:
-            test_hostmem = data["hm"]
-            test_weightsmem = data["wm"]
-            test_ubuffer = data["ub"]
-            test_wqueue = data["wq"]
-            test_accmems = data["acc"]
+            test_hm = data["hm"]
+            test_wm = data["wm"]
+            test_ub = data["ub"]
+            test_wq = data["wq"]
+            test_acc = data["acc"]
+        with np.load(os.path.join(test_output_folderpath, "sim.npz")) as data:
+            ctrl_hm = data["hm"]
+            ctrl_wm = data["wm"]
+            ctrl_ub = data["ub"]
+            ctrl_wq = data["wq"]
+            ctrl_acc = data["acc"]
 
     # compare results of all memories (hostmem, weightsmem, ubuffer, accmems, 
     # fifo queue) and output a verdict
@@ -335,44 +348,44 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
 
     passed = True
 
-    if not np.array_equal(ctrl_hostmem, test_hostmem):
+    if not np.array_equal(ctrl_hm, test_hm):
         print("Test failed (hostmem)")
         print("Control host memory:")
-        print(ctrl_hostmem)
+        print(ctrl_hm)
         print("Test host memory:")
-        print(test_hostmem)
+        print(test_hm)
         passed = False
 
-    if not np.array_equal(ctrl_weightsmem, test_weightsmem):
+    if not np.array_equal(ctrl_wm, test_wm):
         print("Test failed (weightsmem)")
         print("Control weight memory:")
-        print(ctrl_weightsmem)
+        print(ctrl_wm)
         print("Test weight memory:")
-        print(test_weightsmem)
+        print(test_wm)
         passed = False
 
-    if not np.array_equal(ctrl_ubuffer, test_ubuffer):
+    if not np.array_equal(ctrl_ub, test_ub):
         print("Test failed (ubuffer)")
         print("Control ubuffer:")
-        print(ctrl_ubuffer)
+        print(ctrl_ub)
         print("Test ubuffer:")
-        print(test_ubuffer)
+        print(test_ub)
         passed = False
 
-    if not np.array_equal(ctrl_accmems, test_accmems):
+    if not np.array_equal(ctrl_acc, test_acc):
         print("Test failed (accmems)")
         print("Control accmems:")
-        print(ctrl_accmems)
+        print(ctrl_acc)
         print("Test accmems:")
-        print(test_accmems)
+        print(test_acc)
         passed = False
 
-    if not np.array_equal(ctrl_wqueue, test_wqueue):
+    if not np.array_equal(ctrl_wq, test_wq):
         print("Test failed (wqueue)")
         print("Control wqueue:")
-        print(ctrl_wqueue)
+        print(ctrl_wq)
         print("Test wqueue:")
-        print(test_wqueue)
+        print(test_wq)
         passed = False
 
     return passed
