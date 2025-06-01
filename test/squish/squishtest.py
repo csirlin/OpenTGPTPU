@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 from typing import List, Optional, Tuple, Dict
 import pickle
 import sys
@@ -47,6 +48,7 @@ class Opflag(Enum):
     SWITCH = "S"
     RELU = "R"
     SIGMOID = "Q"
+    CONV = "C"
 
 
 class ProgramType(Enum):
@@ -63,7 +65,9 @@ class Instruction:
     opflag: Optional[Opflag] = None
     arg1: Optional[int] = None
     arg2: Optional[int] = None
-    arg3: Optional[float] = None
+    arg3: Optional[int] = None
+    max_hm_addr: Optional[int] = None
+    weight_index: Optional[int] = None
 
     # if absolute addresses is true, then UB and HM addresses are taken literally
     # otherwise, they are taken as relative to matsize. For example, if matsize is 16,
@@ -96,6 +100,12 @@ class Instruction:
         # assign args
         for i in range(1, len(split)):
             setattr(self, f"arg{i}", split[i])
+
+        # set max_hm_addr and weight_index if necessary
+        if self.operation == Operation.RHM:
+            self.max_hm_addr = int(self.arg1) + int(self.arg3) - 1
+        elif self.operation == Operation.RW:
+            self.weight_index = int(self.arg1)
 
     # turn the Instruction object into a string
     def to_string(self) -> str:
@@ -135,6 +145,8 @@ class Program:
         self.setup = []
         self.cleanup = []
         self.ctrl_distance = ctrl_distance
+        self.max_weight_index = -1
+        self.max_hm_addr = -1
 
         for i in range(len(instrs)):
             self.instrs.append(Instruction(instrs[i], matsize, absoluteaddrs))
@@ -146,6 +158,14 @@ class Program:
         if cleanup:
             for i in range(len(cleanup)):
                 self.cleanup.append(Instruction(cleanup[i], matsize, absoluteaddrs))
+
+        for instr_group in [self.setup, self.instrs, self.cleanup]:
+            for instr in instr_group:
+                if instr.max_hm_addr is not None:
+                    self.max_hm_addr = max(self.max_hm_addr, instr.max_hm_addr)
+                if instr.weight_index is not None:
+                    self.max_weight_index = max(self.max_weight_index, 
+                                                instr.weight_index)
 
         self.distance = distance
         self.bitwidth = bitwidth
@@ -241,10 +261,14 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
 
     # make folder for the test (squish/name/) and add weights and inputs if they
     # don't already exist
-    weights_filename = make_weights(program_dir, program.matsize, 
-                                    program.bitwidth, num_weights=12)
-    hostmem_filename = make_hostmem(program_dir, program.matsize, 
-                                    program.bitwidth, num_tiles=12)
+    wm_filename = make_weights(program_dir, program.matsize, program.bitwidth, 
+                               num_weights=program.max_weight_index + 1)
+    if absoluteaddrs:
+        num_tiles = max(16, math.ceil(program.max_hm_addr/matsize))
+    else:
+        num_tiles = max(16, program.max_hm_addr)
+    hm_filename = make_hostmem(program_dir, program.matsize, program.bitwidth, 
+                               num_tiles)
 
     test_type = ProgramType.Distance if use_nops else ProgramType.NoNop
 
@@ -272,7 +296,7 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
     ctrl_output_folderpath = f"{program_dir}/{ProgramType.Control.value}_{bitwidth}b_{matsize}m"
     if reset or not os.path.exists(ctrl_output_folderpath) or program.name == "test":
         sim = TPUSim(program.get_filepath(binary=True, ptype=ProgramType.Control),
-                 hostmem_filename, weights_filename, bitwidth, matsize, 
+                 hm_filename, wm_filename, bitwidth, matsize, 
                  ctrl_output_folderpath)
         sim.run()
         ctrl_hostmem, ctrl_weightsmem, ctrl_ubuffer, ctrl_wqueue, ctrl_accmems \
@@ -295,7 +319,7 @@ def squish_test(setup: list, instrs: list, distance: int, ctrl_distance: int,
     if reset or not os.path.exists(test_output_folderpath) or program.name == "test":
         test_hostmem, test_weightsmem, test_ubuffer, test_wqueue, test_accmems \
             = runtpu(program.get_filepath(binary=True, ptype=test_type),
-                     hostmem_filename, weights_filename, bitwidth, matsize, 
+                     hm_filename, wm_filename, bitwidth, matsize, 
                      test_output_folderpath, output_trace=False)
     else:
         with np.load(os.path.join(test_output_folderpath, "runtpu.npz")) as data:
@@ -384,8 +408,9 @@ if __name__ == "__main__":
     absoluteaddrs: bool = args.absoluteaddrs
     test_folder: str = args.test_folder
     ctrl_distance: int = args.ctrl_distance
-    use_nops: bool = args.use_nops
+    use_nops: bool = args.nops
 
-    squish_test(instrs, distance, bitwidth, matsize, name, 
-                setup, cleanup, reset, absoluteaddrs, test_folder, 
-                ctrl_distance, use_nops)
+    print(instrs)
+    print("aa=", absoluteaddrs)
+    squish_test(setup, instrs, distance, ctrl_distance, bitwidth, matsize, 
+                use_nops, test_folder, name, reset, absoluteaddrs, cleanup)

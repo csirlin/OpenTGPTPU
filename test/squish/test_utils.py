@@ -7,7 +7,7 @@ from squishtest import squish_test
 
 class Params:
     def __init__(self, instr1, instr2, bitwidth, matsize, use_nops, setup_rw_ct, 
-                 base_distance, test_folder):
+                 base_distance, test_folder, ub_addrwidth):
         
         self.instr1 = instr1
         self.instr2 = instr2
@@ -17,20 +17,24 @@ class Params:
         self.setup_rws = [f"RW {w}" for w in range(4, 4+setup_rw_ct)]
         self.base_distance = base_distance
         self.test_folder = test_folder
+        self.buf_addr = 2**ub_addrwidth - 1
     
         self.l1 = None
         self.l2 = None
+        self.argl1 = None
+        self.argl2 = None
         self.hm2 = None
         self.ub2 = None
         self.acc2 = None
         self.flag1 = ""
         self.flag2 = ""
+        self.col = None
 
     def set_distance(self, new_distance):
         self.test_distance = new_distance
 
     def _mem_subfolder(self, mem_addr, mem_name):
-        relative_addr = mem_addr - self.l2
+        relative_addr = mem_addr - max(1, self.l2)
         res = "/" + str(mem_name) + "2=" + str(mem_name) + "1"
         if relative_addr >= 0:
             res += "+"
@@ -43,13 +47,13 @@ class Params:
         fp = self.instr1 + "_" + self.instr2 + "/b" \
            + str(self.bitwidth) + "/m" + str(self.matsize)
 
-        if self.l1 is not None or self.l2 is not None:
+        if self.l1 != 0 or self.l2 != 0:
             fp += "/"
-            if self.l1 is not None:
+            if self.l1 != 0:
                 fp += "l1=" + str(self.l1)
-                if self.l2 is not None:
+                if self.l2 != 0:
                     fp += "_"
-            if self.l2 is not None:
+            if self.l2 != 0:
                 fp += "l2=" + str(self.l2)
 
         if self.hm2 is not None:
@@ -61,6 +65,9 @@ class Params:
         if self.acc2 is not None:
             fp += self._mem_subfolder(self.acc2, "acc")
 
+        if self.col is not None:
+            fp += "/col=" + str(self.col)
+
         fp += "/w" + str(len(self.setup_rws))
 
         return fp
@@ -68,17 +75,23 @@ class Params:
 
 class ParamHandler:
     def __init__(self, func, instr1, instr2, bitwidth, matsize, use_nops, 
-                 setup_rw_ct, base_distance, test_folder):
+                 setup_rw_ct, base_distance, test_folder, ub_addrwidth):
         
         self.func = func
         self.p = Params(instr1, instr2, bitwidth, matsize, use_nops, 
-                        setup_rw_ct, base_distance, test_folder)
+                        setup_rw_ct, base_distance, test_folder, ub_addrwidth)
 
     def set_l1(self, l1):
         self.p.l1 = l1
 
     def set_l2(self, l2):
         self.p.l2 = l2
+
+    def set_argl1(self, argl1):
+        self.p.argl1 = argl1
+
+    def set_argl2(self, argl2):
+        self.p.argl2 = argl2
 
     def set_hm2(self, hm2):
         self.p.hm2 = hm2
@@ -94,6 +107,9 @@ class ParamHandler:
 
     def set_flags2(self, flags):
         self.p.flag2 = "." + "".join(flags)
+
+    def set_col(self, col):
+        self.p.col = col
 
     def get_driver_func(self):
         if self.p.use_nops:
