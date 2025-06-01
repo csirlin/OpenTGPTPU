@@ -106,6 +106,8 @@ def hostmem_to_np(hostmem, bitwidth, matsize):
 # convert weightsmem to 2d numpy array
 def weightsmem_to_np(weightsmem, bitwidth, matsize):
     keys = sorted(weightsmem.keys())
+    if len(keys) == 0:
+        return np.zeros((0, matsize, matsize))
     weightsmem_np = np.zeros((keys[-1]+1, matsize, matsize))
     for k in keys:
         weightsmem_np[k] = make_tile(weightsmem[k], bitwidth, matsize)
