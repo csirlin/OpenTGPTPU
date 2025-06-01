@@ -208,13 +208,9 @@ def tpu(MATSIZE, HOST_ADDR_SIZE, UB_ADDR_SIZE, WEIGHT_DRAM_ADDR_SIZE,
     # it should be pc+2. this works correctly in N mode (sort of) but in H mode,
     # this is happening one cycle after RHM dispatch, meaning pc has already 
     # been incremented by 1 and only needs 1 to be added.
-    if HAZARD_DETECTION:
-        increment = 1
-    else:
-        increment = 2
     rhm_pc_payload = WireVector(DWIDTH*MATSIZE, name="tpu_rhm_pc_payload")
     rhm_pc_payload <<= concat_list([Const(0, DWIDTH), 
-                                    (pc + increment)[:DWIDTH].sign_extended(DWIDTH), 
+                                    (pc + 1)[:DWIDTH].sign_extended(DWIDTH), 
                                     Const(0, DWIDTH * (MATSIZE - 3)), 
                                     Const(4, DWIDTH)])
 
